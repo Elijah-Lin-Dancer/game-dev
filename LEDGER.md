@@ -13,6 +13,7 @@
 | 7 | 2026-11-19 19:41 | 写入选型说明 | 推荐顺位：Ninja > Tiny Swords > Kenney > Pixel Adventure，待拍板 | `docs/STYLE-PICK.md` |
 | 8 | 2026-11-19 19:52 | 主美术拍板 | 选定 Ninja Adventure（CC0）；回填清单与选型页 | `docs/decisions/0002-primary-art.md` |
 | 9 | 2026-11-19 20:05 | 素材落地 | itch 两端均不可达；改从转存仓库稀疏拉取完整包，核对 LICENSE 为 CC0 全文；美术入库、音频留 raw | `docs/ASSET-INVENTORY.md` |
+| 11 | 2026-11-19 21:10 | P1 战斗手感落地 | 音效接入、碰撞与挥砍判定、受击反馈、死亡重开；闭环机器人验 4 连杀与死亡 | `docs/decisions/0004-combat-feel.md` |
 | 10 | 2026-11-19 20:40 | 原型 A 跑通 | Phaser 3 单文件 Web App；修掉列/行误读、摇杆归一化、FIT 展示尺寸三处 bug；三种视口实测通过 | `web/game.html`、ADR 0003 |
 
 待核项：
