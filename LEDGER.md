@@ -19,5 +19,7 @@
 | 12 | 2026-11-19 22:05 | P2 房间结构落地 | 24×26 格房间、3×3 随机游走 3–6 间、清房开门、掉落跨房保留、28 血 Boss + 血条、通关/死亡遮罩；修掉墙切片、金币图形、Boss 贴脸生成、掉落残留、入口方向五处坑 | `docs/decisions/0005-room-structure.md` |
 | 13 | 2026-11-19 22:35 | P2 闭环实测 | 门锁（px=692 撞不过）、换房（落点与来向一致）、Boss 受击节奏 700–750 ms/3 点、通关与重开（新地牢）全部通过；三种视口无报错 | `docs/PLAYTEST-2.md` |
 
+| 14 | 2026-11-19 23:05 | 工程化第 1 步：模块化与引擎分离 | 源码拆为 core/systems/scenes 五模块，esbuild 出 19 KB 逻辑 + 85 KB 素材 + 独立引擎；冷启动 365 KB（gzip）与旧版持平，但改玩法只重下 6 KB | `docs/decisions/0006-modular-build.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

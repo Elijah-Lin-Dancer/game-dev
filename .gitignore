@@ -1,26 +1,3 @@
-# 原始包整目录不入库（Ninja Adventure 解包后约 52 MB，含 34 MB 音乐）
-assets/00-raw/
-
-# 解包中间产物
-assets/00-raw/**/*.zip
-assets/00-raw/**/*.7z
-assets/00-raw/**/*.rar
-
-# 设计源文件
-*.psd
-*.aseprite
-*.blend
-*.fbx
-*.glb
-
-# 音频默认不入库，需要时用 git add -f
-assets/03-audio/**/*.wav
-assets/03-audio/**/*.mp3
-assets/03-audio/**/*.ogg
-
-# 系统与编辑器
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
 node_modules/
+# 原始全量素材包（52 MB，只留本地）
+assets/00-raw/
