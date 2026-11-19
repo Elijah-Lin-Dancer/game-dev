@@ -1,11 +1,15 @@
 # game-dev
 
+**在线试玩**：<https://elijah-lin-dancer.github.io/game-dev/>
+
+
 新游戏的开发仓库。当前阶段：主美术与技术栈已定，P1 战斗已实现，P2 房间结构已实现并跑通一局（随机房间 / 清房开门 / 掉落 / Boss / 通关与死亡重开）。
 
 ## 目录
 
 | 位置 | 内容 |
 |---|---|
+| `index.html` | Pages 入口，跳转到 `web/game.html` |
 | `web/game.html` | **可直接打开玩的单文件原型**（Phaser + 素材 + 音效全内联，1.25 MB） |
 | `web/main.js` | 游戏逻辑源码（改完跑 `node tools/build-webapp.mjs` 重新生成） |
 | `web/audio/` | 从素材包里转出来的 5 个 mp3 音效（已入库，不必重转） |
@@ -53,6 +57,14 @@ P3 叙事形态（NPC / 对话 / 存盘）尚未定；Boss 预警与二阶段待
 | 2 目标冻结 | 技术栈与分辨率已冻结；玩法按「动作 + roguelike 结构 + 冒险叙事」三层叠 |
 | 3 方案 | P1 战斗、P2 房间结构均已落地 |
 | 4 开发 | P1 战斗手感 + P2 一局结构（房间 / 门 / 掉落 / Boss / 输赢）已跑通；P3 未开工 |
+
+## 部署
+
+仓库公开后，GitHub Pages 直接托管 `main` 分支根目录：
+
+- 入口：<https://elijah-lin-dancer.github.io/game-dev/>（跳到 `web/game.html`）
+- 每次 `node tools/build-webapp.mjs` → `git commit` → `git push`，Pages 自动重建，几十秒后线上就是新版
+- 根目录 `.nojekyll` 用来跳过 Jekyll 处理，避免下划线路径被忽略
 
 ## 用法
 
