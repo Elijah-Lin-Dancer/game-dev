@@ -1,5 +1,7 @@
-# 原始下载包与大型二进制不入库
-assets/00-raw/*.zip
+# 原始包整目录不入库（Ninja Adventure 解包后约 52 MB，含 34 MB 音乐）
+assets/00-raw/
+
+# 解包中间产物
 assets/00-raw/**/*.zip
 assets/00-raw/**/*.7z
 assets/00-raw/**/*.rar

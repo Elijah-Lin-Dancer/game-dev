@@ -9,11 +9,11 @@
 
 ## 当前状态
 
-主美术已选定 Ninja Adventure（ADR 0002），素材包尚未下载，下载后补齐 LICENSE 原文路径。
+主美术 Ninja Adventure 素材包**已落地**：原始包 `assets/00-raw/NinjaAdventure/`（不入 git），美术子集 `assets/01-primary/NinjaAdventure/`（入 git）。清点见 `docs/ASSET-INVENTORY.md`。
 
 | 名称 | 作者 | 协议 | 来源 URL | 是否需署名 | 署名模板 | 原始 LICENSE 路径 |
 |---|---|---|---|---|---|---|
-| Ninja Adventure - Asset Pack | Pixel-Boy / AAA | CC0 1.0 | https://pixel-boy.itch.io/ninja-adventure-asset-pack | 否（作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | 待下载：`assets/00-raw/NinjaAdventure/LICENSE` |
+| Ninja Adventure - Asset Pack | Pixel-Boy / AAA | CC0 1.0（已核对全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存，原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
 
 ## 鸣谢页生成
 
