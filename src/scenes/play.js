@@ -29,7 +29,8 @@ export class Play extends Phaser.Scene {
 
     this.player = this.add.sprite(RW / 2, RH / 2, 'walk', 0).setScale(2).setDepth(500);
     this.player.play('walk-down');
-    this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+    this.camLook = { x: 0, y: 0 };
+    this.cameras.main.startFollow(this.player, true, CFG.camLerp, CFG.camLerp);
 
     this.enemies = [];
     this.drops = [];
@@ -208,6 +209,7 @@ export class Play extends Phaser.Scene {
       type: 'beast', spr, hp: CFG.enemyHp, maxHp: CFG.enemyHp,
       kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
       speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
+      stuckT: 0, slideT: 0, slide: new Phaser.Math.Vector2(),
     });
   }
 
@@ -222,6 +224,7 @@ export class Play extends Phaser.Scene {
       type: 'boss', spr, hp: CFG.bossHp, maxHp: CFG.bossHp,
       kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
       speed: CFG.bossSpeed, dmg: CFG.bossDmg, half: 24,
+      phase: 'approach', phaseT: 0, lunge: new Phaser.Math.Vector2(),
     });
     this.bossBarBg = this.add.rectangle(0, S.H - 26, 220, 8, 0x000000, 0.6).setScrollFactor(0).setDepth(810);
     this.bossBar = this.add.rectangle(0, S.H - 26, 216, 4, 0xff6b5a, 1).setOrigin(0, 0.5).setScrollFactor(0).setDepth(811);
@@ -253,7 +256,7 @@ export class Play extends Phaser.Scene {
 
     const v = VEC[this.facing];
     const fx = this.add.sprite(
-      this.player.x + v[0] * 14, this.player.y + v[1] * 12, 'slash'
+      this.player.x + v[0] * 18, this.player.y + v[1] * 16, 'slash'
     ).setDepth(600).setRotation(ANGLE[this.facing] + Math.PI / 4).setScale(2.2);
     fx.play('slash-play');
     this.tweens.add({
@@ -294,6 +297,84 @@ export class Play extends Phaser.Scene {
         ease: 'Quad.easeOut', onComplete: () => spark.destroy(),
       });
     }
+  }
+
+  /* Boss：靠近 → 蓄力（红身抖动）→ 直线冲撞 → 缓 0.38 秒 → 循环 */
+  updateBoss(e, dt) {
+    const s = e.spr, p = this.player;
+    e.phaseT -= dt;
+
+    if (e.phase === 'windup') {
+      const pulse = 1 + 0.07 * Math.sin(this.time.now / 55);
+      s.setScale(1.6 * pulse).setTint(0xff8a7a);
+      if (e.phaseT <= 0) {
+        e.phase = 'lunge';
+        e.phaseT = CFG.bossLungeTime;
+        s.clearTint().setScale(1.6);
+        this.cameras.main.shake(90, 0.008);
+      }
+      return;
+    }
+    if (e.phase === 'lunge') {
+      const sp = CFG.bossLungeSpeed * (dt / 1000);
+      this.moveActor(s, e.lunge.x * sp, e.lunge.y * sp, e.half);
+      if (e.phaseT <= 0) { e.phase = 'recover'; e.phaseT = CFG.bossRecover; }
+      return;
+    }
+    if (e.phase === 'recover') {
+      if (e.phaseT <= 0) e.phase = 'approach';
+      return;
+    }
+
+    if (this.dead || this.won) return;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    const sp = e.speed * (dt / 1000);
+    this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+    s.setFlipX(dirv.x < 0);
+
+    if (dist < CFG.bossLungeReach) {
+      e.phase = 'windup';
+      e.phaseT = CFG.bossWindup;
+      e.lunge.copy(dirv);
+      this.sfx.hurt.play({ rate: 0.55, volume: 0.35 });
+    }
+  }
+
+  /* 小怪：直线追人，卡住超过阈值就顺侧向滑一段再继续 */
+  updateBeast(e, dt) {
+    const s = e.spr, p = this.player;
+    if (this.dead || this.won) return;
+
+    if (e.slideT > 0) {
+      e.slideT -= dt;
+      const sp = e.speed * (dt / 1000);
+      this.moveActor(s, e.slide.x * sp, e.slide.y * sp, e.half);
+      return;
+    }
+
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    const sp = e.speed * (dt / 1000);
+    const bx = s.x, by = s.y;
+    this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+
+    const moved = Phaser.Math.Distance.Between(bx, by, s.x, s.y);
+    e.stuckT = moved < sp * 0.4 ? e.stuckT + dt : 0;
+    if (e.stuckT > CFG.beastStuckMs) {
+      e.stuckT = 0;
+      e.slideT = CFG.beastSlideMs;
+      const side = Math.random() < 0.5 ? 1 : -1;
+      e.slide.set(-dirv.y * side, dirv.x * side);
+    }
+
+    const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
+      ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
+    if (dir !== e.dir) { e.dir = dir; s.play('beast-' + dir); }
+    else if (!s.anims.isPlaying) s.play('beast-' + dir);
   }
 
   killEnemy(e) {
@@ -411,11 +492,21 @@ export class Play extends Phaser.Scene {
       fontFamily: 'ui-monospace, monospace', fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
     }).setScrollFactor(0).setDepth(800);
-    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格/点击 挥砍 · 清完怪才开门', {
+    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 挥砍 · 清怪开门 · Boss 红身=蓄力，退远点', {
       fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
-    this.scale.on('resize', (gs) => this.hint.setPosition(10, gs.height - 20));
+    this.fitHint();
+    this.scale.on('resize', (gs) => {
+      this.hint.setPosition(10, gs.height - 20);
+      this.fitHint();
+    });
+  }
+
+  /* 窄屏时把提示条等比缩进去，别被裁掉 */
+  fitHint() {
+    const w = this.scale.width || S.W;
+    this.hint.setScale(this.hint.width > w - 20 ? (w - 20) / this.hint.width : 1);
   }
 
   bindInput() {
@@ -524,26 +615,16 @@ export class Play extends Phaser.Scene {
       if (e.kb.lengthSq() > 1) {
         this.moveActor(s, e.kb.x * (dt / 1000), e.kb.y * (dt / 1000), e.half);
         e.kb.scale(Math.pow(0.002, dt / 1000));
+      } else if (e.type === 'boss') {
+        this.updateBoss(e, dt);
       } else {
-        const dist = Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y);
-        if (dist < CFG.chaseRange && !this.dead && !this.won) {
-          const dirv = new Phaser.Math.Vector2(this.player.x - s.x, this.player.y - s.y).normalize();
-          const sp = e.speed * (dt / 1000);
-          this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
-
-          if (e.type === 'beast') {
-            const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
-              ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
-            if (dir !== e.dir) { e.dir = dir; s.play('beast-' + dir); }
-            else if (!s.anims.isPlaying) s.play('beast-' + dir);
-          } else {
-            s.setFlipX(dirv.x < 0);
-          }
-        }
+        this.updateBeast(e, dt);
       }
       s.setDepth(2 + s.y / 1000);
 
-      if (!this.dead && !this.won) {
+      // Boss 只有冲撞那一下能伤人，蓄力时贴上去不掉血
+      const canHurt = e.type === 'boss' ? e.phase === 'lunge' : true;
+      if (canHurt && !this.dead && !this.won) {
         const hitR = e.type === 'boss' ? 34 : 24;
         if (Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y) < hitR) {
           this.hurtPlayer(s.x, s.y, e.dmg);
@@ -610,7 +691,17 @@ export class Play extends Phaser.Scene {
         .fillCircle(this.stick.ox + this.stick.dx * limit, this.stick.oy + this.stick.dy * limit, 4);
     }
 
+    this.updateCameraLook(dt);
     this.updateHud();
+  }
+
+  /* 镜头朝面朝方向轻微前瞻，转身时平滑过渡 */
+  updateCameraLook(dt) {
+    const v = VEC[this.facing];
+    const k = 1 - Math.pow(0.004, dt / 1000);
+    this.camLook.x += (-v[0] * CFG.camLookAhead - this.camLook.x) * k;
+    this.camLook.y += (-v[1] * CFG.camLookAhead * 0.8 - this.camLook.y) * k;
+    this.cameras.main.setFollowOffset(this.camLook.x, this.camLook.y);
   }
 
   updateHud() {
@@ -643,11 +734,13 @@ export class Play extends Phaser.Scene {
       enemies: this.enemiesAlive(), drops: this.drops.length,
       enemyList: this.enemies.filter((e) => e.hp > 0).map((e) => [Math.round(e.spr.x), Math.round(e.spr.y), e.type]),
       bossHp: (this.enemies.find((e) => e.type === 'boss') || {}).hp,
+      bossPhase: (this.enemies.find((e) => e.type === 'boss') || {}).phase,
       bossX: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.x : -1),
       bossY: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.y : -1),
       dropList: this.drops.map((d) => ({ k: d.kind, x: Math.round(d.baseX), y: Math.round(d.baseY) })),
       dead: this.dead, won: this.won, iframe: Math.round(this.iframe),
       px: Math.round(this.player.x), py: Math.round(this.player.y),
+      camX: Math.round(this.cameras.main.scrollX), camY: Math.round(this.cameras.main.scrollY),
       w: this.scale.width, h: this.scale.height,
     };
   }

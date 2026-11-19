@@ -21,5 +21,7 @@
 
 | 14 | 2026-11-19 23:05 | 工程化第 1 步：模块化与引擎分离 | 源码拆为 core/systems/scenes 五模块，esbuild 出 19 KB 逻辑 + 85 KB 素材 + 独立引擎；冷启动 365 KB（gzip）与旧版持平，但改玩法只重下 6 KB | `docs/decisions/0006-modular-build.md` |
 
+| 15 | 2026-11-19 23:40 | B 步手感修复 | Boss 四态预警（蓄力期贴脸 0 伤害、冲撞单次 −3）、小怪卡住侧滑、镜头朝向前瞻 ±17px、HUD 提示自适应；发现并修正前瞻符号写反 | `docs/decisions/0007-enemy-telegraph.md`、`docs/PLAYTEST-3.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

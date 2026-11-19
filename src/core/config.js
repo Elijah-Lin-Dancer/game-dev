@@ -9,6 +9,8 @@ const CFG = {
   atkCd: 300, atkReach: 30, atkBox: [34, 30],
   enemySpeed: 46, chaseRange: 420, iFrame: 700, hitStop: 55,
   bossHp: 28, bossSpeed: 52, bossDmg: 3,
+  bossWindup: 420, bossLungeSpeed: 190, bossLungeTime: 220, bossRecover: 380, bossLungeReach: 132,
+  beastStuckMs: 260, beastSlideMs: 420, camLerp: 0.12, camLookAhead: 22,
   roomEnemiesMin: 3, roomEnemiesMax: 5,
   healAmount: 4, coinChance: 0.45, heartChance: 0.12,
 };
