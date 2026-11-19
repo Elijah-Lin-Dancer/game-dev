@@ -1,36 +1,31 @@
-/* Ninja Adventure 原型 B —— P1 战斗手感
- * 阶段 A（已验收）：移动 + 四向动画 + 双端输入 + 短边固定 360 自适应
- * 阶段 B（本次）：碰撞、挥砍、受击硬直、击退、血量、追击怪、音效
+/* Ninja Adventure 原型 C —— P2 房间结构
+ * 阶段 A：移动 + 四向动画 + 双端输入 + 自适应分辨率
+ * 阶段 B：碰撞 / 挥砍 / 受击 / 击退 / 血量 / 追击怪 / 音效
+ * 阶段 C（本次）：随机房间、清房开门、掉落、Boss、一局到底
  *
- * 素材约定（已实测，见 ADR 0003）：
- *   Walk.png / Beast.png = 4 列 × 4 行，列是方向（下/上/左/右），行是帧
- *   某方向的序列 = [col, col+4, col+8, col+12]
+ * 素材约定：Walk.png / Beast.png = 4 列 × 4 行（列=方向，行=帧）
+ *           GiantFrog Idle40x40.png = 40×40 横条 5 帧
  */
 (() => {
-  const WORLD = 1024;
-  const SPEED = 96;
-  const MINOR = 360;
-  const MAX_MAJOR = 800;
+  const TILE = 32;            // 16px 美术 × 2 倍
+  const COLS = 24, ROWS = 26; // 房间格数：768 × 832 世界像素
+  const RW = COLS * TILE, RH = ROWS * TILE;
+  const MINOR = 360, MAX_MAJOR = 800;
 
   const CFG = {
-    maxHp: 20,          // 5 颗心 × 4 档，对应 heart.png 的 5 帧
-    touchDmg: 3,        // 怪碰一下掉 3/20，心掉 3/4
-    playerDmg: 3,       // 挥砍一下 3 点
-    enemyHp: 6,         // 两刀一只
-    atkCd: 300,         // 攻击冷却 ms
-    atkReach: 30,       // 判定中心到角色的距离
-    atkBox: [34, 30],   // 判定框宽高
-    enemySpeed: 46,
-    chaseRange: 300,
-    iFrame: 700,        // 玩家受击无敌 ms
-    hitStop: 55,        // 命中冻结 ms
-    maxAlive: 4,
-    respawn: 2200,
+    maxHp: 20, touchDmg: 3, playerDmg: 3, enemyHp: 6,
+    atkCd: 300, atkReach: 30, atkBox: [34, 30],
+    enemySpeed: 46, chaseRange: 420, iFrame: 700, hitStop: 55,
+    bossHp: 28, bossSpeed: 52, bossDmg: 3,
+    roomEnemiesMin: 3, roomEnemiesMax: 5,
+    healAmount: 4, coinChance: 0.45, heartChance: 0.12,
   };
 
   const DIRS = { down: 0, up: 1, left: 2, right: 3 };
   const ANGLE = { down: Math.PI / 2, up: -Math.PI / 2, left: Math.PI, right: 0 };
   const VEC = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+  const DOOR_VEC = { l: [-1, 0], r: [1, 0], u: [0, -1], d: [0, 1] };
+  const OPPOSITE = { l: 'r', r: 'l', u: 'd', d: 'u' };
 
   function logicalSize() {
     const a = window.innerWidth / window.innerHeight;
@@ -43,8 +38,45 @@
   }
   const S = logicalSize();
 
-  /* 某方向的 4 帧序列 */
-  const dirFrames = (col) => [0, 4, 8, 12].map((row) => ({ key: null, frame: row + col }));
+  /* ---------- 地牢生成：3×3 网格随机游走，从 (0,0) 走到 (2,2) ---------- */
+  function makeDungeon() {
+    const G = 3, goal = [2, 2];
+    let cur = [0, 0];
+    const path = [[0, 0]];
+    const seen = new Set(['0,0']);
+    let guard = 0;
+
+    while ((cur[0] !== goal[0] || cur[1] !== goal[1]) && guard++ < 200) {
+      const cand = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .map(([dx, dy]) => [cur[0] + dx, cur[1] + dy])
+        .filter(([x, y]) => x >= 0 && x < G && y >= 0 && y < G && !seen.has(x + ',' + y));
+      if (!cand.length) break;
+      // 六成概率直奔终点，四成随机，保证路径有弯也有直
+      cand.sort((a, b) => (Math.abs(a[0] - goal[0]) + Math.abs(a[1] - goal[1]))
+        - (Math.abs(b[0] - goal[0]) + Math.abs(b[1] - goal[1])));
+      const forceGoal = path.length >= 5;   // 太长就直奔终点，一局 3–6 间
+      const next = (forceGoal || Math.random() < 0.65 || cand.length === 1) ? cand[0] : cand[Math.floor(Math.random() * cand.length)];
+      cur = next;
+      seen.add(cur[0] + ',' + cur[1]);
+      path.push(cur.slice());
+    }
+
+    // 相邻房间之间开门
+    const rooms = new Map();
+    path.forEach(([x, y], i) => rooms.set(x + ',' + y, {
+      x, y, idx: i, doors: {}, cleared: false, built: false,
+      isBoss: (x === goal[0] && y === goal[1]),
+    }));
+    for (let i = 1; i < path.length; i++) {
+      const a = rooms.get(path[i - 1].join(','));
+      const b = rooms.get(path[i].join(','));
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dir = dx === 1 ? 'r' : dx === -1 ? 'l' : dy === 1 ? 'd' : 'u';
+      a.doors[dir] = b.x + ',' + b.y;
+      b.doors[OPPOSITE[dir]] = a.x + ',' + a.y;
+    }
+    return { rooms, path, start: path[0].join(',') };
+  }
 
   class Boot extends Phaser.Scene {
     constructor() { super('boot'); }
@@ -57,6 +89,8 @@
       this.load.spritesheet('beast', A.beast, { frameWidth: 16, frameHeight: 16 });
       this.load.spritesheet('slash', A.slash, { frameWidth: 32, frameHeight: 32 });
       this.load.spritesheet('heart', A.heart, { frameWidth: 16, frameHeight: 16 });
+      this.load.spritesheet('boss', A.boss, { frameWidth: 40, frameHeight: 40 });
+      this.load.spritesheet('coin', A.coin, { frameWidth: 10, frameHeight: 10 });
       Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
     }
 
@@ -83,6 +117,16 @@
         frames: this.anims.generateFrameNumbers('slash', { start: 0, end: 3 }),
         frameRate: 13, repeat: 0,
       });
+      this.anims.create({
+        key: 'coin-spin',
+        frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 3 }),
+        frameRate: 10, repeat: -1,
+      });
+      this.anims.create({
+        key: 'boss-idle',
+        frames: this.anims.generateFrameNumbers('boss', { start: 0, end: 4 }),
+        frameRate: 7, repeat: -1,
+      });
       this.scene.start('play');
     }
   }
@@ -91,70 +135,430 @@
     constructor() { super('play'); }
 
     create() {
-      this.cameras.main.setBackgroundColor('#2f3b2a');
-      this.add.tileSprite(0, 0, WORLD, WORLD, 'field', 18).setOrigin(0);
-
-      const rnd = new Phaser.Math.RandomDataGenerator(['ninja-p1']);
-      for (let i = 0; i < 26; i++) {
-        this.add.image(rnd.between(64, WORLD - 64), rnd.between(64, WORLD - 64), 'field', 3).setAlpha(0.55);
-      }
-
-      this.player = this.add.sprite(WORLD / 2, WORLD / 2, 'walk', 0).setScale(2).setDepth(2);
-      this.player.play('walk-down');
-      this.facing = 'down';
       this.hp = CFG.maxHp;
+      this.kills = 0;
+      this.coins = 0;
+      this.dead = false;
+      this.won = false;
       this.iframe = 0;
+      this.lastHurtAt = -9999;
       this.atkAt = -9999;
       this.freeze = 0;
-      this.score = 0;
-      this.dead = false;
+      this.facing = 'down';
       this.press = null;
+      this.stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
 
-      this.cameras.main.setBounds(0, 0, WORLD, WORLD);
-      this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+      this.cameras.main.setBackgroundColor('#2f3b2a');
+      this.cameras.main.setBounds(0, 0, RW, RH);
       this.cameras.main.setRoundPixels(true);
 
-      // 敌人
-      this.enemies = [];
-      this.spawnTimer = 0;
-      this.spawnEnemy();
-      this.spawnEnemy();
-      this.spawnEnemy();
-
-      // 音效
       this.sfx = {};
-      ['sword', 'hit', 'hurt', 'kill', 'gameover'].forEach((k) => {
+      ['sword', 'hit', 'hurt', 'kill', 'gameover', 'coin'].forEach((k) => {
         this.sfx[k] = this.sound.add(k, { volume: k === 'gameover' ? 0.45 : 0.5 });
       });
 
-      // HUD
+      this.player = this.add.sprite(RW / 2, RH / 2, 'walk', 0).setScale(2).setDepth(500);
+      this.player.play('walk-down');
+      this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+
+      this.enemies = [];
+      this.drops = [];
+      this.doorLocks = {};
+      this.walls = new Set();
+      this.roomWrap = null;
+
+      this.dungeon = makeDungeon();
+      this.roomTotal = this.dungeon.path.length;
+      this.enterRoom(this.dungeon.start, null);
+
+      this.buildHud();
+      this.bindInput();
+
+      if (location.search.indexOf('debug') >= 0) {
+        window.__cfg = CFG;
+        window.__dbg = {
+          clear: () => this.enemies.filter((e) => e.hp > 0).forEach((e) => this.killEnemy(e)),
+          hp: (v) => { this.hp = v; },
+          exit: (dir) => this.tryExit(dir, true),
+          tp: (x, y) => this.player.setPosition(x, y),
+        };
+      }
+    }
+
+    /* ---------- 房间 ---------- */
+    enterRoom(key, fromDir) {
+      const room = this.dungeon.rooms.get(key);
+      // 离开上一间时，把它没捡的掉落记在房间上，回来还在
+      if (this.room && this.drops) {
+        this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY }));
+        this.drops.forEach((d) => d.spr.destroy());
+      }
+      this.room = room;
+      this.roomKey = key;
+      if (this.roomWrap) this.roomWrap.destroy(true);
+      this.roomWrap = this.add.container(0, 0).setDepth(0);
+      this.enemies = [];
+      this.drops = [];
+      this.doorLocks = {};
+      this.walls = new Set();
+
+      this.entry = fromDir ? OPPOSITE[fromDir] : null;
+      this.paintFloorAndWalls(room);
+      this.spawnRoomEnemies(room);
+      (room.dropState || []).forEach((d) => this.dropItem(d.x, d.y, d.kind));
+
+      // 从哪个门进来，就落在对面的门口
+      if (fromDir) {
+        const back = OPPOSITE[fromDir];
+        const p = this.player;
+        if (back === 'l') p.setPosition(TILE * 2.5, RH / 2);
+        else if (back === 'r') p.setPosition(RW - TILE * 2.5, RH / 2);
+        else if (back === 'u') p.setPosition(RW / 2, TILE * 2.5);
+        else p.setPosition(RW / 2, RH - TILE * 2.5);
+      } else {
+        this.player.setPosition(RW / 2, RH / 2);
+      }
+      this.cameras.main.setBounds(0, 0, RW, RH);
+      this.cameras.main.centerOn(this.player.x, this.player.y);
+      this.room.built = true;
+      if (room.isBoss) this.iframe = 700;   // 进门先给一口气，避免贴脸秒杀
+      this.refreshDoorLocks();
+    }
+
+    paintFloorAndWalls(room) {
+      const wrap = this.roomWrap;
+      wrap.add(this.add.tileSprite(0, 0, RW, RH, 'field', 21).setOrigin(0));
+
+      if (room.isBoss) wrap.add(this.add.rectangle(0, 0, RW, RH, 0x223322, 0.25).setOrigin(0));
+
+      const midX = Math.floor(COLS / 2), midY = Math.floor(ROWS / 2);
+      const doorGap = (x, y) => {
+        if (x === 0) return !!room.doors.l && Math.abs(y - midY) <= 1;
+        if (x === COLS - 1) return !!room.doors.r && Math.abs(y - midY) <= 1;
+        if (y === 0) return !!room.doors.u && Math.abs(x - midX) <= 1;
+        if (y === ROWS - 1) return !!room.doors.d && Math.abs(x - midX) <= 1;
+        return false;
+      };
+
+      const wallRect = (parent, x, y, color) => parent.add(this.add.rectangle(
+        x * TILE + TILE / 2, y * TILE + TILE / 2, TILE, TILE, color
+      ).setStrokeStyle(2, 0x0b120a, 0.45));
+
+      const wallAt = (x, y) => {
+        wallRect(wrap, x, y, 0x2b3a20);
+        this.walls.add(x + ',' + y);
+      };
+
+      for (let x = 0; x < COLS; x++) {
+        if (!doorGap(x, 0)) wallAt(x, 0);
+        if (!doorGap(x, ROWS - 1)) wallAt(x, ROWS - 1);
+      }
+      for (let y = 0; y < ROWS; y++) {
+        if (!doorGap(0, y)) wallAt(0, y);
+        if (!doorGap(COLS - 1, y)) wallAt(COLS - 1, y);
+      }
+
+      // 门洞：沙地底 + 锁着的墙
+      ['l', 'r', 'u', 'd'].forEach((dir) => {
+        if (!room.doors[dir]) return;
+        const cells = [];
+        if (dir === 'l' || dir === 'r') {
+          const x = dir === 'l' ? 0 : COLS - 1;
+          for (let dy = -1; dy <= 1; dy++) cells.push([x, midY + dy]);
+        } else {
+          const y = dir === 'u' ? 0 : ROWS - 1;
+          for (let dx = -1; dx <= 1; dx++) cells.push([midX + dx, y]);
+        }
+        cells.forEach(([x, y]) => wrap.add(
+          this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, 'field', 3).setScale(2)
+        ));
+
+        const lock = this.add.container(0, 0);
+        cells.forEach(([x, y]) => wallRect(lock, x, y, 0x5c5648));
+        wrap.add(lock);
+        lock.cells = cells;
+        this.doorLocks[dir] = lock;
+        cells.forEach(([x, y]) => this.walls.add(x + ',' + y));
+      });
+
+      // 内部障碍：2×2 深绿块
+      let placed = 0, guard = 0;
+      while (placed < 4 && guard++ < 80) {
+        const bx = Phaser.Math.Between(3, COLS - 5);
+        const by = Phaser.Math.Between(3, ROWS - 5);
+        if (Math.abs(bx - midX) <= 3 && Math.abs(by - midY) <= 3) continue;      // 别堵住出生点
+        if (Math.abs(by - midY) <= 3 && (bx < 4 || bx > COLS - 5)) continue;     // 别堵左右门
+        if (Math.abs(bx - midX) <= 3 && (by < 4 || by > ROWS - 5)) continue;     // 别堵上下门
+        for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) wallAt(bx + ix, by + iy);
+        placed++;
+      }
+    }
+
+    refreshDoorLocks() {
+      const alive = this.enemiesAlive();
+      Object.entries(this.doorLocks).forEach(([dir, lock]) => {
+        if (!lock) return;
+        const open = this.room.cleared || alive === 0;
+        lock.setVisible(!open);
+        (lock.cells || []).forEach(([x, y]) => {
+          if (open) this.walls.delete(x + ',' + y);
+          else this.walls.add(x + ',' + y);
+        });
+      });
+    }
+
+    enemiesAlive() {
+      return this.enemies.filter((e) => e.hp > 0).length;
+    }
+
+    spawnRoomEnemies(room) {
+      if (room.cleared && room.built) return;
+      if (room.isBoss) { this.spawnBoss(); return; }
+      const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
+      for (let i = 0; i < n; i++) this.spawnBeast();
+    }
+
+    findFreeSpot(minDistFromPlayer) {
+      for (let i = 0; i < 50; i++) {
+        const x = Phaser.Math.Between(2 * TILE, RW - 2 * TILE);
+        const y = Phaser.Math.Between(2 * TILE, RH - 2 * TILE);
+        if (this.isWall(x, y, 14)) continue;
+        if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDistFromPlayer) continue;
+        return { x, y };
+      }
+      return { x: RW / 2, y: TILE * 3 };
+    }
+
+    spawnBeast() {
+      const spot = this.findFreeSpot(200);
+      const spr = this.add.sprite(spot.x, spot.y, 'beast', 0).setScale(2).setDepth(2).setAlpha(0);
+      spr.play('beast-down');
+      this.tweens.add({ targets: spr, alpha: 1, duration: 240 });
+      this.enemies.push({
+        type: 'beast', spr, hp: CFG.enemyHp, maxHp: CFG.enemyHp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
+      });
+    }
+
+    spawnBoss() {
+      // 生成在对侧，别压在玩家进门的位置上
+      const p = this.player;
+      const bx = RW / 2;
+      const by = p.y < RH / 2 ? RH * 0.72 : RH * 0.28;
+      const spr = this.add.sprite(bx, by, 'boss', 0).setScale(1.6).setDepth(2);
+      spr.play('boss-idle');
+      this.enemies.push({
+        type: 'boss', spr, hp: CFG.bossHp, maxHp: CFG.bossHp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed: CFG.bossSpeed, dmg: CFG.bossDmg, half: 24,
+      });
+      this.bossBarBg = this.add.rectangle(0, S.H - 26, 220, 8, 0x000000, 0.6).setScrollFactor(0).setDepth(810);
+      this.bossBar = this.add.rectangle(0, S.H - 26, 216, 4, 0xff6b5a, 1).setOrigin(0, 0.5).setScrollFactor(0).setDepth(811);
+    }
+
+    /* ---------- 移动与碰撞 ---------- */
+    isWall(px, py, r) {
+      const pts = [[px - r, py - r], [px + r, py - r], [px - r, py + r], [px + r, py + r]];
+      for (const [x, y] of pts) {
+        const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+        if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) return true;
+        if (this.walls.has(tx + ',' + ty)) return true;
+      }
+      return false;
+    }
+
+    moveActor(spr, dx, dy, r) {
+      if (dx && !this.isWall(spr.x + dx, spr.y, r)) spr.x += dx;
+      if (dy && !this.isWall(spr.x, spr.y + dy, r)) spr.y += dy;
+      spr.x = Phaser.Math.Clamp(spr.x, 8, RW - 8);
+      spr.y = Phaser.Math.Clamp(spr.y, 8, RH - 8);
+    }
+
+    /* ---------- 战斗 ---------- */
+    attack() {
+      if (this.dead || this.won || this.time.now - this.atkAt < CFG.atkCd) return;
+      this.atkAt = this.time.now;
+      this.sfx.sword.play({ rate: Phaser.Math.FloatBetween(0.95, 1.08) });
+
+      const v = VEC[this.facing];
+      const fx = this.add.sprite(
+        this.player.x + v[0] * 14, this.player.y + v[1] * 12, 'slash'
+      ).setDepth(600).setRotation(ANGLE[this.facing] + Math.PI / 4).setScale(2.2);
+      fx.play('slash-play');
+      this.tweens.add({
+        targets: fx, scale: 2.9, duration: 210, ease: 'Quad.easeOut',
+        onComplete: () => fx.destroy(),
+      });
+
+      this.tweens.add({
+        targets: this.player,
+        x: this.player.x + v[0] * 4, y: this.player.y + v[1] * 4,
+        duration: 90, yoyo: true, ease: 'Quad.easeOut',
+      });
+      this.tweens.add({ targets: this.player, scaleX: 2.3, scaleY: 1.75, duration: 70, yoyo: true });
+
+      const cx = this.player.x + v[0] * CFG.atkReach;
+      const cy = this.player.y + v[1] * CFG.atkReach;
+      const hw = CFG.atkBox[0] / 2, hh = CFG.atkBox[1] / 2;
+      let hitAny = false;
+
+      this.enemies.forEach((e) => {
+        if (e.hp <= 0) return;
+        if (Math.abs(e.spr.x - cx) > hw + e.half || Math.abs(e.spr.y - cy) > hh + e.half) return;
+        hitAny = true;
+        e.hp -= CFG.playerDmg;
+        e.flash = 70;
+        e.kb.set(v[0] * (e.type === 'boss' ? 40 : 120), v[1] * (e.type === 'boss' ? 40 : 120));
+        e.spr.setAlpha(0.45);
+        if (e.hp <= 0) this.killEnemy(e);
+      });
+
+      if (hitAny) {
+        this.freeze = CFG.hitStop;
+        this.cameras.main.shake(80, 0.006);
+        this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(0.9, 1.12) });
+        const spark = this.add.circle(cx, cy, 7, 0xffffff, 1).setDepth(620);
+        this.tweens.add({
+          targets: spark, scale: 2.4, alpha: 0, duration: 160,
+          ease: 'Quad.easeOut', onComplete: () => spark.destroy(),
+        });
+      }
+    }
+
+    killEnemy(e) {
+      e.hp = 0;
+      this.kills += 1;
+      this.sfx.kill.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
+      const isBoss = e.type === 'boss';
+      this.tweens.add({
+        targets: e.spr,
+        alpha: 0, scaleX: e.spr.scaleX * 1.3, scaleY: e.spr.scaleY * 0.4,
+        y: e.spr.y - (isBoss ? 24 : 8),
+        duration: isBoss ? 520 : 240, ease: 'Quad.easeOut',
+      });
+
+      const spot = { x: e.spr.x, y: e.spr.y };
+      if (isBoss) {
+        this.dropItem(spot.x, spot.y, 'coin');
+        this.dropItem(spot.x + 20, spot.y, 'heart');
+      } else {
+        if (Math.random() < CFG.coinChance) this.dropItem(spot.x, spot.y, 'coin');
+        if (Math.random() < CFG.heartChance) this.dropItem(spot.x + 12, spot.y, 'heart');
+      }
+      if (isBoss) this.time.delayedCall(900, () => this.win());
+    }
+
+    dropItem(x, y, kind) {
+      const spr = kind === 'coin'
+        ? this.add.sprite(x, y, 'coin', 0).setScale(2.4).setDepth(3).play('coin-spin')
+        : this.add.image(x, y, 'heart', 4).setScale(1.6).setDepth(3);
+      this.tweens.add({ targets: spr, y: y - 6, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.drops.push({ kind, spr, baseX: x, baseY: y });
+    }
+
+    hurtPlayer(fromX, fromY, dmg) {
+      if (this.dead || this.won) return;
+      // 冷却按时钟算，不按帧累积：掉帧时也不会被连击打穿
+      if (this.time.now - this.lastHurtAt < CFG.iFrame) return;
+      this.lastHurtAt = this.time.now;
+      this.hp = Math.max(0, this.hp - dmg);
+      this.iframe = CFG.iFrame;
+      this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
+      this.cameras.main.shake(180, 0.012);
+      const ring = this.add.circle(this.player.x, this.player.y, 10, 0xff5555, 0.85).setDepth(620);
+      this.tweens.add({
+        targets: ring, scale: 2.2, alpha: 0, duration: 220,
+        ease: 'Quad.easeOut', onComplete: () => ring.destroy(),
+      });
+      const dir = new Phaser.Math.Vector2(this.player.x - fromX, this.player.y - fromY);
+      if (dir.lengthSq() < 0.01) dir.set(0, 1);
+      dir.normalize().scale(150);
+      this.player.kb = dir;
+      if (this.hp <= 0) this.gameOver();
+    }
+
+    gameOver() {
+      this.dead = true;
+      this.sfx.gameover.play();
+      this.player.setAlpha(0.7);
+      this.showOverlay('你倒了',
+        '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills + ' · 金币 ' + this.coins);
+    }
+
+    win() {
+      if (this.won) return;
+      this.won = true;
+      this.showOverlay('通关',
+        '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 剩 ' + this.hp + ' 血');
+    }
+
+    showOverlay(title, sub) {
+      const shade = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.55)
+        .setOrigin(0).setScrollFactor(0).setDepth(900);
+      const t1 = this.add.text(S.W / 2, S.H / 2 - 18, title, {
+        fontFamily: 'ui-monospace, monospace', fontSize: '22px', color: '#ffffff',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
+      const t2 = this.add.text(S.W / 2, S.H / 2 + 12, sub, {
+        fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffcc',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
+      const t3 = this.add.text(S.W / 2, S.H / 2 + 34, '点击或按 R 重开', {
+        fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffffff88',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
+      this.overlay = [shade, t1, t2, t3];
+    }
+
+    restart() { this.scene.restart(); }
+
+    /* ---------- 过门 ---------- */
+    tryExit(dir, force) {
+      const room = this.room;
+      if (!room.doors[dir]) return false;
+      if (!room.cleared && this.enemiesAlive() > 0 && !force) return false;
+      room.cleared = true;
+      this.enterRoom(room.doors[dir], dir);
+      return true;
+    }
+
+    checkDoors() {
+      const p = this.player, m = 22;
+      const midY = Math.abs(p.y - RH / 2) < TILE * 1.7;
+      const midX = Math.abs(p.x - RW / 2) < TILE * 1.7;
+      if (p.x < m && midY) this.tryExit('l');
+      else if (p.x > RW - m && midY) this.tryExit('r');
+      else if (p.y < m && midX) this.tryExit('u');
+      else if (p.y > RH - m && midX) this.tryExit('d');
+    }
+
+    /* ---------- HUD 与输入 ---------- */
+    buildHud() {
       this.hearts = [];
       for (let i = 0; i < 5; i++) {
         this.hearts.push(this.add.image(10 + i * 18, 10, 'heart', 4)
-          .setScrollFactor(0).setOrigin(0).setScale(1.1).setDepth(20));
+          .setScrollFactor(0).setOrigin(0).setScale(1.1).setDepth(800));
       }
-      this.scoreText = this.add.text(10, 28, '', {
-        fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffff',
-        backgroundColor: '#00000066', padding: { x: 5, y: 3 },
-      }).setScrollFactor(0).setDepth(20);
-      this.hint = this.add.text(10, S.H - 20, 'WASD 移动 · 空格/点击 挥砍 · 拖拽移动', {
-        fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffffffcc',
-      }).setScrollFactor(0).setDepth(20);
+      this.info = this.add.text(8, 26, '', {
+        fontFamily: 'ui-monospace, monospace', fontSize: '12px', color: '#ffffff',
+        backgroundColor: '#00000099', padding: { x: 6, y: 4 },
+      }).setScrollFactor(0).setDepth(800);
+      this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格/点击 挥砍 · 清完怪才开门', {
+        fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
+        backgroundColor: '#00000055', padding: { x: 5, y: 3 },
+      }).setScrollFactor(0).setDepth(800);
       this.scale.on('resize', (gs) => this.hint.setPosition(10, gs.height - 20));
+    }
 
-      // 输入
+    bindInput() {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.keys = this.input.keyboard.addKeys('W,A,S,D');
       this.input.keyboard.on('keydown-SPACE', () => this.attack());
       this.input.keyboard.on('keydown-J', () => this.attack());
       this.input.keyboard.on('keydown-K', () => this.attack());
-      this.input.keyboard.on('keydown-R', () => { if (this.dead) this.restart(); });
+      this.input.keyboard.on('keydown-R', () => { if (this.dead || this.won) this.restart(); });
 
-      this.stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
-      this.ring = this.add.graphics().setScrollFactor(0).setDepth(30);
-
+      this.ring = this.add.graphics().setScrollFactor(0).setDepth(700);
       this.input.on('pointerdown', (p) => {
-        if (this.dead) { this.restart(); return; }
+        if (this.dead || this.won) { this.restart(); return; }
         this.press = { x: p.x, y: p.y, t: this.time.now };
         this.stick = { active: true, ox: p.x, oy: p.y, dx: 0, dy: 0 };
       });
@@ -169,13 +573,11 @@
           this.stick.dx = (v.x * mag) / limit;
           this.stick.dy = (v.y * mag) / limit;
         } else {
-          this.stick.dx = 0;
-          this.stick.dy = 0;
+          this.stick.dx = 0; this.stick.dy = 0;
         }
       });
       const release = (p) => {
-        // 轻点 = 挥砍；拖动 = 移动
-        if (this.press && !this.dead) {
+        if (this.press && !this.dead && !this.won) {
           const dt = this.time.now - this.press.t;
           const moved = Phaser.Math.Distance.Between(p.x, p.y, this.press.x, this.press.y);
           if (dt < 320 && moved < 26) this.attack();
@@ -189,147 +591,12 @@
       this.input.addPointer(1);
     }
 
-    spawnEnemy() {
-      const p = this.player;
-      let x = 0, y = 0;
-      for (let i = 0; i < 12; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const d = Phaser.Math.Between(180, 320);
-        x = Phaser.Math.Clamp(p.x + Math.cos(a) * d, 32, WORLD - 32);
-        y = Phaser.Math.Clamp(p.y + Math.sin(a) * d, 32, WORLD - 32);
-        if (Phaser.Math.Distance.Between(x, y, p.x, p.y) > 150) break;
-      }
-      const spr = this.add.sprite(x, y, 'beast', 0).setScale(2).setDepth(2).setAlpha(0);
-      spr.play('beast-down');
-      this.tweens.add({ targets: spr, alpha: 1, duration: 260 });
-      this.enemies.push({ spr, hp: CFG.enemyHp, kb: new Phaser.Math.Vector2(), flash: 0, cd: 0, dir: 'down' });
-    }
-
-    attack() {
-      if (this.dead || this.time.now - this.atkAt < CFG.atkCd) return;
-      this.atkAt = this.time.now;
-
-      this.sfx.sword.play({ rate: Phaser.Math.FloatBetween(0.95, 1.08) });
-
-      // 挥砍特效
-      const v = VEC[this.facing];
-      // 圆弧质心不在贴图中心，绕中心转会把特效甩到角色外面：
-      // 直接以角色为圆心、贴图居中，弧线扫过角色四周
-      const fx = this.add.sprite(
-        this.player.x + v[0] * 14,
-        this.player.y + v[1] * 12,
-        'slash'
-      ).setDepth(120).setRotation(ANGLE[this.facing] + Math.PI / 4).setScale(2.2);
-      fx.play('slash-play');
-      // 只放大不淡出：淡出会让白弧在浅绿草地上几乎看不见
-      this.tweens.add({
-        targets: fx, scale: 2.9, duration: 210, ease: 'Quad.easeOut',
-        onComplete: () => fx.destroy(),
-      });
-
-      // 身体前冲一点，给动作一点重量
-      this.tweens.add({
-        targets: this.player,
-        x: this.player.x + v[0] * 4, y: this.player.y + v[1] * 4,
-        duration: 90, yoyo: true, ease: 'Quad.easeOut',
-      });
-      this.tweens.add({
-        targets: this.player, scaleX: 2.3, scaleY: 1.75, duration: 70, yoyo: true,
-      });
-
-      // 判定
-      const cx = this.player.x + v[0] * CFG.atkReach;
-      const cy = this.player.y + v[1] * CFG.atkReach;
-      const hw = CFG.atkBox[0] / 2, hh = CFG.atkBox[1] / 2;
-      let hitAny = false;
-
-      this.enemies.forEach((e) => {
-        if (e.hp <= 0) return;
-        const dx = Math.abs(e.spr.x - cx);
-        const dy = Math.abs(e.spr.y - cy);
-        if (dx > hw + 12 || dy > hh + 12) return; // 加怪物半宽
-
-        hitAny = true;
-        e.hp -= CFG.playerDmg;
-        e.flash = 70;
-        e.kb.set(v[0] * 120, v[1] * 120);
-        e.spr.setAlpha(0.45);
-
-        if (e.hp <= 0) {
-          this.killEnemy(e);
-        }
-      });
-
-      if (hitAny) {
-        this.freeze = CFG.hitStop;
-        this.cameras.main.shake(80, 0.006);
-        this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(0.9, 1.12) });
-        // 火花：tintFill 会把整块矩形涂满，用几何图形代替
-        const spark = this.add.circle(cx, cy, 7, 0xffffff, 1).setDepth(130);
-        this.tweens.add({
-          targets: spark, scale: 2.4, alpha: 0, duration: 160,
-          ease: 'Quad.easeOut', onComplete: () => spark.destroy(),
-        });
-      }
-    }
-
-    killEnemy(e) {
-      e.hp = 0;
-      this.score += 1;
-      this.sfx.kill.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
-      this.tweens.add({
-        targets: e.spr, alpha: 0, scaleX: 2.6, scaleY: 0.4, y: e.spr.y - 8,
-        duration: 240, ease: 'Quad.easeOut',
-      });
-    }
-
-    hurtPlayer(fromX, fromY) {
-      if (this.iframe > 0 || this.dead) return;
-      this.hp = Math.max(0, this.hp - CFG.touchDmg);
-      this.iframe = CFG.iFrame;
-
-      this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
-      this.cameras.main.shake(180, 0.012);
-      const ring = this.add.circle(this.player.x, this.player.y, 10, 0xff5555, 0.85).setDepth(130);
-      this.tweens.add({
-        targets: ring, scale: 2.2, alpha: 0, duration: 220,
-        ease: 'Quad.easeOut', onComplete: () => ring.destroy(),
-      });
-
-      // 击退
-      const dir = new Phaser.Math.Vector2(this.player.x - fromX, this.player.y - fromY);
-      if (dir.lengthSq() < 0.01) dir.set(0, 1);
-      dir.normalize().scale(150);
-      this.player.kb = dir;
-
-      if (this.hp <= 0) this.playerDie();
-    }
-
-    playerDie() {
-      this.dead = true;
-      this.player.play('walk-down');
-      this.sfx.gameover.play();
-      this.player.setAlpha(0.7);
-
-      const shade = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.55)
-        .setOrigin(0).setScrollFactor(0).setDepth(40);
-      const t1 = this.add.text(S.W / 2, S.H / 2 - 16, '你倒了', {
-        fontFamily: 'ui-monospace, monospace', fontSize: '20px', color: '#ffffff',
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(41);
-      const t2 = this.add.text(S.W / 2, S.H / 2 + 12, '点击屏幕或按 R 重开', {
-        fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffaa',
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(41);
-      this.deadUi = [shade, t1, t2];
-    }
-
-    restart() {
-      this.scene.restart();
-    }
-
-    update(_t, dt) {
+    /* ---------- 主循环 ---------- */
+    update(_t, dtRaw) {
+      // 卡帧保护：浏览器切后台/追帧时 delta 会飙到几百毫秒，不夹住会把无敌帧一帧烧完
+      const dt = Math.min(dtRaw, 50);
       const d = new Phaser.Math.Vector2(0, 0);
-
-      if (!this.dead) {
+      if (!this.dead && !this.won) {
         if (this.cursors.left.isDown || this.keys.A.isDown) d.x -= 1;
         if (this.cursors.right.isDown || this.keys.D.isDown) d.x += 1;
         if (this.cursors.up.isDown || this.keys.W.isDown) d.y -= 1;
@@ -338,28 +605,24 @@
         d.y += this.stick.dy;
       }
 
-      // 命中冻结：只停角色的推进，画面抖动与快照仍在播
       if (this.freeze > 0) {
         this.freeze -= dt;
         this.updateHud();
         return;
       }
 
-      this.player.setDepth(2 + this.player.y / 1000);
+      this.player.setDepth(500 + this.player.y / 1000);
 
-      // 玩家移动 + 击退衰减
       if (this.player.kb) {
-        this.player.x += this.player.kb.x * (dt / 1000);
-        this.player.y += this.player.kb.y * (dt / 1000);
+        this.moveActor(this.player, this.player.kb.x * (dt / 1000), this.player.kb.y * (dt / 1000), 10);
         this.player.kb.scale(Math.pow(0.0025, dt / 1000));
         if (this.player.kb.lengthSq() < 1) this.player.kb = null;
       }
 
-      if (!this.dead && d.lengthSq() > 0.01) {
+      if (!this.dead && !this.won && d.lengthSq() > 0.01) {
         d.normalize();
-        const step = SPEED * (1 - Math.max(0, this.atkAt + 160 - this.time.now) / 160 * 0.35) * (dt / 1000);
-        this.player.x = Phaser.Math.Clamp(this.player.x + d.x * step, 8, WORLD - 8);
-        this.player.y = Phaser.Math.Clamp(this.player.y + d.y * step, 8, WORLD - 8);
+        const slow = 1 - Math.max(0, this.atkAt + 160 - this.time.now) / 160 * 0.35;
+        this.moveActor(this.player, d.x * 96 * slow * (dt / 1000), d.y * 96 * slow * (dt / 1000), 10);
         const dir = Math.abs(d.x) > Math.abs(d.y) ? (d.x > 0 ? 'right' : 'left') : (d.y > 0 ? 'down' : 'up');
         if (dir !== this.facing) {
           this.facing = dir;
@@ -367,13 +630,12 @@
         } else if (!this.player.anims.isPlaying) {
           this.player.play('walk-' + dir);
         }
-      } else if (!this.dead && this.player.anims.isPlaying) {
+      } else if (!this.dead && !this.won && this.player.anims.isPlaying) {
         this.player.stop();
         this.player.setFrame(DIRS[this.facing]);
         if (this.facing === 'down') this.player.play('idle-down');
       }
 
-      // 无敌闪烁
       if (this.iframe > 0) {
         this.iframe -= dt;
         this.player.setAlpha(this.iframe > 0 && Math.floor(this.iframe / 90) % 2 ? 0.45 : 1);
@@ -382,65 +644,79 @@
 
       // 敌人
       this.enemies.forEach((e) => {
-        if (e.hp <= 0) { return; }
+        if (e.hp <= 0) return;
         const s = e.spr;
         if (e.flash > 0) {
           e.flash -= dt;
           if (e.flash <= 0) s.setAlpha(1);
         }
 
-        // 击退
         if (e.kb.lengthSq() > 1) {
-          s.x += e.kb.x * (dt / 1000);
-          s.y += e.kb.y * (dt / 1000);
+          this.moveActor(s, e.kb.x * (dt / 1000), e.kb.y * (dt / 1000), e.half);
           e.kb.scale(Math.pow(0.002, dt / 1000));
         } else {
           const dist = Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y);
-          if (dist < CFG.chaseRange && !this.dead) {
+          if (dist < CFG.chaseRange && !this.dead && !this.won) {
             const dirv = new Phaser.Math.Vector2(this.player.x - s.x, this.player.y - s.y).normalize();
-            s.x += dirv.x * CFG.enemySpeed * (dt / 1000);
-            s.y += dirv.y * CFG.enemySpeed * (dt / 1000);
-            const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
-              ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
-            if (dir !== e.dir) { e.dir = dir; s.play('beast-' + dir); }
-            else if (!s.anims.isPlaying) s.play('beast-' + dir);
-          } else if (s.anims.isPlaying) {
-            s.stop();
-            s.setFrame(DIRS[e.dir]);
+            const sp = e.speed * (dt / 1000);
+            this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+
+            if (e.type === 'beast') {
+              const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
+                ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
+              if (dir !== e.dir) { e.dir = dir; s.play('beast-' + dir); }
+              else if (!s.anims.isPlaying) s.play('beast-' + dir);
+            } else {
+              s.setFlipX(dirv.x < 0);
+            }
           }
         }
-
-        s.x = Phaser.Math.Clamp(s.x, 8, WORLD - 8);
-        s.y = Phaser.Math.Clamp(s.y, 8, WORLD - 8);
         s.setDepth(2 + s.y / 1000);
 
-        // 接触伤害
-        if (!this.dead && Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y) < 24) {
-          this.hurtPlayer(s.x, s.y);
+        if (!this.dead && !this.won) {
+          const hitR = e.type === 'boss' ? 34 : 24;
+          if (Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y) < hitR) {
+            this.hurtPlayer(s.x, s.y, e.dmg);
+          }
         }
       });
 
-      // 简单分离力：怪之间保持不重叠
+      // 分离
       for (let i = 0; i < this.enemies.length; i++) {
         const a = this.enemies[i];
         if (a.hp <= 0) continue;
         for (let j = i + 1; j < this.enemies.length; j++) {
           const b = this.enemies[j];
           if (b.hp <= 0) continue;
-          const dx = b.spr.x - a.spr.x;
-          const dy = b.spr.y - a.spr.y;
+          const dx = b.spr.x - a.spr.x, dy = b.spr.y - a.spr.y;
           const d2 = dx * dx + dy * dy;
-          if (d2 < 400 && d2 > 0.01) {
-            const d = Math.sqrt(d2);
-            const push = (20 - d) * 0.5;
-            const nx = dx / d, ny = dy / d;
-            a.spr.x -= nx * push; a.spr.y -= ny * push;
-            b.spr.x += nx * push; b.spr.y += ny * push;
+          const rr = a.half + b.half;
+          if (d2 < rr * rr && d2 > 0.01) {
+            const dd = Math.sqrt(d2), push = (rr - dd) * 0.5;
+            a.spr.x -= (dx / dd) * push; a.spr.y -= (dy / dd) * push;
+            b.spr.x += (dx / dd) * push; b.spr.y += (dy / dd) * push;
           }
         }
       }
 
-      // 清尸体与补怪
+      // 拾取
+      for (let i = this.drops.length - 1; i >= 0; i--) {
+        const it = this.drops[i];
+        if (Phaser.Math.Distance.Between(it.spr.x, it.spr.y, this.player.x, this.player.y) < 22
+          && !this.dead && !this.won) {
+          if (it.kind === 'coin') {
+            this.coins += 1;
+            this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
+          } else {
+            this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);
+            this.sfx.coin.play({ rate: 0.8 });
+          }
+          it.spr.destroy();
+          this.drops.splice(i, 1);
+        }
+      }
+
+      // 清尸体
       for (let i = this.enemies.length - 1; i >= 0; i--) {
         const e = this.enemies[i];
         if (e.hp <= 0 && e.spr.alpha <= 0.02) {
@@ -448,16 +724,14 @@
           this.enemies.splice(i, 1);
         }
       }
-      const alive = this.enemies.filter((e) => e.hp > 0).length;
-      if (!this.dead && alive < CFG.maxAlive) {
-        this.spawnTimer += dt;
-        if (this.spawnTimer > CFG.respawn) {
-          this.spawnTimer = 0;
-          if (this.enemies.length < 8) this.spawnEnemy();
-        }
-      }
 
-      // 摇杆可视化
+      // 清房判定 → 开门
+      if (!this.room.cleared && this.enemiesAlive() === 0 && !this.room.isBoss) {
+        this.room.cleared = true;
+      }
+      this.refreshDoorLocks();
+      this.checkDoors();
+
       this.ring.clear();
       if (this.stick.active) {
         const limit = Math.min(this.scale.width, this.scale.height) * 0.18;
@@ -470,19 +744,41 @@
     }
 
     updateHud() {
-      const full = Math.floor(this.hp / 4);
-      const part = this.hp % 4; // 0–3 对应 heart 帧 0–3
       this.hearts.forEach((h, i) => {
-        const remain = this.hp - i * 4;
-        h.setFrame(Math.max(0, Math.min(4, remain)));
+        h.setFrame(Math.max(0, Math.min(4, this.hp - i * 4)));
       });
-      this.scoreText.setText('击杀 ' + this.score + '   HP ' + this.hp + '/' + CFG.maxHp);
+      this.info.setText(
+        '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
+        + ' · 金币 ' + this.coins + ' · HP ' + this.hp + '/' + CFG.maxHp
+      );
+
+      if (this.room) this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY }));
+
+      const boss = this.enemies.find((e) => e.type === 'boss' && e.hp > 0);
+      if (boss && this.bossBar && this.bossBarBg) {
+        const cam = this.cameras.main;
+        this.bossBarBg.setPosition(cam.width / 2, cam.height - 26);
+        this.bossBar.setPosition(cam.width / 2 - 104, cam.height - 26);
+        this.bossBar.setSize(208 * Math.max(0, boss.hp / boss.maxHp), 4);
+      } else if (this.bossBar) {
+        this.bossBar.setVisible(false);
+        this.bossBarBg.setVisible(false);
+      }
 
       window.__state = {
-        hp: this.hp, score: this.score, dead: this.dead,
-        enemies: this.enemies.filter((e) => e.hp > 0).map((e) => ({ hp: e.hp, x: Math.round(e.spr.x), y: Math.round(e.spr.y) })),
-        facing: this.facing, px: Math.round(this.player.x), py: Math.round(this.player.y),
-        freeze: Math.round(this.freeze), w: this.scale.width, h: this.scale.height,
+        hp: this.hp, kills: this.kills, coins: this.coins,
+        room: this.roomKey, roomIdx: this.room.idx + 1, total: this.roomTotal,
+        cleared: this.room.cleared, isBoss: this.room.isBoss,
+        doors: Object.keys(this.room.doors), entry: this.entry,
+        enemies: this.enemiesAlive(), drops: this.drops.length,
+        enemyList: this.enemies.filter((e) => e.hp > 0).map((e) => [Math.round(e.spr.x), Math.round(e.spr.y), e.type]),
+        bossHp: (this.enemies.find((e) => e.type === 'boss') || {}).hp,
+        bossX: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.x : -1),
+        bossY: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.y : -1),
+        dropList: this.drops.map((d) => ({ k: d.kind, x: Math.round(d.baseX), y: Math.round(d.baseY) })),
+        dead: this.dead, won: this.won, iframe: Math.round(this.iframe),
+        px: Math.round(this.player.x), py: Math.round(this.player.y),
+        w: this.scale.width, h: this.scale.height,
       };
     }
   }
@@ -496,7 +792,6 @@
       pixelArt: true,
       roundPixels: true,
       scale: { mode: Phaser.Scale.NONE, width: S.W, height: S.H },
-      // WebAudio 无法解码 data URI 音频，强制走 HTML5 Audio 后端（可播 base64 mp3）
       audio: { disableWebAudio: true },
       scene: [Boot, Play],
     });

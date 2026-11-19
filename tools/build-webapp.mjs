@@ -22,6 +22,8 @@ const img = {
   beast: join(ASSET, 'Actor/Monsters/Beast/Beast.png'),
   slash: join(ASSET, 'FX/SlashFx/SlashCurved/SpriteSheet.png'),
   heart: join(ASSET, 'Ui/LifeReceptacle/heart.png'),
+  coin: join(ASSET, 'Items/Treasure/Coin2.png'),
+  boss: join(ASSET, 'Actor/Boss/GiantFrog/Idle40x40.png'),
 };
 
 // 音效优先用仓库里转好的 mp3；没有就报错提示先转码
@@ -32,6 +34,7 @@ const sfx = {
   hurt: join(SFX_DIR, 'MiniImpact.mp3'),
   kill: join(SFX_DIR, 'Kill.mp3'),
   gameover: join(SFX_DIR, 'GameOver.mp3'),
+  coin: join(SFX_DIR, 'Coin.mp3'),
 };
 
 const b64 = (p) => `data:image/png;base64,${readFileSync(p).toString('base64')}`;
