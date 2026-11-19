@@ -7,6 +7,8 @@
 | 位置 | 内容 |
 |---|---|
 | `docs/ASSET-SOURCES.md` | 素材来源清单：GitHub 仓库、平台、按类型、授权红线 |
+| `docs/STYLE-PICK.md` | 主美术四选一的对比与推荐顺位（待拍板） |
+| `docs/style-comparison/style-compare.png` | 四套候选的官方示例对比图 |
 | `docs/decisions/` | 决策记录（ADR） |
 | `docs/ACCEPTANCE.md` | 验收标准（草案，未冻结） |
 | `assets/` | 素材落地目录；`00-raw` 放原始包与包内 LICENSE |
