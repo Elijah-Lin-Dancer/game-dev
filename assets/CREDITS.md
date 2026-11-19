@@ -9,11 +9,11 @@
 
 ## 当前状态
 
-尚未下载任何素材。以下为待登记的空表头。
+主美术已选定 Ninja Adventure（ADR 0002），素材包尚未下载，下载后补齐 LICENSE 原文路径。
 
 | 名称 | 作者 | 协议 | 来源 URL | 是否需署名 | 署名模板 | 原始 LICENSE 路径 |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — |
+| Ninja Adventure - Asset Pack | Pixel-Boy / AAA | CC0 1.0 | https://pixel-boy.itch.io/ninja-adventure-asset-pack | 否（作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | 待下载：`assets/00-raw/NinjaAdventure/LICENSE` |
 
 ## 鸣谢页生成
 

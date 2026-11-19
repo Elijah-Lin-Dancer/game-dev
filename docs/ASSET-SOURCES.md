@@ -84,7 +84,11 @@
 
 ---
 
-## 6. 先定风格，再批量下
+## 6. 主美术已选定
+
+**选定：Ninja Adventure**（CC0，16×16）。决策见 [`decisions/0002-primary-art.md`](decisions/0002-primary-art.md)，对比图见 [`style-comparison/style-compare.png`](style-comparison/style-compare.png)。
+
+执行规则：只用这一套主美术；最多允许一套补充素材，且只补 UI 或特效，不补角色；批量下载前先定技术栈与分辨率。
 
 素材包真正的问题是**风格打架**：Kenney 的扁平矢量、Pixel Adventure 的圆润描边、Tiny Swords 的高饱和平涂，三者混用会立刻显得廉价。
 
@@ -94,14 +98,14 @@
 2. 其余只做填空（UI、图标、音效），不各取一半
 3. 主包确定后再批量下载，避免下一堆用不上
 
-主美术候选（待选，需同场景对比图）：
+主美术候选（已选 Ninja Adventure，其余三套留作对照）：
 
 | 候选 | 风格 | 授权 | 适合的玩法 |
 |---|---|---|---|
-| Kenney Tiny Dungeon | 16×16 极简、低饱和 | CC0 | roguelike / 地牢 / 塔防 |
-| Ninja Adventure | 16×16 圆润、强描边 | CC0 | 俯视动作 / 冒险 |
-| Tiny Swords | 64×64 高饱和平涂 | 免费包可商用、禁再分发 | 战棋 / 塔防 / 大规模单位 |
-| Pixel Adventure | 圆润卡通、20 fps | CC0 | 平台跳跃 |
+| ~~Kenney Tiny Dungeon~~ | 16×16 极简、低饱和 | CC0 | roguelike / 地牢 / 塔防 |
+| **Ninja Adventure（选定）** | 16×16 圆润、强描边 | CC0 | 俯视动作 / 冒险 |
+| ~~Tiny Swords~~ | 64×64 高饱和平涂 | 免费包可商用、禁再分发 | 战棋 / 塔防 / 大规模单位 |
+| ~~Pixel Adventure~~ | 圆润卡通、20 fps | CC0 | 平台跳跃 |
 
 ---
 

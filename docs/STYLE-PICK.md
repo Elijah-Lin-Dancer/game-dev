@@ -1,6 +1,6 @@
 # 主美术选型
 
-状态：**待拍板**。选定后写 ADR 0002，并把结论回填到 `docs/ASSET-SOURCES.md` 第 6 节。
+状态：**已定稿**（2026-11-19）。选定 **Ninja Adventure**，理由与否掉项见 [`decisions/0002-primary-art.md`](decisions/0002-primary-art.md)。
 
 对比图：[`style-compare.png`](style-comparison/style-compare.png)（各包官方示例，非同一场景）
 
