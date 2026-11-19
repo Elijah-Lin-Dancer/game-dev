@@ -1,0 +1,24 @@
+# 原始下载包与大型二进制不入库
+assets/00-raw/*.zip
+assets/00-raw/**/*.zip
+assets/00-raw/**/*.7z
+assets/00-raw/**/*.rar
+
+# 设计源文件
+*.psd
+*.aseprite
+*.blend
+*.fbx
+*.glb
+
+# 音频默认不入库，需要时用 git add -f
+assets/03-audio/**/*.wav
+assets/03-audio/**/*.mp3
+assets/03-audio/**/*.ogg
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
