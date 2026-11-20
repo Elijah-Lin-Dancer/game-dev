@@ -45,5 +45,7 @@
 
 | 26 | 2026-11-20 23:20 | 批 1 武器系统 | `web/data/weapons.json` 6 把 + `src/systems/weapons.js` 归一化；`attack()` 拆 melee/ranged/throw，玩家弹体独立 `this.bolts`（pierce/墙碰撞/逐目标命中）；掉落换装带 700ms 锁；HUD 武器行；图集 18→36 切片 30 KB；实测 6 把数据、苦无一穿二、换装往返；截图 w1–w4 | `docs/decisions/0014-weapons.md` |
 
+| 27 | 2026-11-20 18:55 | 批 2 房间编排 | `dungeon.js` 新增 `assignTypes()`：6 类房权重 55/12/10/10/8/5，首间 battle、末间 boss、精英≤1、非战斗不连续、有宝箱无钥匙源时强制补精英；`play.js` 按房型生成（elite=放大 2.5×/血×2.4/橙色圆环，treasure=红宝箱+2 守卫，shop=商人+3 货，shrine=石龛，rest=篝火 3×，非战斗房直接开门）；`keyCount` 钥匙 + 0 钥匙拒开 + 精英必掉 + 商店 5 金币；通用 `showPanel` 面板；`drawMinimap()` 3×3 按房型上色；`story.json` 加 `rooms` 与三条交互提示；`save.js` 加 `roomsSeen`；图集 36→40 切片。验收 R-1~R-8 全过（10 局 dump、非战斗 20.4%、全流程通关、无 pageerror） | `docs/BATCH2-ASSETS.md`、`docs/ACCEPTANCE.md`、`assets/01-primary/external/campfire-16x16.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

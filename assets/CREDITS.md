@@ -15,6 +15,8 @@
 |---|---|---|---|---|---|---|
 | Ninja Adventure - Asset Pack | Pixel-Boy / AAA | CC0 1.0（已核对全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存，原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
 
+| 16x16 Animated Campfire（篝火 4 帧） | krial | CC0 1.0（站点许可页核验） | https://opengameart.org/content/16x16-animated-campfire | 否（CC0） | `Campfire by krial — https://opengameart.org/content/16x16-animated-campfire` | `assets/01-primary/external/`（站点许可页，无随包 LICENSE 文件） |
+
 | Fusion Pixel 12px Mono zh-Hans（子集改名 NinjaPixel） | TakWolf | OFL 1.1（已随文件入库） | https://github.com/TakWolf/fusion-pixel-font （release 2026.11.10） | 是（OFL 要求保留协议；已改名，未使用保留字体名） | `Font: Fusion Pixel Font by TakWolf — https://github.com/TakWolf/fusion-pixel-font (SIL OFL 1.1)` | `assets/01-primary/fonts/OFL.txt` |
 
 ## 鸣谢页生成

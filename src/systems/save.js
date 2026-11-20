@@ -14,10 +14,20 @@ const defaults = () => ({
   bestRoom: 0,       // 到过的最深房间序号
   cycle: 1,          // 周目：通关一次 +1，新一局继承一点强度
   muted: false,
+  roomsSeen: {},     // 各房型进过的次数（图鉴用，批 7 消费）
   updatedAt: 0,
 });
 
 const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d);
+
+/* 房型计数：只保留已知房型的非负整数，坏值丢掉，不让存档把一个奇怪的键带进图鉴 */
+const SEEN_KEYS = ['battle', 'elite', 'treasure', 'shop', 'shrine', 'rest', 'boss'];
+function sanitizeSeen(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  SEEN_KEYS.forEach((k) => { out[k] = num(v[k]); });
+  return out;
+}
 
 /* v1 → v2：v1 只有 coins/kills，缺的字段补齐即可，不需要丢弃 */
 function migrate(old) {
@@ -29,6 +39,7 @@ function migrate(old) {
     wins: num(old.wins), bestRoom: num(old.bestRoom),
     cycle: Math.max(1, num(old.cycle, 1)),
     muted: !!old.muted, updatedAt: num(old.updatedAt),
+    roomsSeen: sanitizeSeen(old.roomsSeen),
     v: VERSION,
   };
 }
@@ -55,6 +66,7 @@ export function patchSave(patch) {
   next.coins = num(next.coins); next.kills = num(next.kills); next.runs = num(next.runs);
   next.wins = num(next.wins); next.bestRoom = num(next.bestRoom);
   next.cycle = Math.max(1, num(next.cycle, 1));
+  next.roomsSeen = sanitizeSeen(next.roomsSeen);
   return writeSave(next);
 }
 

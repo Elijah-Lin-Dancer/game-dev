@@ -6,6 +6,10 @@ import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMu
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 
+const ROOM_COLOR = {
+  battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
+  shop: 0x7fd8ff, shrine: 0x9fd8d0, rest: 0xff9a5a, boss: 0xff6b5a,
+};
 const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
 const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
 
@@ -61,6 +65,8 @@ export class Play extends Phaser.Scene {
     const legacy = Math.min(3, Math.max(0, (this.cycle - 1) * CFG.cycle.legacyPower));
     this.upg = { power: legacy, speed: 0, atk: 0 };
     this.drops = [];
+    this.keyCount = 0;        // 本局钥匙：宝箱 1 把，精英必掉，商店可买（注意别叫 this.keys，那是 WASD 键位表）
+    this.seenRooms = {};
     this.doorLocks = {};
     this.walls = new Set();
     this.roomWrap = null;
@@ -91,7 +97,7 @@ export class Play extends Phaser.Scene {
         spawn: (kind, x, y) => this.spawnFoe(kind, 0, { x, y }),
         bosshp: (v) => { const b = this.enemies.find((e) => e.type === 'boss'); if (b) b.hp = v; },
         shots: () => this.shots.length,
-        foes: () => this.enemies.map((e) => ({ k: e.kind || e.type, hp: e.hp, x: Math.round(e.spr.x), y: Math.round(e.spr.y), ph: e.phase, s: Math.round(e.speed) })),
+        foes: () => this.enemies.map((e) => ({ k: e.kind || e.type, hp: e.hp, max: e.maxHp, el: !!e.elite, x: Math.round(e.spr.x), y: Math.round(e.spr.y), s: Math.round(e.speed) })),
         shotPos: () => this.shots.map((b) => [Math.round(b.spr.x), Math.round(b.spr.y)]),
         upgGive: (k, n) => { this.upg[k] += (n || 1); },
         atk: () => this.attack(),
@@ -131,6 +137,33 @@ export class Play extends Phaser.Scene {
         },
         hpv: () => this.hp,
         dropUpg: (k) => this.dropItem(this.player.x + 10, this.player.y + 6, 'upg', k),
+        // 批 2：房间编排
+        roomTypes: () => this.dungeon.path.map(([x, y]) => {
+          const r = this.dungeon.rooms.get(x + ',' + y);
+          return { i: r.idx, x, y, t: r.type, seen: !!r.built };
+        }),
+        roomType: () => this.room.type || 'battle',
+        // 按房型直接跳（截图/验收用）：jumpType('shop')
+        jumpType: (t) => {
+          const r = [...this.dungeon.rooms.values()].find((x) => x.type === t);
+          if (!r) return false;
+          this.enemies.forEach((e) => { e.spr.destroy(); if (e.aura) e.aura.destroy(); });
+          this.enemies = [];
+          this.enterRoom(r.x + ',' + r.y, null);
+          return true;
+        },
+        keys: (n) => { if (typeof n === 'number') this.keyCount = n; return this.keyCount; },
+        keyDrop: () => this.dropItem(this.player.x + 20, this.player.y + 6, 'key'),
+        use: () => this.interact(),
+        tex: (k) => { const t = this.textures.get(k); return { ok: t.key !== '__MISSING', frames: t.getFrameNames().length }; },
+        auraTest: () => {
+          const s = this.add.sprite(this.player.x + 40, this.player.y, 'aura', 0)
+            .setScale(2).setAlpha(0.9).setDepth(3).play('aura-pulse');
+          s.setTint(0xffcc66);
+          return 'ok';
+        },
+        shopStock: () => (this.room.shopStock || []).map((o) => [o.kind, o.label, o.price]),
+        chestOpen: () => this.openChest((this.props || []).find((p) => p.kind === 'chest') || { spr: null, used: true }),
         clearDead: () => { this.enemies = this.enemies.filter((e) => e.hp > 0); },
       };
     }
@@ -153,7 +186,8 @@ export class Play extends Phaser.Scene {
     this.doorLocks = {};
     this.walls = new Set();
 
-    setMood(room.isBoss ? 'fight' : 'dungeon');
+    const t = room.type || 'battle';
+    setMood(room.isBoss ? 'fight' : (t === 'shop' ? 'shop' : (t === 'rest' ? 'cave' : 'dungeon')));
     this.props.forEach((p) => p.spr && p.spr.destroy());
     this.props = [];
     this.closePanel();
@@ -180,6 +214,43 @@ export class Play extends Phaser.Scene {
     this.room.built = true;
     if (room.isBoss) this.iframe = 700;   // 进门先给一口气，避免贴脸秒杀
     this.refreshDoorLocks();
+    this.drawMinimap();
+    this.trackRoom(room);
+    const RD = (this.story.rooms || {})[t] || {};
+    if (RD.name && room.idx > 0) this.floatText(this.player.x, this.player.y - 46, RD.name, '#ffe9b0');
+  }
+
+  /* 房型进过一次就记一笔（只写不读，给批 7 的图鉴用） */
+  trackRoom(room) {
+    const t = room.type || 'battle';
+    if (this.seenRooms[this.roomKey]) return;
+    this.seenRooms[this.roomKey] = true;
+    const seen = Object.assign({}, this.meta.roomsSeen || {});
+    seen[t] = (seen[t] || 0) + 1;
+    this.meta = patchSave({ roomsSeen: seen });
+  }
+
+  /* 3×3 小地图：未进过的点暗，进过的点按房型上色，当前房间白框 */
+  drawMinimap() {
+    if (!this.mini) this.mini = this.add.graphics().setScrollFactor(0).setDepth(800);
+    const g = this.mini;
+    g.clear();
+    const px = S.W - 56, py = 46, cell = 11, gap = 2;
+    this.dungeon.rooms.forEach((r) => {
+      const x = px + r.x * (cell + gap);
+      const y = py + r.y * (cell + gap);
+      const seen = r.built || r === this.room;
+      const color = seen ? (ROOM_COLOR[r.type] || ROOM_COLOR.battle) : 0x2b3226;
+      g.fillStyle(color, seen ? 0.95 : 0.45);
+      g.fillRect(x, y, cell, cell);
+      if (r === this.room) {
+        g.lineStyle(2, 0xffffff, 0.95);
+        g.strokeRect(x - 1, y - 1, cell + 2, cell + 2);
+      } else if (seen) {
+        g.lineStyle(1, 0x000000, 0.55);
+        g.strokeRect(x, y, cell, cell);
+      }
+    });
   }
 
   paintFloorAndWalls(room) {
@@ -271,8 +342,38 @@ export class Play extends Phaser.Scene {
   spawnRoomEnemies(room) {
     if (room.cleared && room.built) return;
     if (room.isBoss) { this.spawnBoss(); return; }
+    const t = room.type || 'battle';
+
+    // 非战斗房直接算清场：门锁不拦路，玩家可以安心翻箱
+    if (t === 'shop' || t === 'shrine' || t === 'rest') { room.cleared = true; return; }
+
+    if (t === 'elite') {
+      const e = this.spawnFoe(this.pickKind(Math.max(1, room.idx)), 240);
+      this.makeElite(e);
+      for (let i = 0; i < 2; i++) this.spawnFoe(this.pickKind(room.idx), 170);
+      return;
+    }
+    if (t === 'treasure') {
+      // 宝箱有 2 个守卫：想开箱子先清场（清完宝箱本体仍锁着，等钥匙）
+      for (let i = 0; i < 2; i++) this.spawnFoe(this.pickKind(room.idx), 150);
+      return;
+    }
     const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
     for (let i = 0; i < n; i++) this.spawnFoe(this.pickKind(room.idx), 200);
+  }
+
+  /* 精英：同一个 kind，血量 ×2.4、伤害 ×1.2、体型 ×1.25，脚下挂一圈金色光环 */
+  makeElite(e) {
+    e.elite = true;
+    e.maxHp = e.hp = Math.max(1, Math.round(e.hp * 2.4));
+    e.dmg = Math.round(e.dmg * 1.2);
+    e.speed = Math.round(e.speed * 1.1);
+    e.spr.setScale(2.5);
+    e.spr.setTint(0xffd0a0);
+    e.aura = this.add.sprite(e.spr.x, e.spr.y + 10, 'aura', 0)
+      .setScale(1.7).setAlpha(0.9).setDepth(1.2).play('aura-pulse');
+    this.floatText(e.spr.x, e.spr.y - 30, '精英', '#ffd479');
+    return e;
   }
 
   /* 越往里走越可能遇到"带脾气"的怪：房间序号决定权重，保证前两间是纯近战教学 */
@@ -359,11 +460,12 @@ export class Play extends Phaser.Scene {
 
   /* ---------- 叙事：NPC、房间事件、周目 ---------- */
   spawnRoomProps(room) {
-    const S0 = this.story || {};
-    const put = (kind, type, x, y, sprite) => {
+    const put = (kind, type, x, y, sprite, pb) => {
       const spr = this.add.sprite(x, y, sprite, 0).setScale(2).setDepth(2 + y / 1000);
-      this.props.push({ kind, type, spr, x, y, used: false });
-      return spr;
+      spr.setOrigin(0.5, pb ? 1 : 0.5);
+      const prop = { kind, type, spr, x, y, used: false };
+      this.props.push(prop);
+      return prop;
     };
 
     // 第一间一定有引路人（开局就把规则讲清楚）
@@ -371,23 +473,55 @@ export class Play extends Phaser.Scene {
       const spot = this.findFreeSpot(120);
       put('npc', 'guide', spot.x, spot.y, 'villager');
     }
-
     if (room.isBoss) return;
-    // 每个房间只随机决定一次事件，回头再看还是同一个
-    if (room.eventKind === undefined) {
-      room.eventKind = (room.idx >= 1 && Math.random() < 0.45)
-        ? ['vendor', 'shrine', 'curse'][Phaser.Math.Between(0, 2)]
-        : null;
+
+    const t = room.type || 'battle';
+
+    if (t === 'treasure') {
+      const spot = this.findFreeSpot(120);
+      const p = put('chest', 'treasure', spot.x, spot.y, 'chest', true);
+      p.spr.setScale(2.6);
+      return;
     }
-    const k = room.eventKind;
-    if (!k) return;
-    if (!S0.events || !S0.events[k]) return;
-    const spot = this.findFreeSpot(160);
-    if (k === 'vendor') put('event', 'vendor', spot.x, spot.y, 'villager2');
-    else {
-      const spr = put('event', k, spot.x, spot.y, 'statue');
-      spr.setTint(k === 'curse' ? 0xff7b6b : 0x9fd8d0);
+
+    if (t === 'shop') {
+      const spot = this.findFreeSpot(120);
+      put('npc', 'vendor', spot.x, spot.y, 'villager2', true).spr.setTint(0xd8e7ff);
+      if (!room.shopStock) room.shopStock = this.rollShopStock();
+      // 三件货就是三个悬浮图标：不画货架，用"货摆在地上"表达明码标价
+      room.shopStock.forEach((o, i) => {
+        const x = spot.x - 36 + i * 36;
+        const y = spot.y + 26;
+        const spr = this.add.image(x, y, o.icon, o.frame || 0).setScale(o.kind === 'key' ? 2.6 : 2).setDepth(3);
+        this.tweens.add({ targets: spr, y: y - 5, duration: 620, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.props.push({ kind: 'shelf', type: o.kind, spr, x, y, used: false, offer: o });
+      });
+      return;
     }
+
+    if (t === 'shrine') {
+      const spot = this.findFreeSpot(150);
+      const p = put('event', 'shrine', spot.x, spot.y, 'statue', true);
+      p.spr.setTint(0x9fd8d0);
+      return;
+    }
+
+    if (t === 'rest') {
+      const spot = this.findFreeSpot(120);
+      const p = put('rest', 'rest', spot.x, spot.y, 'campfire', true);
+      p.spr.setScale(3).play('campfire-burn');
+      return;
+    }
+  }
+
+  /* 商店货：武器 / 回血 / 钥匙，价格固定，写在 story.json 里做文案，数值留在这 */
+  rollShopStock() {
+    const w = rollWeapon(this.W, this.weapon.id) || this.W.list[0];
+    return [
+      { kind: 'weapon', id: w.id, icon: w.icon, price: 10, label: '武器 · ' + w.name },
+      { kind: 'heal', icon: 'heart', frame: 4, price: 4, label: '回血 +6' },
+      { kind: 'key', icon: 'key', price: 5, label: '钥匙 ×1' },
+    ];
   }
 
   updatePrompt() {
@@ -395,8 +529,18 @@ export class Play extends Phaser.Scene {
     const p = this.nearestProp(56);
     if (!p || this.dead || this.won) { this.promptT.setVisible(false); return; }
     const ui = this.story.ui || {};
-    const label = p.kind === 'npc' ? (ui.talkHint || 'E 交谈') : (ui.eventHint || 'E 查看');
-    this.promptT.setText(label).setPosition(p.spr.x, p.spr.y - 26).setVisible(true);
+    const HINT = {
+      npc: ui.talkHint || 'E 交谈',
+      chest: ui.chestHint || 'E 开箱',
+      rest: ui.restHint || 'E 烤火',
+      shelf: ui.shopHint || 'E 看货',
+      event: ui.eventHint || 'E 查看',
+    };
+    let label = HINT[p.kind] || ui.eventHint || 'E 查看';
+    // 用过的一次性物件：提示换成"已用"状态，别继续骗玩家按 E
+    if (p.used && p.kind === 'chest') label = ui.chestUsedHint || 'E 空箱子';
+    if (p.used && p.kind === 'rest') label = ui.restUsedHint || '火快灭了';
+    this.promptT.setText(label).setPosition(p.spr.x, p.spr.y - 40).setVisible(true);
   }
 
   nearestProp(maxDist) {
@@ -417,7 +561,15 @@ export class Play extends Phaser.Scene {
       const npc = (this.story.npc || {})[p.type] || { name: '陌生人', lines: ['……'] };
       const seen = this.meta && this.meta.kills > 0;
       const lines = seen && npc.repeat ? [npc.repeat] : npc.lines;
-      this.talk(lines, npc.name);
+      // 商店里的行脚商：说完开场白直接接价目面板，免得玩家还要再找一次"货架"
+      const shop = (this.room.type === 'shop') ? () => this.openShop(p) : null;
+      this.talk(lines, npc.name, shop);
+    } else if (p.kind === 'chest') {
+      this.openChest(p);
+    } else if (p.kind === 'rest') {
+      this.openRest(p);
+    } else if (p.kind === 'shelf') {
+      this.openShop(p);
     } else {
       this.openEvent(p);
     }
@@ -490,10 +642,11 @@ export class Play extends Phaser.Scene {
     if (cb) cb();
   }
 
-  openEvent(p) {
-    const EV = (this.story.events || {})[p.type] || { title: '', text: '' };
+  /* 面板通用外壳：事件 / 商店 / 篝火 / 宝箱共用 */
+  showPanel(title, text, options, prop) {
     const W = S.W, H = S.H;
-    const bw = Math.min(380, W - 32), bh = 190;
+    const bw = Math.min(400, W - 32);
+    const bh = Math.max(168, 112 + options.length * 24);
     const top = H / 2 - bh / 2;
     this.panelOpen = true;
     this.sfx.ui.play({ rate: 1.0, volume: 0.8 });
@@ -502,15 +655,29 @@ export class Play extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(864);
     const bg = this.add.rectangle(W / 2, H / 2, bw, bh, 0x0d1017, 0.95)
       .setScrollFactor(0).setDepth(870).setStrokeStyle(1, 0xffffff, 0.22);
-    const title = this.add.text(W / 2, top + 14, EV.title, {
+    const ttl = this.add.text(W / 2, top + 14, title, {
       fontFamily: FONT, fontSize: '24px', color: '#ffd479',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
-    const text = this.add.text(W / 2, top + 40, EV.text, {
+    const body = this.add.text(W / 2, top + 46, text, {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
       wordWrap: { width: bw - 40 }, align: 'center',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
 
-    let options = [];
+    const rows = options.map((o, i) => this.add.text(W / 2, top + 92 + i * 24, `${i + 1}. ${o.label}`, {
+      fontFamily: FONT, fontSize: '12px', color: o.dim ? '#ffffff77' : '#ffffff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(871).setInteractive({ useHandCursor: true }));
+
+    this.panel = { dim, bg, title: ttl, text: body, rows, options, prop, hotkeys: [] };
+    rows.forEach((row, i) => {
+      row.on('pointerdown', () => this.choose(i));
+      const key = ['ONE', 'TWO', 'THREE', 'FOUR'][i];
+      if (key) this.panel.hotkeys.push(this.input.keyboard.on('keydown-' + key, () => this.choose(i)));
+    });
+  }
+
+  openEvent(p) {
+    const EV = (this.story.events || {})[p.type] || { title: '', text: '' };
+    let options;
     if (p.type === 'shrine') {
       options = [
         { label: '攻击 +1', act: () => this.gainUpg('power') },
@@ -519,27 +686,87 @@ export class Play extends Phaser.Scene {
       ];
     } else if (p.type === 'vendor') {
       options = [
-        { label: '回血 +6（3 金币）', act: () => this.buy(3, () => { this.hp = Math.min(CFG.maxHp, this.hp + 6); }) },
+        { label: '回血 +6（3 金币）', act: () => this.buy(3, () => this.heal(6)) },
         { label: '强化 +1（6 金币）', act: () => this.buy(6, () => this.gainUpg(this.rollUpgrade())) },
       ];
     } else {
-      options = [
-        { label: '献祭 5 血换 +2 强化', act: () => this.sacrifice() },
-      ];
+      options = [{ label: '献祭 5 血换 +2 强化', act: () => this.sacrifice() }];
     }
-    options.push({ label: '离开', act: () => {} });
-
-    const rows = options.map((o, i) => this.add.text(W / 2, top + 96 + i * 22, `${i + 1}. ${o.label}`, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(871).setInteractive({ useHandCursor: true }));
-
-    this.panel = { dim, bg, title, text, rows, options, prop: p, hotkeys: [] };
-    rows.forEach((row, i) => {
-      row.on('pointerdown', () => this.choose(i));
-      this.panel.hotkeys.push(this.input.keyboard.on('keydown-' + ['ONE', 'TWO', 'THREE', 'FOUR'][i], () => this.choose(i)));
-    });
+    options.push({ label: (this.story.ui || {}).leave || '离开', act: () => {} });
+    this.showPanel(EV.title, EV.text, options, p);
     if (p.type !== 'vendor') p.used = true;
     if (p.type === 'shrine' || p.type === 'curse') p.spr.setTint(0x777777);
+  }
+
+  /* 商店：三件货明码标价，金币不足 buy() 会提示且不扣钱 */
+  openShop(p) {
+    const R = (this.story.rooms || {}).shop || {};
+    const stock = this.room.shopStock || [];
+    const options = stock.map((o) => ({
+      label: `${o.label} · ${o.price} 金币${o.kind === 'key' ? '（本局持有 ' + this.keyCount + '）' : ''}`,
+      act: () => this.buy(o.price, () => {
+        if (o.kind === 'weapon') this.dropItem(p.spr.x + 28, p.spr.y - 4, 'weapon', null, o.id);
+        else if (o.kind === 'heal') this.heal(6);
+        else {
+          this.keyCount += 1;
+          this.floatText(this.player.x, this.player.y - 24, '钥匙 +1', '#ffd479');
+          this.sfx.bonus.play({ rate: 1.1, volume: 0.8 });
+        }
+      }),
+    }));
+    options.push({ label: (this.story.ui || {}).leave || '离开', act: () => {} });
+    this.showPanel(R.name || '商店', R.text || '三件货，明码标价，银货两讫。', options, p);
+  }
+
+  /* 宝箱：必须持 1 把钥匙；开完变敞开帧，不再可交互 */
+  openChest(p) {
+    const R = (this.story.rooms || {}).treasure || {};
+    if (p.used) {
+      this.floatText(p.spr.x, p.spr.y - 22, R.empty || '已经开过了', '#ffffffaa');
+      return;
+    }
+    if (this.keyCount <= 0) {
+      this.floatText(p.spr.x, p.spr.y - 22, R.locked || '需要 1 把钥匙', '#ff8a7a');
+      this.sfx.ui.play({ rate: 0.6, volume: 0.6 });
+      return;
+    }
+    p.used = true;
+    this.keyCount -= 1;
+    p.spr.setFrame(1);
+    this.sfx.bonus.play({ volume: 0.95 });
+    playAct(this, 'upgrade', p.spr.x, p.spr.y - 6);
+    const w = rollWeapon(this.W, this.weapon.id);
+    if (w) this.dropItem(p.spr.x + 44, p.spr.y - 6, 'weapon', null, w.id);
+    this.dropItem(p.spr.x - 44, p.spr.y - 6, 'coin');
+    this.dropItem(p.spr.x, p.spr.y + 26, 'upg', this.rollUpgrade());
+    this.floatText(p.spr.x, p.spr.y - 30, R.opened || '宝箱开启', '#ffd479');
+  }
+
+  /* 篝火：付 2 金币回 6 血，一间一次 */
+  openRest(p) {
+    const R = (this.story.rooms || {}).rest || {};
+    const options = [];
+    if (p.used) {
+      options.push({ label: R.spent || '已经休息过了', act: () => {}, dim: true });
+    } else {
+      options.push({
+        label: `${R.pay || '付 2 金币'} · 回 ${CFG.healAmount + 2} 血`,
+        act: () => this.buy(2, () => {
+          p.used = true;
+          p.spr.setTint(0x8f8a82);
+          this.heal(CFG.healAmount + 2);
+        }),
+      });
+    }
+    options.push({ label: (this.story.ui || {}).leave || '离开', act: () => {} });
+    this.showPanel(R.name || '篝火', R.text || '火还在烧，坐一会儿再走。', options, p);
+  }
+
+  heal(n) {
+    this.hp = Math.min(CFG.maxHp, this.hp + n);
+    this.floatText(this.player.x, this.player.y - 26, '+' + n + ' HP', '#9be27a');
+    this.sfx.bonus.play({ rate: 0.9, volume: 0.75 });
+    this.updateHud();
   }
 
   choose(i) {
@@ -1077,6 +1304,15 @@ export class Play extends Phaser.Scene {
         if (w) this.dropItem(spot.x - 14, spot.y, 'weapon', null, w.id);
       }
     }
+    if (e.elite) {
+      this.dropItem(spot.x, spot.y + 12, 'key');
+      const w2 = rollWeapon(this.W, this.weapon.id);
+      if (w2) this.dropItem(spot.x + 22, spot.y, 'weapon', null, w2.id);
+      this.floatText(spot.x, spot.y - 26, '精英击破 · 钥匙', '#ffd479');
+      if (e.aura) {
+        this.tweens.add({ targets: e.aura, alpha: 0, duration: 320 });
+      }
+    }
     if (isBoss) this.time.delayedCall(900, () => this.win());
   }
 
@@ -1090,6 +1326,8 @@ export class Play extends Phaser.Scene {
       const w = this.W.byId[id] || this.W.list[0];
       id = w.id;
       spr = this.add.image(x, y, w.icon, 0).setScale(2.4).setDepth(3);
+    } else if (kind === 'key') {
+      spr = this.add.image(x, y, 'key', 0).setScale(2).setDepth(3);
     } else {
       spr = this.add.image(x, y, 'heart', 4).setScale(1.6).setDepth(3);
     }
@@ -1102,9 +1340,10 @@ export class Play extends Phaser.Scene {
   floatText(x, y, text, color) {
     const t = this.add.text(x, y, text, {
       fontFamily: FONT, fontSize: '12px', color: color || '#ffffff',
+      backgroundColor: '#000000aa', padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(640);
     this.tweens.add({
-      targets: t, y: y - 16, alpha: 0, duration: 620, ease: 'Quad.easeOut',
+      targets: t, y: y - 18, alpha: 0, duration: 820, ease: 'Quad.easeOut',
       onComplete: () => t.destroy(),
     });
   }
@@ -1445,6 +1684,11 @@ export class Play extends Phaser.Scene {
           it.spr.destroy();
           this.drops.splice(i, 1);
           continue;
+        } else if (it.kind === 'key') {
+          this.keyCount += 1;
+          this.sfx.bonus.play({ rate: 1.25, volume: 0.75 });
+          playAct(this, 'pickup', it.spr.x, it.spr.y);
+          this.floatText(this.player.x, this.player.y - 22, '钥匙 +1', '#ffd479');
         } else {
           this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);
           this.sfx.coin.play({ rate: 0.8 });
@@ -1459,6 +1703,7 @@ export class Play extends Phaser.Scene {
       const e = this.enemies[i];
       if (e.hp <= 0 && e.spr.alpha <= 0.02) {
         e.spr.destroy();
+        if (e.aura) { e.aura.destroy(); e.aura = null; }
         this.enemies.splice(i, 1);
       }
     }
@@ -1512,8 +1757,15 @@ export class Play extends Phaser.Scene {
     });
     this.info.setText(
       '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
-      + ' · 金币 ' + this.coins + ' · HP ' + this.hp + '/' + CFG.maxHp
+      + ' · 金币 ' + this.coins + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + CFG.maxHp
     );
+
+    // 精英光环跟着走，怪物死了就藏起来（sprite 由清尸循环销毁）
+    this.enemies.forEach((e) => {
+      if (!e.aura) return;
+      e.aura.setVisible(e.hp > 0);
+      e.aura.setPosition(e.spr.x, e.spr.y + 10);
+    });
 
     if (this.room) this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY, up: d.up, id: d.id }));
 
@@ -1530,7 +1782,8 @@ export class Play extends Phaser.Scene {
 
     window.__state = {
       hp: this.hp, kills: this.kills, coins: this.coins, weapon: this.weapon.id,
-      room: this.roomKey, roomIdx: this.room.idx + 1, total: this.roomTotal,
+      room: this.roomKey, roomType: this.room.type || 'battle', keys: this.keyCount,
+      roomIdx: this.room.idx + 1, total: this.roomTotal,
       cleared: this.room.cleared, isBoss: this.room.isBoss,
       doors: Object.keys(this.room.doors), entry: this.entry,
       enemies: this.enemiesAlive(), drops: this.drops.length,

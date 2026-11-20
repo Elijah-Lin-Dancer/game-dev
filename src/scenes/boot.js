@@ -73,6 +73,17 @@ export class Boot extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('slD', { start: 0, end: 4 }),
       frameRate: 16, repeat: 0,
     });
+    // 批 2：篝火 4 帧循环、精英光环 4 帧循环
+    this.anims.create({
+      key: 'campfire-burn',
+      frames: this.anims.generateFrameNumbers('campfire', { start: 0, end: 3 }),
+      frameRate: 8, repeat: -1,
+    });
+    this.anims.create({
+      key: 'aura-pulse',
+      frames: this.anims.generateFrameNumbers('aura', { start: 0, end: 3 }),
+      frameRate: 6, repeat: -1,
+    });
     this.anims.create({
       key: 'fireball-play',
       frames: this.anims.generateFrameNumbers('fireball', { start: 0, end: 3 }),

@@ -2,9 +2,10 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 1 武器系统完成（6 把武器 / 三系分派 / 掉落换装 / HUD 武器行，ADR 0014）。下一步批 2 房间编排（`docs/ROADMAP.md §4`）。
+当前段：批 2 房间编排完成（6 类房型 / 钥匙-宝箱 / 商店 / 篝火 / 精英光环 / 3×3 小地图）。下一步批 3 层间天赋（`docs/ROADMAP.md §5`）。
 
 已完成：
+- 批 2 房间编排：`dungeon.js` 加 `assignTypes()`（55/12/10/10/8/5 + 精英≤1/非战斗不连续/钥匙断供保护）；`play.js` 按房型生成敌人与道具、`spawnShop/spawnChest/spawnRest`、通用 `showPanel`、`keyCount` 钥匙、精英 `makeElite()`+橙色圆环、`drawMinimap()`；`story.json` 加 `rooms` 文案与三条交互提示；`save.js` 加 `roomsSeen`；图集 40 切片；调试口 `roomTypes/jumpType/keys/shopStock/use/tex`。验收 R-1~R-8 全过（`docs/BATCH2-ASSETS.md §5`）
 - 批 1 武器系统（ADR 0014）：`web/data/weapons.json` 6 把（刀/巨剑/锤/弓/杖/苦无）、`attack()` 拆 melee/ranged/throw、`this.bolts` 玩家弹体、掉落换装（旧武器留地可取回）、HUD 武器行
 - 音频线（`docs/AUDIO.md`）：`tools/encode_audio.sh` 转 6 首 BGM（3.11 MB，懒加载）+ 10 个 SFX（51.6 KB，内联），按 mood 切换、`loop:false` 一次性胜利曲、死亡停乐、M 静音入档
 - 素材来源清单与授权策略（ADR 0001）
@@ -23,8 +24,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 2 房间编排**（`docs/ROADMAP.md §4`）：宝箱房/商店房/篝火房/精英房四类，非战斗房权重 ≤35%
-- 批 3 层间天赋 / 批 4 敌人与 Boss（顺位见 ROADMAP §3）
+- **批 3 层间天赋**（`docs/ROADMAP.md §5`）：每层结束三选一，跨局保留
+- 批 4 敌人与 Boss / 批 5–8（顺位见 ROADMAP §3）
 - 精英怪词缀 / 第二种 Boss
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD

@@ -54,6 +54,11 @@ const img = {
   arrow: join(ASSET, 'FX/Projectile/Arrow.png'),
   kunaiProj: join(ASSET, 'FX/Projectile/Kunai.png'),
   fireball: join(ASSET, 'FX/Projectile/Fireball.png'),
+  /* 批 2 房间：宝箱两帧 / 钥匙 / 精英光环 / 篝火（外部 CC0，见 assets/CREDITS.md） */
+  chest: join(ASSET, 'Items/Treasure/BigTreasureChest.png'),
+  key: join(ASSET, 'Items/Treasure/GoldKey.png'),
+  aura: join(ASSET, 'FX/Magic/Circle/SpriteSheetOrange.png'),
+  campfire: join(ROOT, 'assets/01-primary/external/campfire-16x16.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -66,6 +71,7 @@ const FRAME = {
   hKatana: [6, 10], hBigSword: [7, 12], hHammer: [9, 9], hWand: [5, 10], hKunai: [3, 12],
   slA: [32, 32], slB: [32, 32], slC: [32, 32], slD: [32, 32],
   arrow: [13, 5], kunaiProj: [14, 5], fireball: [16, 16],
+  chest: [16, 14], key: [12, 8], aura: [32, 32], campfire: [16, 16],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
