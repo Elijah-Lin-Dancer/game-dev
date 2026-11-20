@@ -25,11 +25,20 @@ const img = {
   heart: join(ASSET, 'Ui/LifeReceptacle/heart.png'),
   coin: join(ASSET, 'Items/Treasure/Coin2.png'),
   boss: join(ASSET, 'Actor/Boss/GiantFrog/Idle40x40.png'),
+  cyclope: join(ASSET, 'Actor/Monsters/Cyclope/SpriteSheet.png'),
+  eye: join(ASSET, 'Actor/Monsters/Eye/Eye.png'),
+  larva: join(ASSET, 'Actor/Monsters/Larva/Larva.png'),
+  ball: join(ASSET, 'FX/Projectile/EnergyBall.png'),
+  upgPower: join(ASSET, 'Items/Scroll/ScrollFire.png'),
+  upgSpeed: join(ASSET, 'Items/Scroll/ScrollPlant.png'),
+  upgAtk: join(ASSET, 'Items/Scroll/ScrollIce.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
   walk: [16, 16], idle: [16, 16], field: [16, 16], beast: [16, 16],
   slash: [32, 32], heart: [16, 16], boss: [40, 40], coin: [10, 10],
+  cyclope: [16, 16], eye: [16, 16], larva: [16, 16], ball: [16, 16],
+  upgPower: [16, 16], upgSpeed: [16, 16], upgAtk: [16, 16],
 };
 const SFX_DIR = join(ROOT, 'web/audio');
 const MUSIC = { dungeon: './web/audio/music/dungeon.mp3', fight: './web/audio/music/fight.mp3' };

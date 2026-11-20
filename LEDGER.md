@@ -27,5 +27,7 @@
 
 | 17 | 2026-11-20 11:05 | 数据驱动与存档 | 平衡数值外置 26 项（改 JSON 免构建，实测 enemyHp 6→12 生效）；存档 v2 存累计金币/击杀/最深/通关/静音，死亡与通关各记一次；v1 迁移与坏档兜底都实测通过；`?reset` 清档 | `docs/decisions/0009-data-and-save.md`、`web/data/balance.json` |
 
+| 18 | 2026-11-20 12:10 | 内容扩充第 1 批 | 四种小怪行为（冲刺/远程/分裂）、Boss 半血二阶段（moveCount%3 砸地+78px 预警圈）、三张强化卷轴可叠层；自测抓出 phaseT 漏减、roar 重入、UPG_ICON 未定义三个 bug | `docs/decisions/0010-content-expansion.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

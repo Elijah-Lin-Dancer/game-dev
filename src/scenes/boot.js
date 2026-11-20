@@ -38,10 +38,12 @@ export class Boot extends Phaser.Scene {
         frames: [0, 4, 8, 12].map((row) => ({ key: 'walk', frame: row + col })),
         frameRate: 9, repeat: -1,
       });
-      this.anims.create({
-        key: 'beast-' + dir,
-        frames: [0, 4, 8, 12].map((row) => ({ key: 'beast', frame: row + col })),
-        frameRate: 8, repeat: -1,
+      ['beast', 'cyclope', 'eye', 'larva'].forEach((k) => {
+        this.anims.create({
+          key: k + '-' + dir,
+          frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
+          frameRate: 8, repeat: -1,
+        });
       });
     });
     this.anims.create({
@@ -53,6 +55,11 @@ export class Boot extends Phaser.Scene {
       key: 'slash-play',
       frames: this.anims.generateFrameNumbers('slash', { start: 0, end: 3 }),
       frameRate: 13, repeat: 0,
+    });
+    this.anims.create({
+      key: 'ball-fly',
+      frames: this.anims.generateFrameNumbers('ball', { start: 0, end: 3 }),
+      frameRate: 12, repeat: -1,
     });
     this.anims.create({
       key: 'coin-spin',

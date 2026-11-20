@@ -3,6 +3,10 @@ import { CFG, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '..
 import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
+
+const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
+const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
+
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
 
@@ -38,6 +42,8 @@ export class Play extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, CFG.camLerp, CFG.camLerp);
 
     this.enemies = [];
+    this.shots = [];
+    this.upg = { power: 0, speed: 0, atk: 0 };
     this.drops = [];
     this.doorLocks = {};
     this.walls = new Set();
@@ -64,6 +70,16 @@ export class Play extends Phaser.Scene {
         win: () => this.win(),
         reset: () => resetSave(),
         bal: () => (window.__balance || null),
+        spawn: (kind, x, y) => this.spawnFoe(kind, 0, { x, y }),
+        bosshp: (v) => { const b = this.enemies.find((e) => e.type === 'boss'); if (b) b.hp = v; },
+        shots: () => this.shots.length,
+        foes: () => this.enemies.map((e) => ({ k: e.kind || e.type, hp: e.hp, x: Math.round(e.spr.x), y: Math.round(e.spr.y), ph: e.phase, s: Math.round(e.speed) })),
+        shotPos: () => this.shots.map((b) => [Math.round(b.spr.x), Math.round(b.spr.y)]),
+        upgGive: (k, n) => { this.upg[k] += (n || 1); },
+        atk: () => this.attack(),
+        stats: () => ({ dmg: this.dmg(), cd: Math.round(this.atkCd()), spd: Math.round(this.moveSpeed()) }),
+        dropUpg: (k) => this.dropItem(this.player.x + 10, this.player.y + 6, 'upg', k),
+        clearDead: () => { this.enemies = this.enemies.filter((e) => e.hp > 0); },
       };
     }
   }
@@ -199,7 +215,17 @@ export class Play extends Phaser.Scene {
     if (room.cleared && room.built) return;
     if (room.isBoss) { this.spawnBoss(); return; }
     const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
-    for (let i = 0; i < n; i++) this.spawnBeast();
+    for (let i = 0; i < n; i++) this.spawnFoe(this.pickKind(room.idx), 200);
+  }
+
+  /* 越往里走越可能遇到"带脾气"的怪：房间序号决定权重，保证前两间是纯近战教学 */
+  pickKind(idx) {
+    if (idx <= 0) return 'beast';
+    const pool = ['beast', 'beast'];
+    if (idx >= 1) pool.push('cyclope');
+    if (idx >= 2) pool.push('eye');
+    if (idx >= 3) pool.push('larva', 'cyclope');
+    return pool[Phaser.Math.Between(0, pool.length - 1)];
   }
 
   findFreeSpot(minDistFromPlayer) {
@@ -213,17 +239,26 @@ export class Play extends Phaser.Scene {
     return { x: RW / 2, y: TILE * 3 };
   }
 
-  spawnBeast() {
-    const spot = this.findFreeSpot(200);
-    const spr = this.add.sprite(spot.x, spot.y, 'beast', 0).setScale(2).setDepth(2).setAlpha(0);
-    spr.play('beast-down');
+  spawnBeast() { this.spawnFoe('beast', 200); }
+
+  /* 四种小怪的统一出生：行为差异全在 updateFoe 里分派 */
+  spawnFoe(kind, minDist, at) {
+    const spot = at || this.findFreeSpot(minDist || 200);
+    const cfg = kind === 'beast' ? {
+      hp: CFG.enemyHp, speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
+    } : CFG[kind];
+    const spr = this.add.sprite(spot.x, spot.y, kind, 0).setScale(2).setDepth(2).setAlpha(0);
+    spr.play(kind + '-down');
     this.tweens.add({ targets: spr, alpha: 1, duration: 240 });
-    this.enemies.push({
-      type: 'beast', spr, hp: CFG.enemyHp, maxHp: CFG.enemyHp,
+    const e = {
+      type: 'foe', kind, spr, hp: cfg.hp, maxHp: cfg.hp,
       kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-      speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
+      speed: cfg.speed, dmg: cfg.dmg, half: cfg.half || 12,
       stuckT: 0, slideT: 0, slide: new Phaser.Math.Vector2(),
-    });
+      phase: 'walk', phaseT: 0, cdT: 0, mini: false,
+    };
+    this.enemies.push(e);
+    return e;
   }
 
   spawnBoss() {
@@ -263,7 +298,7 @@ export class Play extends Phaser.Scene {
 
   /* ---------- 战斗 ---------- */
   attack() {
-    if (this.dead || this.won || this.time.now - this.atkAt < CFG.atkCd) return;
+    if (this.dead || this.won || this.time.now - this.atkAt < this.atkCd()) return;
     this.atkAt = this.time.now;
     this.sfx.sword.play({ rate: Phaser.Math.FloatBetween(0.95, 1.08) });
 
@@ -293,7 +328,7 @@ export class Play extends Phaser.Scene {
       if (e.hp <= 0) return;
       if (Math.abs(e.spr.x - cx) > hw + e.half || Math.abs(e.spr.y - cy) > hh + e.half) return;
       hitAny = true;
-      e.hp -= CFG.playerDmg;
+      e.hp -= this.dmg();
       e.flash = 70;
       e.kb.set(v[0] * (e.type === 'boss' ? 40 : 120), v[1] * (e.type === 'boss' ? 40 : 120));
       e.spr.setAlpha(0.45);
@@ -313,17 +348,42 @@ export class Play extends Phaser.Scene {
   }
 
   /* Boss：靠近 → 蓄力（红身抖动）→ 直线冲撞 → 缓 0.38 秒 → 循环 */
+  /* Boss 一阶段：靠近 → 蓄力（红身抖动）→ 冲撞 → 缓 0.38 秒
+     二阶段（半血后）：吼一嗓 → 移动更快、蓄力更短，并且每三次出手改砸地（带地面预警圈） */
   updateBoss(e, dt) {
     const s = e.spr, p = this.player;
+    const B2 = CFG.boss2;
     e.phaseT -= dt;
 
+    if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * B2.at) {
+      e.phase = 'roar';
+      e.phaseT = B2.roarMs;
+      this.cameras.main.shake(260, 0.02);
+      this.sfx.hurt.play({ rate: 0.4, volume: 0.5 });
+      this.floatText(s.x, s.y - 26, '狂暴', '#ff8a7a');
+      if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
+      return;
+    }
+
+    if (e.phase === 'roar') {
+      s.setScale(1.6 + 0.18 * Math.sin(this.time.now / 40)).setTint(0xff5a4a);
+      if (e.phaseT <= 0) {
+        e.phase2 = true;
+        e.phase = 'approach';
+        e.speed *= B2.speedMul;
+        e.moveCount = 0;
+        s.setScale(1.7).setTint(0xffb8a8);
+      }
+      return;
+    }
+
     if (e.phase === 'windup') {
-      const pulse = 1 + 0.07 * Math.sin(this.time.now / 55);
-      s.setScale(1.6 * pulse).setTint(0xff8a7a);
+      const pulse = 1.7 + 0.07 * Math.sin(this.time.now / 55);
+      s.setScale(1.7 * pulse).setTint(0xff8a7a);
       if (e.phaseT <= 0) {
         e.phase = 'lunge';
         e.phaseT = CFG.bossLungeTime;
-        s.clearTint().setScale(1.6);
+        s.clearTint().setScale(1.7);
         this.cameras.main.shake(90, 0.008);
       }
       return;
@@ -334,6 +394,34 @@ export class Play extends Phaser.Scene {
       if (e.phaseT <= 0) { e.phase = 'recover'; e.phaseT = CFG.bossRecover; }
       return;
     }
+    if (e.phase === 'slamWindup') {
+      const pulse = 1.7 + 0.12 * Math.sin(this.time.now / 45);
+      s.setScale(pulse).setTint(0xffe08a);
+      if (!e.ring) {
+        e.ring = this.add.circle(p.x, p.y, B2.slamRadius, 0xff5533, 0.22).setDepth(1);
+        e.ring.setStrokeStyle(2, 0xff8866, 0.9);
+      }
+      if (e.phaseT <= 0) {
+        e.phase = 'slamAir';
+        e.phaseT = B2.slamAir;
+        e.jumpFrom = { x: s.x, y: s.y };
+        e.landAt = { x: e.ring ? e.ring.x : s.x, y: e.ring ? e.ring.y : s.y };
+        s.clearTint().setScale(1.7);
+      }
+      return;
+    }
+    if (e.phase === 'slamAir') {
+      const pr = 1 - Math.max(0, e.phaseT) / B2.slamAir;
+      s.x = e.jumpFrom.x + (e.landAt.x - e.jumpFrom.x) * pr;
+      s.y = e.jumpFrom.y + (e.landAt.y - e.jumpFrom.y) * pr - Math.sin(Math.PI * pr) * 36;
+      if (e.phaseT <= 0) {
+        s.setPosition(e.landAt.x, e.landAt.y);
+        this.slamImpact(e);
+        e.phase = 'recover';
+        e.phaseT = CFG.bossRecover;
+      }
+      return;
+    }
     if (e.phase === 'recover') {
       if (e.phaseT <= 0) e.phase = 'approach';
       return;
@@ -342,6 +430,16 @@ export class Play extends Phaser.Scene {
     if (this.dead || this.won) return;
     const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
     if (dist > CFG.chaseRange) return;
+
+    // 二阶段：每三次出手，第三次改成砸地
+    if (e.phase2 && (e.moveCount || 0) % 3 === 2 && dist < 340) {
+      e.moveCount += 1;
+      e.phase = 'slamWindup';
+      e.phaseT = B2.slamWindup;
+      this.sfx.hurt.play({ rate: 0.45, volume: 0.4 });
+      return;
+    }
+
     const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
     const sp = e.speed * (dt / 1000);
     this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
@@ -349,9 +447,27 @@ export class Play extends Phaser.Scene {
 
     if (dist < CFG.bossLungeReach) {
       e.phase = 'windup';
-      e.phaseT = CFG.bossWindup;
+      e.phaseT = CFG.bossWindup * (e.phase2 ? B2.windupMul : 1);
       e.lunge.copy(dirv);
+      e.moveCount = (e.moveCount || 0) + 1;
       this.sfx.hurt.play({ rate: 0.55, volume: 0.35 });
+    }
+  }
+
+  /* 砸地落点：只判定一次，预警圈消失，落点范围内的玩家吃伤害并被推开 */
+  slamImpact(e) {
+    const B2 = CFG.boss2;
+    this.cameras.main.shake(200, 0.02);
+    this.sfx.kill.play({ rate: 0.5, volume: 0.55 });
+    const ring = this.add.circle(e.spr.x, e.spr.y, 20, 0xff8855, 0.5).setDepth(620);
+    this.tweens.add({ targets: ring, scale: 4.2, alpha: 0, duration: 340, onComplete: () => ring.destroy() });
+    if (e.ring) { e.ring.destroy(); e.ring = null; }
+    if (this.dead || this.won) return;
+    const d = Phaser.Math.Distance.Between(e.spr.x, e.spr.y, this.player.x, this.player.y);
+    if (d < B2.slamRadius) {
+      this.hurtPlayer(e.spr.x, e.spr.y, B2.slamDmg);
+      this.player.kb = new Phaser.Math.Vector2(this.player.x - e.spr.x, this.player.y - e.spr.y)
+        .normalize().scale(150);
     }
   }
 
@@ -386,8 +502,123 @@ export class Play extends Phaser.Scene {
 
     const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
       ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
-    if (dir !== e.dir) { e.dir = dir; s.play('beast-' + dir); }
-    else if (!s.anims.isPlaying) s.play('beast-' + dir);
+    if (dir !== e.dir) { e.dir = dir; s.play(e.kind + '-' + dir); }
+    else if (!s.anims.isPlaying) s.play(e.kind + '-' + dir);
+  }
+
+  /* ---------- 小怪行为：四种脾气 ---------- */
+  updateFoe(e, dt) {
+    e.cdT -= dt;
+    if (e.kind === 'cyclope') return this.updateCyclope(e, dt);
+    if (e.kind === 'eye') return this.updateEye(e, dt);
+    return this.updateBeast(e, dt);          // beast / larva：追击（larva 更快）
+  }
+
+  /* 独眼：走近到一定距离就蓄力扑一个直线冲刺，冲完瘫一下 */
+  updateCyclope(e, dt) {
+    const s = e.spr, p = this.player;
+    if (this.dead || this.won) return;
+    const C = CFG.cyclope;
+    e.phaseT -= dt;
+
+    if (e.phase === 'windup') {
+      const pulse = 1 + 0.09 * Math.sin(this.time.now / 48);
+      s.setScale(2 * pulse).setTint(0xffc98a);
+      if (e.phaseT <= 0) {
+        e.phase = 'dash'; e.phaseT = C.dashTime;
+        s.clearTint().setScale(2);
+        this.cameras.main.shake(70, 0.004);
+      }
+      return;
+    }
+    if (e.phase === 'dash') {
+      const sp = C.dashSpeed * (dt / 1000);
+      this.moveActor(s, e.dash.x * sp, e.dash.y * sp, e.half);
+      if (e.phaseT <= 0) { e.phase = 'walk'; e.cdT = C.dashCd; }
+      return;
+    }
+
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    const sp = e.speed * (dt / 1000);
+    this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+
+    if (dist < C.dashRange && e.cdT <= 0) {
+      e.phase = 'windup'; e.phaseT = 400;
+      e.dash = dirv.clone();
+      this.sfx.hurt.play({ rate: 0.7, volume: 0.3 });
+    }
+  }
+
+  /* 眼怪：保持中距离，每 1.6 秒吐一颗能量球 */
+  updateEye(e, dt) {
+    const s = e.spr, p = this.player;
+    if (this.dead || this.won) return;
+    const E = CFG.eye;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > E.range) return;
+
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    let move = new Phaser.Math.Vector2(0, 0);
+    if (dist < E.keepMin) move.set(-dirv.x, -dirv.y);        // 太近就退
+    else if (dist > E.keepMax) move.set(dirv.x, dirv.y);     // 太远就追
+    if (move.lengthSq() > 0) {
+      const sp = e.speed * (dt / 1000);
+      this.moveActor(s, move.x * sp, move.y * sp, e.half);
+    }
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+
+    if (e.cdT <= 0) {
+      this.shoot(e, dirv);
+      e.cdT = E.shotCd;
+    }
+  }
+
+  faceAnim(e, dirv) {
+    const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
+      ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
+    if (dir !== e.dir) { e.dir = dir; e.spr.play(e.kind + '-' + dir); }
+  }
+
+  shoot(e, dirv) {
+    const spr = this.add.sprite(e.spr.x, e.spr.y, 'ball', 0)
+      .setScale(1.8).setDepth(4).play('ball-fly');
+    this.shots.push({
+      spr, vx: dirv.x * CFG.eye.shotSpeed, vy: dirv.y * CFG.eye.shotSpeed,
+      life: 2600, dmg: CFG.eye.shotDmg,
+    });
+    this.sfx.hurt.play({ rate: 1.5, volume: 0.22 });
+  }
+
+  updateShots(dt) {
+    for (let i = this.shots.length - 1; i >= 0; i--) {
+      const b = this.shots[i];
+      b.life -= dt;
+      b.spr.x += b.vx * (dt / 1000);
+      b.spr.y += b.vy * (dt / 1000);
+      const dead = b.life <= 0 || this.isWall(b.spr.x, b.spr.y, 4);
+      const hit = !this.dead && !this.won
+        && Phaser.Math.Distance.Between(b.spr.x, b.spr.y, this.player.x, this.player.y) < 16;
+      if (dead || hit) {
+        if (hit) this.hurtPlayer(b.spr.x, b.spr.y, b.dmg);
+        b.spr.destroy();
+        this.shots.splice(i, 1);
+      }
+    }
+  }
+
+  /* 强化：翻倍吃到就叠层，直接改伤害/攻速/移速 */
+  atkCd() { return Math.max(CFG.atkCd * CFG.upgrades.minAtkMul, CFG.atkCd * (1 - CFG.upgrades.atkStep * this.upg.atk)); }
+  dmg() { return CFG.playerDmg + CFG.upgrades.powerStep * this.upg.power; }
+  moveSpeed() { return 96 * (1 + CFG.upgrades.speedStep * this.upg.speed); }
+
+  rollUpgrade() {
+    const pool = ['power', 'speed', 'atk', 'power', 'speed'];
+    return pool[Phaser.Math.Between(0, pool.length - 1)];
   }
 
   killEnemy(e) {
@@ -403,9 +634,29 @@ export class Play extends Phaser.Scene {
     });
 
     const spot = { x: e.spr.x, y: e.spr.y };
+
+    // 幼虫：死了裂成两只小号幼虫（小号不再分裂，防止无限爆兵）
+    if (e.kind === 'larva' && !e.mini) {
+      const L = CFG.larva;
+      for (let i = 0; i < L.splitCount; i++) {
+        const off = (i === 0 ? -18 : 18);
+        const at = { x: spot.x + off, y: spot.y };
+        if (this.isWall(at.x, at.y, 10)) { at.x = spot.x; at.y = spot.y + off; }
+        const mini = this.spawnFoe('larva', 0, at);
+        mini.mini = true;
+        mini.hp = mini.maxHp = L.miniHp;
+        mini.speed = L.miniSpeed;
+        mini.half = L.miniHalf;
+        mini.spr.setScale(1.4);
+      }
+      this.floatText(spot.x, spot.y - 14, '分裂', '#9be27a');
+    }
+
     if (isBoss) {
+      if (e.ring) { e.ring.destroy(); e.ring = null; }
       this.dropItem(spot.x, spot.y, 'coin');
       this.dropItem(spot.x + 20, spot.y, 'heart');
+      this.dropItem(spot.x - 20, spot.y, 'upg', this.rollUpgrade());
     } else {
       if (Math.random() < CFG.coinChance) this.dropItem(spot.x, spot.y, 'coin');
       if (Math.random() < CFG.heartChance) this.dropItem(spot.x + 12, spot.y, 'heart');
@@ -413,12 +664,28 @@ export class Play extends Phaser.Scene {
     if (isBoss) this.time.delayedCall(900, () => this.win());
   }
 
-  dropItem(x, y, kind) {
-    const spr = kind === 'coin'
-      ? this.add.sprite(x, y, 'coin', 0).setScale(2.4).setDepth(3).play('coin-spin')
-      : this.add.image(x, y, 'heart', 4).setScale(1.6).setDepth(3);
+  dropItem(x, y, kind, up) {
+    let spr;
+    if (kind === 'coin') {
+      spr = this.add.sprite(x, y, 'coin', 0).setScale(2.4).setDepth(3).play('coin-spin');
+    } else if (kind === 'upg') {
+      spr = this.add.image(x, y, UPG_ICON[up], 0).setScale(2).setDepth(3);
+    } else {
+      spr = this.add.image(x, y, 'heart', 4).setScale(1.6).setDepth(3);
+    }
     this.tweens.add({ targets: spr, y: y - 6, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    this.drops.push({ kind, spr, baseX: x, baseY: y });
+    this.drops.push({ kind, up, spr, baseX: x, baseY: y });
+  }
+
+  /* 伤害数字一样的飘字，拾取/击杀反馈用 */
+  floatText(x, y, text, color) {
+    const t = this.add.text(x, y, text, {
+      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: color || '#ffffff',
+    }).setOrigin(0.5).setDepth(640);
+    this.tweens.add({
+      targets: t, y: y - 16, alpha: 0, duration: 620, ease: 'Quad.easeOut',
+      onComplete: () => t.destroy(),
+    });
   }
 
   hurtPlayer(fromX, fromY, dmg) {
@@ -526,6 +793,10 @@ export class Play extends Phaser.Scene {
       fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
+    this.upgText = this.add.text(S.W - 10, 30, '', {
+      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffd479cc',
+      backgroundColor: '#00000044', padding: { x: 4, y: 2 },
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
     this.metaText = this.add.text(S.W - 10, 12, '', {
       fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffcc',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
@@ -629,7 +900,8 @@ export class Play extends Phaser.Scene {
     if (!this.dead && !this.won && d.lengthSq() > 0.01) {
       d.normalize();
       const slow = 1 - Math.max(0, this.atkAt + 160 - this.time.now) / 160 * 0.35;
-      this.moveActor(this.player, d.x * 96 * slow * (dt / 1000), d.y * 96 * slow * (dt / 1000), 10);
+      const spd = this.moveSpeed() * slow * (dt / 1000);
+      this.moveActor(this.player, d.x * spd, d.y * spd, 10);
       const dir = Math.abs(d.x) > Math.abs(d.y) ? (d.x > 0 ? 'right' : 'left') : (d.y > 0 ? 'down' : 'up');
       if (dir !== this.facing) {
         this.facing = dir;
@@ -664,7 +936,7 @@ export class Play extends Phaser.Scene {
       } else if (e.type === 'boss') {
         this.updateBoss(e, dt);
       } else {
-        this.updateBeast(e, dt);
+        this.updateFoe(e, dt);
       }
       s.setDepth(2 + s.y / 1000);
 
@@ -677,6 +949,8 @@ export class Play extends Phaser.Scene {
         }
       }
     });
+
+    this.updateShots(dt);
 
     // 分离
     for (let i = 0; i < this.enemies.length; i++) {
@@ -704,6 +978,10 @@ export class Play extends Phaser.Scene {
         if (it.kind === 'coin') {
           this.coins += 1;
           this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
+        } else if (it.kind === 'upg') {
+          this.upg[it.up] += 1;
+          this.sfx.coin.play({ rate: 1.6 });
+          this.floatText(this.player.x, this.player.y - 22, UPG_NAME[it.up] + ' +1', '#ffd479');
         } else {
           this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);
           this.sfx.coin.play({ rate: 0.8 });
@@ -725,6 +1003,9 @@ export class Play extends Phaser.Scene {
     // 清房判定 → 开门
     if (!this.room.cleared && this.enemiesAlive() === 0 && !this.room.isBoss) {
       this.room.cleared = true;
+      if (Math.random() < CFG.upgrades.dropChance) {
+        this.dropItem(this.player.x + 26, this.player.y - 10, 'upg', this.rollUpgrade());
+      }
     }
     this.refreshDoorLocks();
     this.checkDoors();
@@ -751,6 +1032,11 @@ export class Play extends Phaser.Scene {
   }
 
   updateHud() {
+    if (this.upgText) {
+      const u = this.upg;
+      this.upgText.setVisible(u.power + u.speed + u.atk > 0);
+      this.upgText.setText(`攻+${u.power} 速+${u.speed} 频+${u.atk}`);
+    }
     if (this.metaText) {
       const m = this.meta || loadSave();
       this.metaText.setText(`累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6} · 通关 ${m.wins}`);
@@ -787,6 +1073,10 @@ export class Play extends Phaser.Scene {
       enemyList: this.enemies.filter((e) => e.hp > 0).map((e) => [Math.round(e.spr.x), Math.round(e.spr.y), e.type]),
       bossHp: (this.enemies.find((e) => e.type === 'boss') || {}).hp,
       bossPhase: (this.enemies.find((e) => e.type === 'boss') || {}).phase,
+      bossPhase2: !!(this.enemies.find((e) => e.type === 'boss') || {}).phase2,
+      shots: this.shots.length,
+      kinds: this.enemies.filter((e) => e.hp > 0).map((e) => e.kind || e.type),
+      upg: { ...this.upg },
       bossX: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.x : -1),
       bossY: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.y : -1),
       dropList: this.drops.map((d) => ({ k: d.kind, x: Math.round(d.baseX), y: Math.round(d.baseY) })),

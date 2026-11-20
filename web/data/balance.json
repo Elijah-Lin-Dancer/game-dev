@@ -1,13 +1,89 @@
 {
   "v": 1,
   "note": "改这里的数字不用重新构建；线上改 web/data/balance.json 刷新即生效，单文件版用构建时内嵌的副本",
-  "player": { "maxHp": 20, "touchDmg": 3, "playerDmg": 3, "atkCd": 300, "atkReach": 30, "iFrame": 700 },
-  "beast": { "hp": 6, "speed": 46, "chaseRange": 420, "stuckMs": 260, "slideMs": 420 },
-  "boss": {
-    "hp": 28, "speed": 52, "dmg": 3,
-    "windup": 420, "lungeSpeed": 190, "lungeTime": 220, "recover": 380, "lungeReach": 132
+  "player": {
+    "maxHp": 20,
+    "touchDmg": 3,
+    "playerDmg": 3,
+    "atkCd": 300,
+    "atkReach": 30,
+    "iFrame": 700
   },
-  "camera": { "lerp": 0.12, "lookAhead": 22 },
-  "drops": { "healAmount": 4, "coinChance": 0.45, "heartChance": 0.12 },
-  "dungeon": { "roomEnemiesMin": 3, "roomEnemiesMax": 5, "maxRooms": 6 }
+  "beast": {
+    "hp": 6,
+    "speed": 46,
+    "chaseRange": 420,
+    "stuckMs": 260,
+    "slideMs": 420
+  },
+  "boss": {
+    "hp": 28,
+    "speed": 52,
+    "dmg": 3,
+    "windup": 420,
+    "lungeSpeed": 190,
+    "lungeTime": 220,
+    "recover": 380,
+    "lungeReach": 132
+  },
+  "camera": {
+    "lerp": 0.12,
+    "lookAhead": 22
+  },
+  "drops": {
+    "healAmount": 4,
+    "coinChance": 0.45,
+    "heartChance": 0.12
+  },
+  "dungeon": {
+    "roomEnemiesMin": 3,
+    "roomEnemiesMax": 5,
+    "maxRooms": 6
+  },
+  "cyclope": {
+    "hp": 10,
+    "speed": 30,
+    "dmg": 4,
+    "dashSpeed": 230,
+    "dashTime": 260,
+    "dashCd": 1400,
+    "dashRange": 170
+  },
+  "eye": {
+    "hp": 8,
+    "speed": 34,
+    "dmg": 2,
+    "shotCd": 1600,
+    "shotSpeed": 150,
+    "keepMin": 110,
+    "keepMax": 230,
+    "range": 380,
+    "shotDmg": 2
+  },
+  "larva": {
+    "hp": 9,
+    "speed": 56,
+    "dmg": 3,
+    "miniHp": 3,
+    "miniSpeed": 74,
+    "miniHalf": 10,
+    "splitCount": 2
+  },
+  "upgrades": {
+    "dropChance": 0.35,
+    "powerStep": 1,
+    "speedStep": 0.12,
+    "atkStep": 0.15,
+    "minAtkMul": 0.4
+  },
+  "boss2": {
+    "at": 0.5,
+    "roarMs": 650,
+    "slamWindup": 520,
+    "slamAir": 460,
+    "slamRadius": 78,
+    "slamDmg": 4,
+    "speedMul": 1.3,
+    "windupMul": 0.75
+  }
 }

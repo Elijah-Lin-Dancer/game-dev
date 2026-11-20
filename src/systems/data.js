@@ -36,6 +36,18 @@ const MAP = [
 
 const get = (obj, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
+/* 结构化分组（敌人档、强化、Boss 二阶段）：只覆盖默认里已有的数字字段，防止 JSON 塞进陌生键 */
+const GROUPS = ['cyclope', 'eye', 'larva', 'upgrades', 'boss2'];
+
+function mergeNumbers(target, src) {
+  if (!src || typeof src !== 'object') return;
+  for (const k of Object.keys(target)) {
+    const t = target[k], v = src[k];
+    if (typeof t === 'number') { if (typeof v === 'number' && Number.isFinite(v)) target[k] = v; }
+    else if (t && typeof t === 'object') mergeNumbers(t, v);
+  }
+}
+
 let applied = [];
 
 export function applyBalance(json) {
@@ -47,7 +59,13 @@ export function applyBalance(json) {
     CFG[key] = v;
     applied.push(`${key}=${v}`);
   }
-    // 房间怪数上下限要自洽，别配出 5..3
+    for (const g of GROUPS) {
+    if (json[g] && typeof json[g] === 'object' && CFG[g]) {
+      mergeNumbers(CFG[g], json[g]);
+      applied.push(`${g}:merge`);
+    }
+  }
+  // 房间怪数上下限要自洽，别配出 5..3
   if (CFG.roomEnemiesMax < CFG.roomEnemiesMin) {
     CFG.roomEnemiesMax = CFG.roomEnemiesMin;
     applied.push('roomEnemiesMax 已夹到 roomEnemiesMin');
