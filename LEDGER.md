@@ -49,5 +49,7 @@
 
 | 28 | 2026-11-20 19:40 | 批 3 层间天赋 | `web/data/talents.json` 14 张（普通6/稀有5/史诗3）；`src/systems/talents.js` 白名单归一化 + 深度加权抽卡（60/30/10，每深一间 −6/+2/+6，已选不进池，全普通保底换一张稀有）+ 修正合并；`play.js` 每 2 间弹三列卡片（点卡/1–3 键），上限、伤害、攻速、移速、受伤、金币小数累加、击杀回血、进房回血全部接入；心数随上限重算（17→4 格半、24→6 颗）；新增 `__dbg.talents/talentPool/openTalent/pick/addTalent`。验收 T-1~T-9 全过（狂战 17/5、深度稀有度 91/75/14→73/58/49、5 间通关无报错） | `docs/BATCH3-TALENTS.md`、`docs/ACCEPTANCE.md` |
 
+| 29 | 2026-11-20 20:55 | 批 4 敌人与 Boss | 6 新怪全部用包内 4×4 表（Slime 分裂/Spider 吐网减速/Owl 悬停俯冲/Mushroom 毒雾/Mole 钻地冒头/Skull 追踪弹），新增 `zones` 区域与敌弹 `slow/homing` 字段；4 精英词缀（狂暴/护盾/分裂/迅捷）随机挂载、`enemyList` 可读；`spawnBoss` 双 Boss 随机、新增 `updateSamurai + samuraiSlash`（横斩/突进/召唤/50% 血 roar 二阶段）；同屏上限 8；图集 40→52 切片。验收 U-1~U-12 全过（web slows 1483ms、护盾先破后伤、Boss 打死 `won=true`、无 pageerror） | `docs/BATCH4-ASSETS.md`、`docs/ACCEPTANCE.md`、`docs/screens/b4-*.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

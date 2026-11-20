@@ -108,5 +108,94 @@
     "flashHurt": 0.26,
     "flashSlam": 0.3,
     "flashPhase": 0.26
+  },
+  "slime": {
+    "hp": 7,
+    "speed": 32,
+    "dmg": 3,
+    "splitHp": 3,
+    "splitSpeed": 46,
+    "splitCount": 2
+  },
+  "spider": {
+    "hp": 8,
+    "speed": 36,
+    "dmg": 2,
+    "webCd": 1900,
+    "webSpeed": 118,
+    "webSlow": 0.4,
+    "webSlowMs": 1500,
+    "keepMin": 120,
+    "range": 360
+  },
+  "owl": {
+    "hp": 6,
+    "speed": 42,
+    "dmg": 3,
+    "hoverMs": 720,
+    "diveSpeed": 205,
+    "diveRange": 230,
+    "tall": 18
+  },
+  "mush": {
+    "hp": 10,
+    "speed": 8,
+    "dmg": 2,
+    "poisonCd": 2400,
+    "poisonRadius": 54,
+    "poisonLife": 3000,
+    "poisonTick": 600,
+    "poisonDmg": 1,
+    "poisonRange": 300
+  },
+  "mole": {
+    "hp": 9,
+    "speed": 38,
+    "dmg": 3,
+    "diveMs": 620,
+    "emergeMs": 260,
+    "diveRange": 260
+  },
+  "skull": {
+    "hp": 7,
+    "speed": 26,
+    "dmg": 2,
+    "shotCd": 2100,
+    "shotSpeed": 105,
+    "shotDmg": 2,
+    "turn": 0.6,
+    "range": 420
+  },
+  "elite": {
+    "hpMul": 1.8,
+    "affix": {
+      "enrage": {
+        "speed": 1.4,
+        "dmg": 1.5,
+        "hp": 1.2
+      },
+      "swift": {
+        "speed": 1.1,
+        "windup": 0.7
+      },
+      "split": {},
+      "shield": {}
+    }
+  },
+  "bossB": {
+    "hp": 34,
+    "speed": 58,
+    "dmg": 4,
+    "at": 0.5,
+    "slashWindup": 420,
+    "slashDmg": 4,
+    "slashReach": 96,
+    "slashWidth": 120,
+    "chargeWindup": 480,
+    "chargeSpeed": 230,
+    "chargeTime": 300,
+    "chargeDmg": 5,
+    "summonCd": 2600,
+    "summonCount": 2
   }
 }

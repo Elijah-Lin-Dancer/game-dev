@@ -237,6 +237,8 @@
 
 **风险**：怪变多导致房间过密、帧率下降（解法：同屏上限 8，超过就不再生成）；AI 模板膨胀难维护（解法：抽 `foeBehaviors` 表，行为即数据）。
 
+**状态：已完成（2026-11-20）**。6 只新怪（Slime/Spider/Owl/Mushroom/Mole/Skull）全部用包内 4×4 表，行为落在 `updateSpider/updateOwl/updateMush/updateMole/updateSkull`；4 词缀（狂暴/护盾/分裂/迅捷）随机挂在任意怪上，`__state.enemyList` 第 4 位可读；第二只 Boss 蓝武士三招（横斩/突进斩/召唤 2 小怪）+ 50% 血二阶段，与青蛙按 50% 随机二选一；同屏上限 8。验收 U-1~U-12 全过（见 `docs/BATCH4-ASSETS.md §6`）。
+
 ---
 
 ### 批 5 · 多角色与主动技能（L 级，预计 500–700 行）

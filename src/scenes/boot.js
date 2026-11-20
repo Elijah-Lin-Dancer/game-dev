@@ -44,7 +44,7 @@ export class Boot extends Phaser.Scene {
         frames: [0, 4, 8, 12].map((row) => ({ key: 'walk', frame: row + col })),
         frameRate: 9, repeat: -1,
       });
-      ['beast', 'cyclope', 'eye', 'larva'].forEach((k) => {
+      ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull'].forEach((k) => {
         this.anims.create({
           key: k + '-' + dir,
           frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
@@ -85,6 +85,25 @@ export class Boot extends Phaser.Scene {
       key: 'aura-pulse',
       frames: this.anims.generateFrameNumbers('aura', { start: 0, end: 3 }),
       frameRate: 6, repeat: -1,
+    });
+    // 批 4：蓝武士（第二只 Boss）的待机/走路/横斩/突进
+    this.anims.create({
+      key: 'sam-idle', frames: this.anims.generateFrameNumbers('samIdle', { start: 0, end: 5 }),
+      frameRate: 7, repeat: -1,
+    });
+    this.anims.create({
+      key: 'sam-walk', frames: this.anims.generateFrameNumbers('samWalk', { start: 0, end: 11 }),
+      frameRate: 11, repeat: -1,
+    });
+    ['L', 'R'].forEach((d) => {
+      this.anims.create({
+        key: 'sam-atk' + d, frames: this.anims.generateFrameNumbers('samAtk' + d, { start: 0, end: 3 }),
+        frameRate: 18, repeat: 0,
+      });
+      this.anims.create({
+        key: 'sam-chg' + d, frames: this.anims.generateFrameNumbers('samChg' + d, { start: 0, end: 2 }),
+        frameRate: 12, repeat: 0,
+      });
     });
     this.anims.create({
       key: 'fireball-play',

@@ -2,9 +2,10 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 3 层间天赋完成（14 张天赋 / 每 2 间三选一 / 与 upg 分乘区 / 心数随上限）。下一步批 4 敌人与 Boss 扩展（`docs/ROADMAP.md §6`）。
+当前段：批 4 敌人与 Boss 扩展完成（6 新怪 / 4 精英词缀 / 蓝武士 Boss / 同屏上限 8）。下一步批 5 多角色与主动技能（`docs/ROADMAP.md §7`）。
 
 已完成：
+- 批 4 敌人与 Boss 扩展：6 新怪（Slime 分裂/Spider 吐网减速/Owl 悬停俯冲/Mushroom 毒雾/Mole 钻地冒头/Skull 追踪弹）、4 词缀（狂暴/护盾/分裂/迅捷）、第二只 Boss 蓝武士（横斩/突进斩/召唤/半血二阶段）、同屏上限 8；素材全部包内，外部件 0、自绘 0；验收 U-1~U-12 全过（`docs/BATCH4-ASSETS.md`）
 - 批 3 层间天赋：`web/data/talents.json` 14 张（6/5/3 档）、`src/systems/talents.js`（归一化/深度加权抽卡/修正合并）、`play.js` 三列卡片 UI（点卡或 1–3）、上限/伤害/攻速/移速/受伤/金币/击杀与进房回血接入、动态心数；验收 T-1~T-9 全过（`docs/BATCH3-TALENTS.md`）
 - 批 2 房间编排：`dungeon.js` 加 `assignTypes()`（55/12/10/10/8/5 + 精英≤1/非战斗不连续/钥匙断供保护）；`play.js` 按房型生成敌人与道具、`spawnShop/spawnChest/spawnRest`、通用 `showPanel`、`keyCount` 钥匙、精英 `makeElite()`+橙色圆环、`drawMinimap()`；`story.json` 加 `rooms` 文案与三条交互提示；`save.js` 加 `roomsSeen`；图集 40 切片；调试口 `roomTypes/jumpType/keys/shopStock/use/tex`。验收 R-1~R-8 全过（`docs/BATCH2-ASSETS.md §5`）
 - 批 1 武器系统（ADR 0014）：`web/data/weapons.json` 6 把（刀/巨剑/锤/弓/杖/苦无）、`attack()` 拆 melee/ranged/throw、`this.bolts` 玩家弹体、掉落换装（旧武器留地可取回）、HUD 武器行
@@ -25,9 +26,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 4 敌人与 Boss 扩展**（`docs/ROADMAP.md §6`）：精英词缀、第二种 Boss、怪的攻击帧（用现有 58 怪资源）
-- 批 5–8（顺位见 ROADMAP §3）
-- 精英怪词缀 / 第二种 Boss
+- **批 5 多角色与主动技能**（`docs/ROADMAP.md §7`）
+- 批 6–8（顺位见 ROADMAP §3）
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
 - 叙事层（NPC 对话/周目）与结算页对比历史最好

@@ -37,7 +37,8 @@ const MAP = [
 const get = (obj, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
 /* 结构化分组（敌人档、强化、Boss 二阶段）：只覆盖默认里已有的数字字段，防止 JSON 塞进陌生键 */
-const GROUPS = ['cyclope', 'eye', 'larva', 'upgrades', 'boss2', 'cycle', 'feel'];
+const GROUPS = ['cyclope', 'eye', 'larva', 'upgrades', 'boss2', 'cycle', 'feel',
+  'slime', 'spider', 'owl', 'mush', 'mole', 'skull', 'elite', 'bossB'];
 
 function mergeNumbers(target, src) {
   if (!src || typeof src !== 'object') return;

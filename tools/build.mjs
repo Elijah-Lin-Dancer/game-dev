@@ -55,6 +55,19 @@ const img = {
   kunaiProj: join(ASSET, 'FX/Projectile/Kunai.png'),
   fireball: join(ASSET, 'FX/Projectile/Fireball.png'),
   /* 批 2 房间：宝箱两帧 / 钥匙 / 精英光环 / 篝火（外部 CC0，见 assets/CREDITS.md） */
+  /* 批 4：六种新怪 + 第二只 Boss（蓝武士）*/
+  slime: join(ASSET, 'Actor/Monsters/Slime.png'),
+  spider: join(ASSET, 'Actor/Monsters/SpiderRed/SpriteSheet.png'),
+  owl: join(ASSET, 'Actor/Monsters/Owl.png'),
+  mush: join(ASSET, 'Actor/Monsters/Mushroom/mushroom.png'),
+  mole: join(ASSET, 'Actor/Monsters/Mole.png'),
+  skull: join(ASSET, 'Actor/Monsters/SkullBlue/SpriteSheet.png'),
+  samIdle: join(ASSET, 'Actor/Boss/GiantBlueSamurai/Idle.png'),
+  samWalk: join(ASSET, 'Actor/Boss/GiantBlueSamurai/Walk.png'),
+  samAtkL: join(ASSET, 'Actor/Boss/GiantBlueSamurai/AttackLeft.png'),
+  samAtkR: join(ASSET, 'Actor/Boss/GiantBlueSamurai/AttackRight.png'),
+  samChgL: join(ASSET, 'Actor/Boss/GiantBlueSamurai/ChargeLeft.png'),
+  samChgR: join(ASSET, 'Actor/Boss/GiantBlueSamurai/ChargeRight.png'),
   chest: join(ASSET, 'Items/Treasure/BigTreasureChest.png'),
   key: join(ASSET, 'Items/Treasure/GoldKey.png'),
   aura: join(ASSET, 'FX/Magic/Circle/SpriteSheetOrange.png'),
@@ -72,6 +85,9 @@ const FRAME = {
   slA: [32, 32], slB: [32, 32], slC: [32, 32], slD: [32, 32],
   arrow: [13, 5], kunaiProj: [14, 5], fireball: [16, 16],
   chest: [16, 14], key: [12, 8], aura: [32, 32], campfire: [16, 16],
+  slime: [16, 16], spider: [16, 16], owl: [16, 16], mush: [16, 16], mole: [16, 16], skull: [16, 16],
+  samIdle: [48, 48], samWalk: [48, 48], samAtkL: [96, 96], samAtkR: [96, 96],
+  samChgL: [96, 96], samChgR: [96, 96],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
