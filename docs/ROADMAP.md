@@ -20,6 +20,7 @@
 | 局内成长 | 攻/速/攻速 三层线性叠加强化卷轴 |
 | 跨局 | coins/kills/runs/wins/bestRoom/cycle，周目自动加血加起始强化 |
 | 表现 | act 时间轴 8 套、顿帧 5 档、震屏 4 档、白色剪影受击 |
+| 音频 | 已入库 2 首 BGM（dungeon/fight）+ 6 个音效；**包内另有 31 首 BGM + 62 个音效未用**（见 §11） |
 | 缺口 | 无事可做的"选择"、无武器、无小地图、无大厅、无多角色 |
 
 **素材侧我实际清点过（这是判断成本的前提，不是猜的）**：
@@ -297,7 +298,7 @@
 - **内购 / 广告 / 存档云同步**：没有发行需求。
 - **程序化地图生成大改**（如房间内部随机布局）：现在 3×3 网格够用，改布局会连带重做碰撞与门判定。
 - **3D / 高清重绘**：像素风是资产决定的，换风格等于换项目。
-- **音效人声 / 剧情配音**：只有 BGM 与 SFX，保持低成本。
+- **人声配音 / 剧情旁白**：只有 BGM 与 SFX 两条轨，也不打算加人声。
 
 ---
 
@@ -352,6 +353,47 @@
 | R4 | 存档 v3→v4 迁移出错 | 老玩家丢进度 | 迁移只补默认值、幂等；坏档另存 `na.save.broken` 已有机制 |
 | R5 | 素材上量后包体膨胀 | 首屏变慢 | 批 8 拆图集 + PWA 缓存；单文件版只保留必需子集 |
 | R6 | 在线验证受带宽限制 | 线上证据不完整 | 本地 2× 采样为主证据，线上只验加载与无报错，并在文档如实标注 |
+| R7 | 全量包不入 git，音频/图集只有在本地才有 | 换机器后批 6/7 缺料 | `fetch-assets.sh` 先跑通并把音频转码产物提交；CI/新机器开局第一步就是它 |
+| R8 | 58 种怪规格统一但锚点不同 | 换怪出现悬空/陷地 | 每只新怪单独校 origin；在图集 JSON 里记 `oy` 偏移，不靠公式 |
+
+---
+
+## 11. 素材审计（2026-11-20 实测，逐批核对"够不够"）
+
+方法：直接 `ls` + PIL 读尺寸，数目录数与帧表规格，不看 README 的描述。结论逐批对应 §4。
+
+### 11.1 逐批判定
+
+| 批次 | 需要什么 | 实际有什么 | 判定 |
+|---|---|---|---|
+| 批 1 武器 | 6 把武器图标 + 手持帧；3 种弹体 | 23 个武器目录，每把 `Sprite.png` + `SpriteInHand.png`（5–16px）；弹体 Arrow 13×5、Kunai 14×5 单帧，Shuriken/Fireball/IceSpike/EnergyBall 为多帧条（32×16 ~ 144×10） | **够**。缺口：Bow 没有 `SpriteInHand`（只有 15×7 图标 + 13×5 箭）；所有武器只有**一个持握姿势**，没有挥动帧 → 挥动感必须靠 `slash` FX，不能靠武器动画 |
+| 批 2 房间 | 宝箱 / 钥匙 / 货架 / 篝火 / 小地图 | Treasure：BigTreasureChest 32×14、LittleTreasureChest 32×16、GoldKey/SilverKey 12×8、金币 4 种；Ui/Theme 12 张 `nine_path` 面板；**无货架、无篝火** | **部分够**。货架 = nine_path 面板 + 物品图标摆出来；篝火 = `FX/Particle/Fire.png` + `FX/Smoke`；小地图用 `Graphics` 画点阵，不需要素材 |
+| 批 3 天赋卡 | 卡片边框 + 稀有度色 + 图标 | Ui/Theme 12 张九宫格、Ui/Emote 20+ 表情、Scroll 6 种、Elemental 5 种（Flam/Ice/Plant/Rock/Thunder） | **够** |
+| 批 4 敌人 | 6 种新怪 + 精英标记 + 第二只 Boss | **58 种怪，全部 64×64 = 4×4 的 16px 表，规格完全统一**；每只还带 `Faceset.png` 38×38（可直接做图鉴/精英头像）；12 只 Boss 里 6 只有 `Attack/Charge` 帧，`GiantBlueSamurai` 最全（Attack L/R + Charge L/R + Hit + Idle + Walk） | **够**。限制：普通怪只有一张 4×4 表，**没有攻击/受击专属帧** → "吐网/俯冲/钻地"只能靠位移 + FX + 变色表达，不能靠新帧 |
+| 批 5 角色 | 3 个角色皮肤 + 技能特效 | **81 个角色目录，每个都有 Walk/Idle/Attack/Jump/Dead**；BlueNinja 另有 Special1/Special2 单帧；技能特效可用 FX/Magic 的 Spark(10 帧)/Circle/Aura/Shield | **够** |
+| 批 6 场景 | 第二套图集 + 光/雾/粒子 | 16 张图集（含 **TilesetDungeon**、FloorDetail、Water、Nature）+ Animated（Waterfall/QuickSand/Flag/Plant/Water Ripples）+ Particle（Fire/Rain/Snow/Grass/Spark/Wood）+ Smoke | **够**。缺口：**没有火把/灯笼的发光帧** → 伪光只能用 `Graphics` 径向渐变 + Particle/Fire 叠 `ADD` 混合 |
+| 批 7 大厅 | 大厅背景 + 宝石图标 + 图鉴框 | TilesetHouse / TilesetVillageAbandoned / Interior 可拼出大厅；Dialog 的 FacesetBox 做图鉴框；**`gem/diamond/crystal/star` 一个都没有** | **有缺口**：宝石图标必须自绘（12×12 点阵，代码里画或用 `SilverCup`/`Scroll` 顶替） |
+| 批 8 工程 | 无素材需求 | — | — |
+
+### 11.2 这次真正漏掉的东西：音频
+
+我们只入库了 2 首 BGM + 6 个音效，但全量包里躺着：
+
+- `Musics/`：**31 首 ogg，34 MB**（Adventure Begin / The Cave / Dark Castle / Temple / Mystical / Curse / Fight / Aquatic / Ascension / Dungeon / Dream / Road / Final Area / Lost Village / Chill…）
+- `Sounds/Game`：**47 个 wav**（Alert、Bonus、Explosion ×4、Fire ×3、Fireball ×2、GameOver ×2、Gold ×3、Hit ×7、Jump、Kill、Magic…）
+- `Sounds/Menu`：**15 个 wav**（Accept/cancel + Menu1–12）
+- 合计 5.4 MB，直接可用
+
+也就是说"商店/大厅/胜利/失败/洞穴/Boss"各有现成情绪曲，菜单点击音也齐 —— 之前的"只有 BGM 与 SFX"是**没用起来**，不是没有。
+
+代价：34 MB 不能全进 git/Pages。做法：按需转码，128 kbps 单声道每首约 1.2–1.8 MB，先选 4–5 首（大厅/商店/胜利/第 2 套地牢/Boss），总量控制在 7 MB 内；SFX 从 wav 转 mp3（单个 5–30 KB，可全收）。
+
+### 11.3 天花板与可复现性
+
+- **外部平台实测不可用**：`kenney.nl` 直连 403、`itch.io` 直连 000（本机与用户端都不通）。所以新素材不能指望外求，**天花板 = 这个包 + 代码自绘（几何/渐变/裁剪/染色）**。超出这个包风格的题材（科幻、机械、现代都市）直接不做。
+- **52 MB 全量包不入 git**（`.gitignore` 里的 `assets/00-raw/`），靠 `tools/fetch-assets.sh` 从转存仓库稀疏拉取。风险：如果 GitHub 不可达，clone 下来只有 8.2 MB 子集 —— **没有音乐库、没有全量图集**，批 6/7 会缺料。缓解见 R7。
+- **锚点不一致**：58 种怪虽然规格统一（64×64 / 16px 帧），但帧内留白不同（抽查 Slime 首帧 bbox 是 `(0,6,16,15)`，贴图偏下），直接换 `kind` 会出现"飘在空中/陷进地里"。**每只新怪都要单独校 origin/offset**，不能一次公式套全部。见 R8。
+
 
 ---
 
