@@ -41,5 +41,7 @@
 
 | 24 | 2026-11-20 22:10 | 素材策略修正 | 推翻"外部平台不可用"的旧结论：重测 `opengameart.org` 200 并实际下载 3 个文件（campfire 467 B / gems 202 KB / slash sheet 1.2 MB），`raw.githubusercontent.com` 200；四个真缺口逐个核对许可与风格（篝火采纳 CC0、宝石与刀光因风格不合不采纳）；新增 ADR 0013「素材优先」与 `ASSET-SOURCES §4.1` 候选表，ROADMAP §11.3 与 §4 同步 | `docs/decisions/0013-asset-first-sourcing.md`、`docs/ASSET-SOURCES.md` |
 
+| 25 | 2026-11-20 22:40 | 批 1 素材关 | 逐个量 22 个武器目录：19 把有 `SpriteInHand`，Bow/Bow2 只有 `Sprite`+`Arrow`（用横弓顶替手持，不画）；发现 `FX/SlashFx/` 7 套 32×32 斩击帧（Slash/SlashCurved/SlashDouble/SlashDoubleCurved/CircularSlash/Cut/Claw）可与武器一一配对，取代原计划的纯代码画弧；判定外部件 0、自绘 0；出两张 4× 对照图与 W-1~W-5 判据 | `docs/BATCH1-ASSETS.md`、`docs/screens/g1-weapons.png`、`g2-slashfx.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`
