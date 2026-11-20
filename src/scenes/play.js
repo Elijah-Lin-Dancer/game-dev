@@ -2,7 +2,7 @@
 import { CFG, FONT, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
 import { playAct, hitStop as fxHitStop, resumeStop } from '../systems/fx.js';
 import { makeDungeon } from '../systems/dungeon.js';
-import { setMood, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
+import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 
 const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
@@ -38,9 +38,12 @@ export class Play extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, RW, RH);
     this.cameras.main.setRoundPixels(true);
 
+    // 音效实例表：键必须与 build.mjs 的 sfx 表一致，少一个就会在调用点静默失败
     this.sfx = {};
-    ['sword', 'hit', 'hurt', 'kill', 'gameover', 'coin'].forEach((k) => {
-      this.sfx[k] = this.sound.add(k, { volume: k === 'gameover' ? 0.45 : 0.5 });
+    const SFX_KEYS = ['sword', 'hit', 'hurt', 'kill', 'gameover', 'coin', 'ui', 'bonus', 'boom', 'alarm'];
+    const SFX_VOL = { gameover: 0.45, boom: 0.55, alarm: 0.5, ui: 0.4, bonus: 0.5 };
+    SFX_KEYS.forEach((k) => {
+      this.sfx[k] = this.sound.add(k, { volume: SFX_VOL[k] || 0.5 });
     });
 
     this.player = this.add.sprite(RW / 2, RH / 2, 'walk', 0).setScale(2).setDepth(500);
@@ -73,6 +76,8 @@ export class Play extends Phaser.Scene {
         exit: (dir) => this.tryExit(dir, true),
         tp: (x, y) => this.player.setPosition(x, y),
         music: () => musicState(),
+        playMood: (m, once) => { setMood(m, { loop: !once }); return musicState(); },
+        sfxTest: (n) => { const a = this.sfx[n]; if (!a) return 'missing:' + n; a.play(); return 'ok:' + n; },
         save: () => loadSave(),
         die: () => this.gameOver(),
         win: () => this.win(),
@@ -479,6 +484,7 @@ export class Play extends Phaser.Scene {
     const bw = Math.min(380, W - 32), bh = 190;
     const top = H / 2 - bh / 2;
     this.panelOpen = true;
+    this.sfx.ui.play({ rate: 1.0, volume: 0.8 });
 
     const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.4)
       .setOrigin(0).setScrollFactor(0).setDepth(864);
@@ -549,7 +555,7 @@ export class Play extends Phaser.Scene {
     this.upg[k] += 1;
     this.floatText(this.player.x, this.player.y - 24, UPG_NAME[k] + ' +1', '#ffd479');
     playAct(this, 'upgrade', this.player.x, this.player.y - 10);
-    this.sfx.coin.play({ rate: 1.5 });
+    this.sfx.bonus.play({ volume: 0.85 });
     if (k === 'power') this.hp = Math.min(CFG.maxHp, this.hp);
   }
 
@@ -637,6 +643,7 @@ export class Play extends Phaser.Scene {
       e.phase = 'roar';
       e.phaseT = B2.roarMs;
       playAct(this, 'roar', s.x, s.y);
+      this.sfx.alarm.play({ volume: 0.8 });
       this.sfx.hurt.play({ rate: 0.4, volume: 0.5 });
       this.floatText(s.x, s.y - 26, '狂暴', '#ff8a7a');
       if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
@@ -735,7 +742,7 @@ export class Play extends Phaser.Scene {
   /* 砸地落点：只判定一次，预警圈消失，落点范围内的玩家吃伤害并被推开 */
   slamImpact(e) {
     const B2 = CFG.boss2;
-    this.sfx.kill.play({ rate: 0.5, volume: 0.55 });
+    this.sfx.boom.play({ volume: 0.9 });
     playAct(this, 'slam', e.spr.x, e.spr.y);
     if (e.ring) { e.ring.destroy(); e.ring = null; }
     if (this.dead || this.won) return;
@@ -983,6 +990,7 @@ export class Play extends Phaser.Scene {
 
   gameOver() {
     this.dead = true;
+    stopMusic();
     this.commitRun(false);
     this.sfx.gameover.play();
     this.player.setAlpha(0.7);
@@ -993,6 +1001,7 @@ export class Play extends Phaser.Scene {
   win() {
     if (this.won) return;
     this.won = true;
+    setMood('victory', { loop: false });
     this.commitRun(true);
     this.showOverlay('通关',
       '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 剩 ' + this.hp + ' 血');
@@ -1274,7 +1283,7 @@ export class Play extends Phaser.Scene {
           this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
         } else if (it.kind === 'upg') {
           this.upg[it.up] += 1;
-          this.sfx.coin.play({ rate: 1.6 });
+          this.sfx.bonus.play({ rate: 1.15, volume: 0.8 });
           this.floatText(this.player.x, this.player.y - 22, UPG_NAME[it.up] + ' +1', '#ffd479');
         } else {
           this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);

@@ -29,19 +29,32 @@ function stopCurrent() {
   playing = null;
 }
 
-/* mood: 'dungeon' | 'fight'；同曲已在播就什么都不做 */
-export function setMood(mood) {
+/* mood: 'dungeon' | 'fight' | 'cave' | 'shop' | 'lobby' | 'victory'
+ * 同曲已在播就什么都不做；opts.loop=false 用于胜利这种"播一遍就停"的一次性曲 */
+export function setMood(mood, opts) {
   if (!mood) return;
+  const loop = !(opts && opts.loop === false);
   want = mood;
-  if (playing && playing.dataset && playing.dataset.mood === mood) return;
+  if (playing && playing.dataset && playing.dataset.mood === mood) {
+    playing.loop = loop;
+    return;
+  }
   if (!unlocked) { el(mood); return; }   // 先把文件拉起来，等解锁再响
   const a = el(mood);
   if (!a) return;
   stopCurrent();
   a.dataset.mood = mood;
+  a.loop = loop;
+  a.currentTime = 0;
   const pr = a.play();
   if (pr && pr.catch) pr.catch(() => {});
   playing = a;
+}
+
+/* 停掉当前 BGM（死亡/通关遮罩时用，别让战斗曲在结算界面上继续响） */
+export function stopMusic() {
+  want = null;
+  stopCurrent();
 }
 
 /* 第一次真实输入时调用；返回是否真的开始了播放 */
@@ -70,6 +83,8 @@ export function musicState() {
     want, unlocked, muted,
     playing: playing ? playing.dataset.mood : null,
     paused: playing ? playing.paused : null,
+    loop: playing ? playing.loop : null,
+    dur: playing ? Math.round(playing.duration * 10) / 10 : null,
     loaded: Object.keys(cache).map((k) => [k, cache[k].readyState]),
   };
 }

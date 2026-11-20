@@ -44,15 +44,28 @@ const FRAME = {
   upgPower: [16, 16], upgSpeed: [16, 16], upgAtk: [16, 16],
   villager: [16, 16], villager2: [16, 16], statue: [16, 16],
 };
-const SFX_DIR = join(ROOT, 'web/audio');
-const MUSIC = { dungeon: './web/audio/music/dungeon.mp3', fight: './web/audio/music/fight.mp3' };
+const SFX_DIR = join(ROOT, 'web/audio/sfx');
+/* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
+const MUSIC = {
+  dungeon: './web/audio/music/dungeon.mp3',
+  fight: './web/audio/music/fight.mp3',
+  lobby: './web/audio/music/lobby.mp3',
+  shop: './web/audio/music/shop.mp3',
+  victory: './web/audio/music/victory.mp3',
+  cave: './web/audio/music/cave.mp3',
+};
+/* 音效 base64 内联：单个 2–20 KB，换来"开口即响"没有额外请求 */
 const sfx = {
-  sword: join(SFX_DIR, 'Sword.mp3'),
-  hit: join(SFX_DIR, 'Hit.mp3'),
-  hurt: join(SFX_DIR, 'MiniImpact.mp3'),
-  kill: join(SFX_DIR, 'Kill.mp3'),
-  gameover: join(SFX_DIR, 'GameOver.mp3'),
-  coin: join(SFX_DIR, 'Coin.mp3'),
+  sword: join(SFX_DIR, 'sword.mp3'),
+  hit: join(SFX_DIR, 'hit.mp3'),
+  hurt: join(SFX_DIR, 'hurt.mp3'),
+  kill: join(SFX_DIR, 'kill.mp3'),
+  gameover: join(SFX_DIR, 'gameover.mp3'),
+  coin: join(SFX_DIR, 'coin.mp3'),
+  ui: join(SFX_DIR, 'ui.mp3'),
+  bonus: join(SFX_DIR, 'bonus.mp3'),
+  boom: join(SFX_DIR, 'boom.mp3'),
+  alarm: join(SFX_DIR, 'alarm.mp3'),
 };
 
 const b64 = (p, mime) => `data:${mime};base64,${readFileSync(p).toString('base64')}`;
@@ -157,7 +170,9 @@ let singleSize = 0;
 if (single) {
   const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
     balanceUrl: './data/balance.json', gameData: BALANCE,
-    music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3' }, sfx: {} };
+    music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3',
+      lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
+      victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
   const singleHtml = `${head('Ninja Adventure · 单文件版', b64(FONT_OUT, 'font/woff2'))}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
@@ -175,4 +190,6 @@ console.log(`  字体           ${kb(FONT_SIZE)}  → web/fonts/game.woff2（Nin
 console.log(`  图集           ${kb(statSync(join(ROOT, 'web/atlas/core.png')).size)}  → web/atlas/core.png（${Object.keys(PACK_META.sheets).length} 张切片）`);
 console.log(`  素材数据       ${kb(statSync(join(ROOT, 'dist', assetsName)).size)}  → dist/${assetsName}`);
 console.log(`  游戏逻辑       ${kb(statSync(join(ROOT, 'dist', gameName)).size)}  → dist/${gameName}`);
+const audioSize = Object.keys(MUSIC).reduce((n, k) => n + statSync(join(ROOT, MUSIC[k].replace('./', ''))).size, 0);
+console.log(`  音乐(懒加载)   ${(audioSize / 1048576).toFixed(2)} MB  → ${Object.keys(MUSIC).length} 首 mood（不进 assets.js）`);
 if (single) console.log(`  单文件自测     ${kb(singleSize)}  → web/game.html`);
