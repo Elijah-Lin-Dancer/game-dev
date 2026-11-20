@@ -23,5 +23,7 @@
 
 | 15 | 2026-11-19 23:40 | B 步手感修复 | Boss 四态预警（蓄力期贴脸 0 伤害、冲撞单次 −3）、小怪卡住侧滑、镜头朝向前瞻 ±17px、HUD 提示自适应；发现并修正前瞻符号写反 | `docs/decisions/0007-enemy-telegraph.md`、`docs/PLAYTEST-3.md` |
 
+| 16 | 2026-11-20 10:20 | 资源管线落地 | 8 张切片打成 1024×240 图集（13.4 KB，1 请求），运行期 canvas 还原 spritesheet 帧号不变；音乐改 HTMLAudio 流式，普通房 dungeon / Boss 房 fight 自动切换，首次输入前不响；M 静音；单文件版双击可玩 | `docs/decisions/0008-asset-pipeline.md`、`web/atlas/core.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

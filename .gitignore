@@ -1,3 +1,4 @@
 node_modules/
 # 原始全量素材包（52 MB，只留本地）
 assets/00-raw/
+build/

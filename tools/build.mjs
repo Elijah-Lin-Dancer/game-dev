@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, statSy
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSET = join(ROOT, 'assets/01-primary/NinjaAdventure');
@@ -25,7 +26,13 @@ const img = {
   coin: join(ASSET, 'Items/Treasure/Coin2.png'),
   boss: join(ASSET, 'Actor/Boss/GiantFrog/Idle40x40.png'),
 };
+/* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
+const FRAME = {
+  walk: [16, 16], idle: [16, 16], field: [16, 16], beast: [16, 16],
+  slash: [32, 32], heart: [16, 16], boss: [40, 40], coin: [10, 10],
+};
 const SFX_DIR = join(ROOT, 'web/audio');
+const MUSIC = { dungeon: './web/audio/music/dungeon.mp3', fight: './web/audio/music/fight.mp3' };
 const sfx = {
   sword: join(SFX_DIR, 'Sword.mp3'),
   hit: join(SFX_DIR, 'Hit.mp3'),
@@ -37,9 +44,26 @@ const sfx = {
 
 const b64 = (p, mime) => `data:${mime};base64,${readFileSync(p).toString('base64')}`;
 
-function assetsJs() {
-  const out = {};
-  for (const [k, p] of Object.entries(img)) out[k] = b64(p, 'image/png');
+/* ---------- 图集打包：多张切片 → 一张 PNG + 区域清单 ---------- */
+mkdirSync(join(ROOT, 'build'), { recursive: true });
+mkdirSync(join(ROOT, 'web/atlas'), { recursive: true });
+const manifest = { atlasWidth: 1024, sheets: {} };
+for (const [k, p] of Object.entries(img)) manifest.sheets[k] = { path: p, fw: FRAME[k][0], fh: FRAME[k][1] };
+writeFileSync(join(ROOT, 'build/atlas-input.json'), JSON.stringify(manifest));
+const packed = spawnSync('python3', [
+  join(ROOT, 'tools/pack_atlas.py'),
+  join(ROOT, 'build/atlas-input.json'),
+  join(ROOT, 'web/atlas/core.png'),
+  join(ROOT, 'web/atlas/core.json'),
+], { encoding: 'utf8' });
+if (packed.status !== 0) {
+  console.error('图集打包失败：\n' + (packed.stderr || packed.error));
+  process.exit(1);
+}
+const PACK_META = JSON.parse(readFileSync(join(ROOT, 'web/atlas/core.json'), 'utf8'));
+
+function assetsJs(packUrl) {
+  const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -65,7 +89,7 @@ const bundled = await build({
   logLevel: 'warning',
 });
 const code = bundled.outputFiles[0].text;
-const assetsCode = assetsJs();
+const assetsCode = assetsJs('./web/atlas/core.png');
 
 const gameName = `game.${sha(code)}.js`;
 const assetsName = `assets.${sha(assetsCode)}.js`;
@@ -102,10 +126,10 @@ writeFileSync(join(ROOT, 'index.html'), pagesHtml);
 
 let singleSize = 0;
 if (single) {
-  const singleHtml = `${head('Ninja Adventure · 单文件版')}<script>window.ASSET_DATA = ${JSON.stringify(
-    (() => { const out = {}; for (const [k, p] of Object.entries(img)) out[k] = b64(p, 'image/png');
-      out.sfx = {}; for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg'); return out; })()
-  )};</script>
+  const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
+    music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3' }, sfx: {} };
+  for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
+  const singleHtml = `${head('Ninja Adventure · 单文件版')}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
 <script>${code}</script>
 </body>
@@ -117,6 +141,7 @@ if (single) {
 
 console.log(`已生成 index.html`);
 console.log(`  引擎(单独缓存) ${kb(statSync(join(ROOT, 'web/vendor/phaser.min.js')).size)}  → web/vendor/phaser.min.js`);
-console.log(`  素材包         ${kb(statSync(join(ROOT, 'dist', assetsName)).size)}  → dist/${assetsName}`);
+console.log(`  图集           ${kb(statSync(join(ROOT, 'web/atlas/core.png')).size)}  → web/atlas/core.png（${Object.keys(PACK_META.sheets).length} 张切片）`);
+console.log(`  素材数据       ${kb(statSync(join(ROOT, 'dist', assetsName)).size)}  → dist/${assetsName}`);
 console.log(`  游戏逻辑       ${kb(statSync(join(ROOT, 'dist', gameName)).size)}  → dist/${gameName}`);
 if (single) console.log(`  单文件自测     ${kb(singleSize)}  → web/game.html`);

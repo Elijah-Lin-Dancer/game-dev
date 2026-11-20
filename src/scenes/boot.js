@@ -5,18 +5,27 @@ export class Boot extends Phaser.Scene {
 
   preload() {
     const A = window.ASSET_DATA;
-    this.load.spritesheet('walk', A.walk, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('idle', A.idle, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('field', A.field, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('beast', A.beast, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('slash', A.slash, { frameWidth: 32, frameHeight: 32 });
-    this.load.spritesheet('heart', A.heart, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('boss', A.boss, { frameWidth: 40, frameHeight: 40 });
-    this.load.spritesheet('coin', A.coin, { frameWidth: 10, frameHeight: 10 });
+    // 一次请求拿整张图集，切片在 create 里按区域还原成原来的 spritesheet
+    this.load.image('__pack', A.pack);
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
+  /* 图集 → 与原素材一一对应的 spritesheet，帧号语义不变 */
+  unpackAtlas(meta) {
+    const src = this.textures.get('__pack').getSourceImage();
+    for (const [key, r] of Object.entries(meta.sheets)) {
+      const cv = document.createElement('canvas');
+      cv.width = r.w; cv.height = r.h;
+      const ctx = cv.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(src, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      this.textures.addSpriteSheet(key, cv, { frameWidth: r.fw, frameHeight: r.fh });
+    }
+    this.textures.remove('__pack');
+  }
+
   create() {
+    this.unpackAtlas(window.ASSET_DATA.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
       this.anims.create({
         key: 'walk-' + dir,

@@ -1,6 +1,7 @@
 /* 主场景：移动 / 战斗 / 房间 / 门 / 掉落 / Boss / HUD */
 import { CFG, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
 import { makeDungeon } from '../systems/dungeon.js';
+import { setMood, toggleMute, isMuted, unlockMusic, musicState } from '../systems/music.js';
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
 
@@ -43,6 +44,7 @@ export class Play extends Phaser.Scene {
     this.enterRoom(this.dungeon.start, null);
 
     this.buildHud();
+    setMood(this.room.isBoss ? 'fight' : 'dungeon');
     this.bindInput();
 
     if (location.search.indexOf('debug') >= 0) {
@@ -52,6 +54,7 @@ export class Play extends Phaser.Scene {
         hp: (v) => { this.hp = v; },
         exit: (dir) => this.tryExit(dir, true),
         tp: (x, y) => this.player.setPosition(x, y),
+        music: () => musicState(),
       };
     }
   }
@@ -73,6 +76,7 @@ export class Play extends Phaser.Scene {
     this.doorLocks = {};
     this.walls = new Set();
 
+    setMood(room.isBoss ? 'fight' : 'dungeon');
     this.entry = fromDir ? OPPOSITE[fromDir] : null;
     this.paintFloorAndWalls(room);
     this.spawnRoomEnemies(room);
@@ -492,7 +496,7 @@ export class Play extends Phaser.Scene {
       fontFamily: 'ui-monospace, monospace', fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
     }).setScrollFactor(0).setDepth(800);
-    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 挥砍 · 清怪开门 · Boss 红身=蓄力，退远点', {
+    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力', {
       fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
@@ -516,6 +520,17 @@ export class Play extends Phaser.Scene {
     this.input.keyboard.on('keydown-J', () => this.attack());
     this.input.keyboard.on('keydown-K', () => this.attack());
     this.input.keyboard.on('keydown-R', () => { if (this.dead || this.won) this.restart(); });
+    this.input.keyboard.on('keydown-M', () => {
+      toggleMute();
+      this.updateHud();
+    });
+    const unlockOnce = () => {
+      unlockMusic();
+      this.input.keyboard.off('keydown', unlockOnce);
+      this.input.off('pointerdown', unlockOnce);
+    };
+    this.input.keyboard.on('keydown', unlockOnce);
+    this.input.on('pointerdown', unlockOnce);
 
     this.ring = this.add.graphics().setScrollFactor(0).setDepth(700);
     this.input.on('pointerdown', (p) => {
@@ -705,6 +720,8 @@ export class Play extends Phaser.Scene {
   }
 
   updateHud() {
+    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 挥砍' : 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力';
+    if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
       h.setFrame(Math.max(0, Math.min(4, this.hp - i * 4)));
     });
