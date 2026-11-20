@@ -39,5 +39,7 @@
 
 | 23 | 2026-11-20 21:40 | 音频线 + R7 补齐 | `tools/encode_audio.sh`（BGM 80k/44.1k、SFX 64k/22.05k）转出 6 首 BGM 3.11 MB + 10 个 SFX 51.6 KB，`web/audio` 重构为 `music/` + `sfx/`；`build.mjs` MUSIC/SFX 表扩到 6/10，单文件版 music key 同步；`music.js` 支持多 mood + `stopMusic` + 一次性曲；`play.js` 接 ui/bonus/boom/alarm 四个挂点与 victory/gameOver 音乐切换；自测抓出「sfx 实例表硬编码 6 键导致新音效 missing」并修复，10/10 音效 + 6/6 mood 运行时通过；新建 `docs/AUDIO.md`，ROADMAP 基线/R7/§11.2 同步 | `docs/AUDIO.md`、`tools/encode_audio.sh` |
 
+| 24 | 2026-11-20 22:10 | 素材策略修正 | 推翻"外部平台不可用"的旧结论：重测 `opengameart.org` 200 并实际下载 3 个文件（campfire 467 B / gems 202 KB / slash sheet 1.2 MB），`raw.githubusercontent.com` 200；四个真缺口逐个核对许可与风格（篝火采纳 CC0、宝石与刀光因风格不合不采纳）；新增 ADR 0013「素材优先」与 `ASSET-SOURCES §4.1` 候选表，ROADMAP §11.3 与 §4 同步 | `docs/decisions/0013-asset-first-sourcing.md`、`docs/ASSET-SOURCES.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

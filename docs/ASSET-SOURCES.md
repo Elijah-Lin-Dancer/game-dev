@@ -50,6 +50,19 @@
 | [Quaternius](https://quaternius.com) / [KayKit](https://kaylousberg.itch.io/) | 低多边形 3D，80+ 主题包，glTF / FBX / OBJ | **CC0** | 仅做 3D 时 |
 | [爱给网](https://www.aigei.com/) | 中文站，有 CC 协议专区 | 混有搬运内容，**逐件核来源** | 应急找中文 UI / 图标，风险自担 |
 
+### 3.1 实测可达性（2026-11-20，本机实测）
+
+之前只试了两个站点就下了"外部平台不可用"的结论，样本太小。重测结果：
+
+| 站点 | 实测 | 备注 |
+|---|---|---|
+| `opengameart.org` | **200，能直连下文件**（已实际下载 `campfire_16x16.png` 467 B、`gems.zip` 202 KB、`Small Sheet.png` 1.2 MB） | 主力外部源 |
+| `kenney.nl` | 403（Cloudflare/地区拦截） | 站点不通 ≠ 素材拿不到，见下方镜像思路 |
+| `itch.io`、`*.itch.io` | 000（连接被拒） | 同上 |
+| `raw.githubusercontent.com` / `codeload.github.com` | **200** | 所以 GitHub 上的素材镜像一律可用（Ninja Adventure 本身就是这么拉下来的） |
+
+结论修正：**外部不是"不可用"，是"不可靠"** —— 主站被拦，但镜像与社区站可达。做题策略应该是"先找现成，再看风格匹配"，而不是"直接自绘"。
+
 ---
 
 ## 4. 按资源类型补齐
@@ -64,6 +77,24 @@
 | **UI 套件** | Kenney 的 UI / Input / Puzzle 系列 | CC0，带 PNG + SVG + XML |
 
 已失效：**FreePD 于 2025 年关站**，旧链接与教程仍在流传，不要再用。
+
+### 4.1 本项目四个真缺口的具体候选（已逐个打开核对许可）
+
+| 缺口 | 候选（OpenGameArt） | 许可 | 实测 | 风格判定 |
+|---|---|---|---|---|
+| 篝火 / 火堆 | [16x16 Animated Campfire](https://opengameart.org/content/16x16-animated-campfire)（krial） | **CC0** | 已下载，64×16 = 4 帧 16×16，467 B | **可直接用**：平涂、暖色、有底座，与 Ninja Adventure 同一档像素 |
+| 宝石 / 水晶图标 | [Gem Jewel Diamond Glass](https://opengameart.org/content/gem-jewel-diamond-glass)（Osmic）、[Basic Gems Icon Set - Remix](https://opengameart.org/content/basic-gems-icon-set-remix)（prdatur） | CC BY 3.0（要署名） | 已下载预览：64×64，带高光渐变 | **不合**：是手游图标风，缩到 12×12 会糊成一团。优先用包内 `Items/Elemental` 的 Flam/Ice/Plant/Rock/Thunder 顶替，仍不够再自绘 |
+| 武器挥动帧 | [Slash Effect Collection](https://opengameart.org/content/slash-effect-collection)（MetaShinryu）、[Weapon Slash - Effect](https://opengameart.org/content/weapon-slash-effect) | **CC0** | 已下载 Small Sheet：1600×1200 四档尺寸 | **半合**：是发光刀光（非像素），直接缩到 360 宽会糊；但可当"参考曲线"，而且现有代码 FX 已经够用 → 暂不引入 |
+| 火把 / 灯笼光 | [DENZI's public domain art](https://opengameart.org/content/denzis-public-domain-art)（DENZI） | **CC0** | 页面核对通过（32 个文件） | **待验**：DENZI 偏精细；当前用 `Graphics` 径向渐变 + `Particle/Fire` 叠 ADD，视觉效果已成立 → 保持现状 |
+| 货架 / 桶 / 箱 | [Objects for 16x16 tilesets](https://opengameart.org/content/objects-for-16x16-tilesets) | CC BY 3.0 + GPL 双协议（**只取 CC BY，不取 GPL**） | 页面核对通过（11 个文件） | **待验**：需逐件看是否 16×16 平涂；可用 nine_path 面板 + 包内图标拼，暂不引入 |
+
+判定口径（写死，避免以后又拍脑袋）：
+
+1. **能直接用** = 16×16 平涂、调色板接近、轮廓有描边 → 采纳。
+2. **半合** = 尺寸/风格不对但姿态或曲线可参考 → 只用参考，不采纳文件。
+3. **不合** = 高光渐变、64px 手游图标风 → 不采纳，走包内替代或自绘。
+
+**自绘的合法边界**：只有"包内没有 + 外部找不到合风格的"才自绘，且必须记进 `docs/decisions/`；目前的合资格案例只有宝石图标与"光晕半径随进度变化"这类**动态**效果（素材是固定帧，做不到跟着数值缩放）。
 
 ---
 
