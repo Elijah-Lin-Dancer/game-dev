@@ -33,5 +33,7 @@
 
 | 20 | 2026-11-20 16:30 | 表现力线落地 | 字体：Fusion Pixel 12px → 构建期子集 3911 字 / 129.8 KB，改名 NinjaPixel，先 load 后建 Phaser；特效：act 时间轴 8 套（hit/kill/hurt/slam/roar/pickup/upgrade），十字星+环+碎片+压扁；顿帧 42/78/95/130/190，震屏 4 档；顿帧只冻动画不冻特效补间；小怪受击白色剪影 | `docs/decisions/0012-feel-and-font.md`、`src/systems/fx.js`、`tools/subset_font.py` |
 
+| 21 | 2026-11-20 17:10 | 扩展方案文书 | 新增 `docs/ROADMAP.md`：现状基线（含素材实数清点：24 武器 / 81 角色皮 / 58 怪 / 12 Boss / 16 图集）、5 条简陋根因、四维打分排序、8 批改动清单（文件级）+ 验收判据 + 风险登记 + 硬指标；未开工批次不改代码 | `docs/ROADMAP.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`
