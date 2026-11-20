@@ -11,6 +11,7 @@ export class Boot extends Phaser.Scene {
     this.load.json('__balance', A.balanceUrl);   // 外部数值：失败就用构建期内嵌副本
     this.load.json('__story', A.storyUrl);       // 对话与事件文本，同样有内嵌兜底
     this.load.json('__weapons', A.weaponsUrl);   // 武器表，同样有内嵌兜底
+    this.load.json('__talents', A.talentsUrl);   // 天赋表，同样有内嵌兜底
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
@@ -34,6 +35,7 @@ export class Boot extends Phaser.Scene {
     const applied = applyBalance(ext || A.gameData);
     window.__storyData = this.cache.json.get('__story') || A.storyData;
     window.__weaponsData = this.cache.json.get('__weapons') || A.weaponsData;
+    window.__talentsData = this.cache.json.get('__talents') || A.talentsData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {

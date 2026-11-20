@@ -5,6 +5,7 @@ import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
+import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -25,7 +26,9 @@ export class Play extends Phaser.Scene {
     this.talking = false;
     this.panelOpen = false;
     this.props = [];
-    this.hp = CFG.maxHp;
+    // maxHp() 依赖 mods，先放一份零修正，天赋表在下面读完再覆盖
+    this.mods = mergeMods(normalizeTalents(null), []);
+    this.hp = this.maxHp();
     this.kills = 0;
     this.coins = 0;
     this.dead = false;
@@ -61,6 +64,12 @@ export class Play extends Phaser.Scene {
     this.bolts = [];          // 玩家射出的弹（会伤害敌人）
     this.W = normalizeWeapons(window.__weaponsData);
     this.weapon = this.W.byId[this.W.global.startWeapon];
+    // 天赋：本局三选一，重开清零；与 upg 分开算（flat 先、mul 后）
+    this.T = normalizeTalents(window.__talentsData);
+    this.talents = [];
+    this.mods = mergeMods(this.T, this.talents);
+    this.roomsEntered = 0;
+    this.talentOpen = false;
     this.hand = this.add.image(0, 0, this.weapon.inhand || this.weapon.icon).setScale(2).setDepth(519);
     const legacy = Math.min(3, Math.max(0, (this.cycle - 1) * CFG.cycle.legacyPower));
     this.upg = { power: legacy, speed: 0, atk: 0 };
@@ -111,7 +120,7 @@ export class Play extends Phaser.Scene {
         bolts: () => this.bolts.map((b) => [Math.round(b.spr.x), Math.round(b.spr.y), b.pierce]),
         props: () => this.props.map((p) => ({ k: p.kind, t: p.type, x: Math.round(p.spr.x), y: Math.round(p.spr.y), used: p.used })),
         dlg: () => (this.dlg ? { i: this.dlg.i, n: this.dlg.lines.length, line: this.dlg.lines[this.dlg.i], done: !this.dlg.timer } : null),
-        panel: () => (this.panel ? { type: this.panel.prop.type, opts: this.panel.options.map((o) => o.label) } : null),
+        panel: () => (this.panel ? { type: (this.panel.prop && this.panel.prop.type) || (this.panel.cards ? 'talent' : '?'), opts: this.panel.options.map((o) => o.label) } : null),
         advance: () => this.dlgAdvance(),
         chooseIdx: (i) => this.choose(i),
         toProp: (i) => { const p = this.props[i]; if (p) this.player.setPosition(p.spr.x, p.spr.y + 30); },
@@ -143,6 +152,23 @@ export class Play extends Phaser.Scene {
           return { i: r.idx, x, y, t: r.type, seen: !!r.built };
         }),
         roomType: () => this.room.type || 'battle',
+        // 批 3：层间天赋
+        talents: () => ({ ids: this.talents.slice(), mods: Object.assign({}, this.mods),
+          maxHp: this.maxHp(), dmg: this.dmg(), cd: Math.round(this.atkCd()), spd: Math.round(this.moveSpeed()) }),
+        talentPool: (depth) => rollTalents(this.T, this.talents, depth || this.room.idx + 1, 3)
+          .map((t) => [t.id, t.rarity]),
+        openTalent: () => { this.offerTalent(); return !!this.panel; },
+        pick: (i) => { this.pickTalent(i); return this.talents.slice(); },
+        talentList: () => this.T.list.map((t) => [t.id, t.rarity]),
+        addTalent: (id) => {
+          if (!this.T.byId[id] || this.talents.indexOf(id) >= 0) return this.talents.slice();
+          this.talents.push(id);
+          this.mods = mergeMods(this.T, this.talents);
+          this.hp = Math.min(this.hp, this.maxHp());
+          this.rebuildHearts();
+          this.updateHud();
+          return this.talents.slice();
+        },
         // 按房型直接跳（截图/验收用）：jumpType('shop')
         jumpType: (t) => {
           const r = [...this.dungeon.rooms.values()].find((x) => x.type === t);
@@ -216,6 +242,16 @@ export class Play extends Phaser.Scene {
     this.refreshDoorLocks();
     this.drawMinimap();
     this.trackRoom(room);
+
+    // 层间天赋：每进 2 间给一次三选一；进房回血的天赋在这里生效
+    this.roomsEntered = (this.roomsEntered || 0) + 1;
+    if (this.roomsEntered > 1 && this.mods.healOnRoom) {
+      this.hp = Math.min(this.maxHp(), this.hp + this.mods.healOnRoom);
+      this.floatText(this.player.x, this.player.y - 30, '+' + this.mods.healOnRoom + ' HP', '#9be27a');
+    }
+    if (this.roomsEntered > 1 && this.roomsEntered % 2 === 0 && !room.isBoss) {
+      this.time.delayedCall(240, () => this.offerTalent());
+    }
     const RD = (this.story.rooms || {})[t] || {};
     if (RD.name && room.idx > 0) this.floatText(this.player.x, this.player.y - 46, RD.name, '#ffe9b0');
   }
@@ -763,9 +799,84 @@ export class Play extends Phaser.Scene {
   }
 
   heal(n) {
-    this.hp = Math.min(CFG.maxHp, this.hp + n);
+    this.hp = Math.min(this.maxHp(), this.hp + n);
     this.floatText(this.player.x, this.player.y - 26, '+' + n + ' HP', '#9be27a');
     this.sfx.bonus.play({ rate: 0.9, volume: 0.75 });
+    this.updateHud();
+  }
+
+  /* ---------- 层间天赋 ---------- */
+  offerTalent() {
+    if (this.talentOpen || this.dead || this.won) return;
+    if (this.panelOpen || this.talking) return;   // 面板/对话占着就先跳过，下次二选一再给
+    const cards = rollTalents(this.T, this.talents, this.room.idx + 1, 3);
+    if (!cards.length) return;
+    this.talentOpen = true;
+    this.showTalentPanel(cards);
+  }
+
+  /* 三张卡：稀有度描边 + 名字 + 代价说明，点卡或按 1-3 */
+  showTalentPanel(cards) {
+    const W = S.W, H = S.H;
+    const cw = 108, gap = 10, ch = 116;
+    const total = cards.length * cw + (cards.length - 1) * gap;
+    const left = W / 2 - total / 2;
+    const cy = H / 2 + 8;
+    this.panelOpen = true;
+    this.sfx.ui.play({ rate: 1.0, volume: 0.8 });
+
+    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.55)
+      .setOrigin(0).setScrollFactor(0).setDepth(864);
+    const bg = this.add.rectangle(W / 2, H / 2, total + 40, ch + 96, 0x0d1017, 0.96)
+      .setScrollFactor(0).setDepth(870).setStrokeStyle(1, 0xffffff, 0.22);
+    const title = this.add.text(W / 2, H / 2 - (ch + 96) / 2 + 12, '天赋 · 选一张带到底', {
+      fontFamily: FONT, fontSize: '24px', color: '#ffd479',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(871);
+
+    const ui = [dim, bg, title];
+    const options = [];
+    cards.forEach((t, i) => {
+      const cx = left + i * (cw + gap) + cw / 2;
+      const stroke = parseInt(t.color.slice(1), 16);
+      const rect = this.add.rectangle(cx, cy, cw, ch, 0x141a12, 0.95)
+        .setScrollFactor(0).setDepth(872).setStrokeStyle(2, stroke, 0.95)
+        .setInteractive({ useHandCursor: true });
+      rect.on('pointerdown', () => this.pickTalent(i));
+      const name = this.add.text(cx, cy - ch / 2 + 10, t.name, {
+        fontFamily: FONT, fontSize: '14px', color: t.color,
+      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873);
+      const rar = this.add.text(cx, cy - ch / 2 + 30, RARITY_NAME[t.rarity] || '', {
+        fontFamily: FONT, fontSize: '12px', color: t.color,
+      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873).setAlpha(0.8);
+      const desc = this.add.text(cx, cy - ch / 2 + 48, t.desc, {
+        fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
+        wordWrap: { width: cw - 14 }, align: 'center',
+      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873);
+      const num = this.add.text(cx, cy + ch / 2 - 18, String(i + 1), {
+        fontFamily: FONT, fontSize: '12px', color: '#ffffff88',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(873);
+      ui.push(rect, name, rar, desc, num);
+      options.push({ label: t.name, act: () => this.pickTalent(i) });
+    });
+
+    this.panel = { dim, bg, title, rows: ui, options, cards, hotkeys: [] };
+    ['ONE', 'TWO', 'THREE'].forEach((k, i) => {
+      if (cards[i]) this.panel.hotkeys.push(this.input.keyboard.on('keydown-' + k, () => this.pickTalent(i)));
+    });
+  }
+
+  pickTalent(i) {
+    const t = this.panel && this.panel.cards && this.panel.cards[i];
+    if (!t) return;
+    this.talents.push(t.id);
+    this.mods = mergeMods(this.T, this.talents);
+    this.hp = Math.min(this.hp, this.maxHp());
+    this.rebuildHearts();
+    this.talentOpen = false;
+    this.sfx.bonus.play({ volume: 0.9 });
+    playAct(this, 'upgrade', this.player.x, this.player.y - 8);
+    this.floatText(this.player.x, this.player.y - 34, t.name, t.color);
+    this.closePanel();
     this.updateHud();
   }
 
@@ -786,6 +897,7 @@ export class Play extends Phaser.Scene {
     pnl.rows.forEach((r) => r.destroy());
     ['dim', 'bg', 'title', 'text'].forEach((k) => pnl[k] && pnl[k].destroy());
     (pnl.hotkeys || []).forEach((h) => h && h.remove && h.remove());
+    if (pnl.cards) this.talentOpen = false;
     this.panel = null;
     this.panelOpen = false;
   }
@@ -795,7 +907,7 @@ export class Play extends Phaser.Scene {
     this.floatText(this.player.x, this.player.y - 24, UPG_NAME[k] + ' +1', '#ffd479');
     playAct(this, 'upgrade', this.player.x, this.player.y - 10);
     this.sfx.bonus.play({ volume: 0.85 });
-    if (k === 'power') this.hp = Math.min(CFG.maxHp, this.hp);
+    if (k === 'power') this.hp = Math.min(this.maxHp(), this.hp);
   }
 
   buy(cost, effect) {
@@ -1246,9 +1358,16 @@ export class Play extends Phaser.Scene {
   }
 
   /* 强化：翻倍吃到就叠层，直接改伤害/攻速/移速 */
-  atkCd() { return Math.max(CFG.atkCd * CFG.upgrades.minAtkMul, CFG.atkCd * (1 - CFG.upgrades.atkStep * this.upg.atk)); }
-  dmg() { return CFG.playerDmg + CFG.upgrades.powerStep * this.upg.power; }
-  moveSpeed() { return 96 * (1 + CFG.upgrades.speedStep * this.upg.speed); }
+  maxHp() { return Math.max(1, CFG.maxHp + this.mods.maxHp); }
+  atkCd() {
+    const base = Math.max(CFG.atkCd * CFG.upgrades.minAtkMul, CFG.atkCd * (1 - CFG.upgrades.atkStep * this.upg.atk));
+    return Math.max(120, base * (1 + this.mods.atkCd));
+  }
+  dmg() {
+    const flat = CFG.playerDmg + CFG.upgrades.powerStep * this.upg.power + this.mods.atk;
+    return Math.max(1, Math.round(flat * this.mods.dmgMul));
+  }
+  moveSpeed() { return 96 * Math.max(0.4, 1 + CFG.upgrades.speedStep * this.upg.speed + this.mods.speed); }
 
   rollUpgrade() {
     const pool = ['power', 'speed', 'atk', 'power', 'speed'];
@@ -1258,6 +1377,10 @@ export class Play extends Phaser.Scene {
   killEnemy(e) {
     e.hp = 0;
     this.kills += 1;
+    if (this.mods.healOnKill) {
+      this.hp = Math.min(this.maxHp(), this.hp + this.mods.healOnKill);
+      this.floatText(e.spr.x, e.spr.y - 18, '+' + this.mods.healOnKill + ' HP', '#9be27a');
+    }
     this.sfx.kill.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
     playAct(this, 'kill', e.spr.x, e.spr.y - 4);
     const isBoss = e.type === 'boss';
@@ -1299,7 +1422,7 @@ export class Play extends Phaser.Scene {
     } else {
       if (Math.random() < CFG.coinChance) this.dropItem(spot.x, spot.y, 'coin');
       if (Math.random() < CFG.heartChance) this.dropItem(spot.x + 12, spot.y, 'heart');
-      if (Math.random() < this.W.global.dropChance) {
+      if (Math.random() < this.W.global.dropChance + this.mods.dropLuck) {
         const w = rollWeapon(this.W, this.weapon.id);
         if (w) this.dropItem(spot.x - 14, spot.y, 'weapon', null, w.id);
       }
@@ -1353,7 +1476,8 @@ export class Play extends Phaser.Scene {
     // 冷却按时钟算，不按帧累积：掉帧时也不会被连击打穿
     if (this.time.now - this.lastHurtAt < CFG.iFrame) return;
     this.lastHurtAt = this.time.now;
-    this.hp = Math.max(0, this.hp - dmg);
+    const taken = Math.max(1, Math.round(dmg * this.mods.takenMul));
+    this.hp = Math.max(0, this.hp - taken);
     this.iframe = CFG.iFrame;
     this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
     playAct(this, 'hurt', this.player.x, this.player.y);
@@ -1438,11 +1562,7 @@ export class Play extends Phaser.Scene {
 
   /* ---------- HUD 与输入 ---------- */
   buildHud() {
-    this.hearts = [];
-    for (let i = 0; i < 5; i++) {
-      this.hearts.push(this.add.image(10 + i * 18, 10, 'heart', 4)
-        .setScrollFactor(0).setOrigin(0).setScale(1.1).setDepth(800));
-    }
+    this.rebuildHearts();
     this.info = this.add.text(8, 34, '', {
       fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
@@ -1475,6 +1595,17 @@ export class Play extends Phaser.Scene {
       this.hint.setPosition(10, gs.height - 20);
       this.fitHint();
     });
+  }
+
+  /* 心数跟着血量上限走：上限 17 是 5 颗（最后一颗半格），上限 24 是 6 颗 */
+  rebuildHearts() {
+    if (this.hearts) this.hearts.forEach((h) => h.destroy());
+    this.hearts = [];
+    const n = Math.max(1, Math.ceil(this.maxHp() / 4));
+    for (let i = 0; i < n; i++) {
+      this.hearts.push(this.add.image(10 + i * 18, 10, 'heart', 4)
+        .setScrollFactor(0).setOrigin(0).setScale(1.1).setDepth(800));
+    }
   }
 
   /* 窄屏时把提示条等比缩进去，别被裁掉 */
@@ -1664,7 +1795,11 @@ export class Play extends Phaser.Scene {
       if (Phaser.Math.Distance.Between(it.spr.x, it.spr.y, this.player.x, this.player.y) < 22
         && !this.dead && !this.won) {
         if (it.kind === 'coin') {
-          this.coins += 1;
+          // 金币倍率可能是 0.5，不能直接四舍五入（0.5 会变成 1，等于没减），攒够整数再结算
+          this.coinAcc = (this.coinAcc || 0) + Math.max(0, (1 + this.mods.coinBonus) * this.mods.coinMul);
+          const whole = Math.floor(this.coinAcc);
+          this.coinAcc -= whole;
+          this.coins += whole;
           playAct(this, 'pickup', it.spr.x, it.spr.y);
           this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
         } else if (it.kind === 'upg') {
@@ -1690,7 +1825,7 @@ export class Play extends Phaser.Scene {
           playAct(this, 'pickup', it.spr.x, it.spr.y);
           this.floatText(this.player.x, this.player.y - 22, '钥匙 +1', '#ffd479');
         } else {
-          this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);
+          this.hp = Math.min(this.maxHp(), this.hp + CFG.healAmount);
           this.sfx.coin.play({ rate: 0.8 });
         }
         it.spr.destroy();
@@ -1753,11 +1888,13 @@ export class Play extends Phaser.Scene {
     const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击' : 'WASD 移动 · 空格 攻击 · 拾取武器自动换装 · M 静音';
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
-      h.setFrame(Math.max(0, Math.min(4, this.hp - i * 4)));
+      const left = Math.max(0, Math.min(4, Math.min(this.hp, this.maxHp()) - i * 4));
+      h.setFrame(left);
+      h.setVisible(this.maxHp() - i * 4 > 0);
     });
     this.info.setText(
       '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
-      + ' · 金币 ' + this.coins + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + CFG.maxHp
+      + ' · 金币 ' + this.coins + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
     );
 
     // 精英光环跟着走，怪物死了就藏起来（sprite 由清尸循环销毁）
@@ -1783,6 +1920,7 @@ export class Play extends Phaser.Scene {
     window.__state = {
       hp: this.hp, kills: this.kills, coins: this.coins, weapon: this.weapon.id,
       room: this.roomKey, roomType: this.room.type || 'battle', keys: this.keyCount,
+      talents: this.talents.slice(), maxHp: this.maxHp(),
       roomIdx: this.room.idx + 1, total: this.roomTotal,
       cleared: this.room.cleared, isBoss: this.room.isBoss,
       doors: Object.keys(this.room.doors), entry: this.entry,

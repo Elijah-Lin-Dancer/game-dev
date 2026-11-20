@@ -47,5 +47,7 @@
 
 | 27 | 2026-11-20 18:55 | 批 2 房间编排 | `dungeon.js` 新增 `assignTypes()`：6 类房权重 55/12/10/10/8/5，首间 battle、末间 boss、精英≤1、非战斗不连续、有宝箱无钥匙源时强制补精英；`play.js` 按房型生成（elite=放大 2.5×/血×2.4/橙色圆环，treasure=红宝箱+2 守卫，shop=商人+3 货，shrine=石龛，rest=篝火 3×，非战斗房直接开门）；`keyCount` 钥匙 + 0 钥匙拒开 + 精英必掉 + 商店 5 金币；通用 `showPanel` 面板；`drawMinimap()` 3×3 按房型上色；`story.json` 加 `rooms` 与三条交互提示；`save.js` 加 `roomsSeen`；图集 36→40 切片。验收 R-1~R-8 全过（10 局 dump、非战斗 20.4%、全流程通关、无 pageerror） | `docs/BATCH2-ASSETS.md`、`docs/ACCEPTANCE.md`、`assets/01-primary/external/campfire-16x16.png` |
 
+| 28 | 2026-11-20 19:40 | 批 3 层间天赋 | `web/data/talents.json` 14 张（普通6/稀有5/史诗3）；`src/systems/talents.js` 白名单归一化 + 深度加权抽卡（60/30/10，每深一间 −6/+2/+6，已选不进池，全普通保底换一张稀有）+ 修正合并；`play.js` 每 2 间弹三列卡片（点卡/1–3 键），上限、伤害、攻速、移速、受伤、金币小数累加、击杀回血、进房回血全部接入；心数随上限重算（17→4 格半、24→6 颗）；新增 `__dbg.talents/talentPool/openTalent/pick/addTalent`。验收 T-1~T-9 全过（狂战 17/5、深度稀有度 91/75/14→73/58/49、5 间通关无报错） | `docs/BATCH3-TALENTS.md`、`docs/ACCEPTANCE.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

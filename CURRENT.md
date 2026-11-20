@@ -2,9 +2,10 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 2 房间编排完成（6 类房型 / 钥匙-宝箱 / 商店 / 篝火 / 精英光环 / 3×3 小地图）。下一步批 3 层间天赋（`docs/ROADMAP.md §5`）。
+当前段：批 3 层间天赋完成（14 张天赋 / 每 2 间三选一 / 与 upg 分乘区 / 心数随上限）。下一步批 4 敌人与 Boss 扩展（`docs/ROADMAP.md §6`）。
 
 已完成：
+- 批 3 层间天赋：`web/data/talents.json` 14 张（6/5/3 档）、`src/systems/talents.js`（归一化/深度加权抽卡/修正合并）、`play.js` 三列卡片 UI（点卡或 1–3）、上限/伤害/攻速/移速/受伤/金币/击杀与进房回血接入、动态心数；验收 T-1~T-9 全过（`docs/BATCH3-TALENTS.md`）
 - 批 2 房间编排：`dungeon.js` 加 `assignTypes()`（55/12/10/10/8/5 + 精英≤1/非战斗不连续/钥匙断供保护）；`play.js` 按房型生成敌人与道具、`spawnShop/spawnChest/spawnRest`、通用 `showPanel`、`keyCount` 钥匙、精英 `makeElite()`+橙色圆环、`drawMinimap()`；`story.json` 加 `rooms` 文案与三条交互提示；`save.js` 加 `roomsSeen`；图集 40 切片；调试口 `roomTypes/jumpType/keys/shopStock/use/tex`。验收 R-1~R-8 全过（`docs/BATCH2-ASSETS.md §5`）
 - 批 1 武器系统（ADR 0014）：`web/data/weapons.json` 6 把（刀/巨剑/锤/弓/杖/苦无）、`attack()` 拆 melee/ranged/throw、`this.bolts` 玩家弹体、掉落换装（旧武器留地可取回）、HUD 武器行
 - 音频线（`docs/AUDIO.md`）：`tools/encode_audio.sh` 转 6 首 BGM（3.11 MB，懒加载）+ 10 个 SFX（51.6 KB，内联），按 mood 切换、`loop:false` 一次性胜利曲、死亡停乐、M 静音入档
@@ -24,8 +25,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 3 层间天赋**（`docs/ROADMAP.md §5`）：每层结束三选一，跨局保留
-- 批 4 敌人与 Boss / 批 5–8（顺位见 ROADMAP §3）
+- **批 4 敌人与 Boss 扩展**（`docs/ROADMAP.md §6`）：精英词缀、第二种 Boss、怪的攻击帧（用现有 58 怪资源）
+- 批 5–8（顺位见 ROADMAP §3）
 - 精英怪词缀 / 第二种 Boss
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
