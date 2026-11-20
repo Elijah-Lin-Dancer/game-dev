@@ -1,0 +1,127 @@
+{
+  "global": {
+    "dropChance": 0.07,
+    "bossExtra": 1,
+    "startWeapon": "katana",
+    "swapKeepOld": true
+  },
+  "list": [
+    {
+      "id": "katana",
+      "name": "忍者刀",
+      "kind": "melee",
+      "icon": "wKatana",
+      "inhand": "hKatana",
+      "dmgMul": 1.0,
+      "cd": 280,
+      "reach": 30,
+      "box": [
+        34,
+        30
+      ],
+      "knock": 120,
+      "fx": "slA",
+      "fxScale": 1.9,
+      "sfx": "sword"
+    },
+    {
+      "id": "bigsword",
+      "name": "巨剑",
+      "kind": "melee",
+      "icon": "wBigSword",
+      "inhand": "hBigSword",
+      "dmgMul": 2.0,
+      "cd": 480,
+      "reach": 38,
+      "box": [
+        46,
+        36
+      ],
+      "knock": 170,
+      "fx": "slB",
+      "fxScale": 1.9,
+      "heavy": 1,
+      "sfx": "sword"
+    },
+    {
+      "id": "hammer",
+      "name": "战锤",
+      "kind": "melee",
+      "icon": "wHammer",
+      "inhand": "hHammer",
+      "dmgMul": 2.8,
+      "cd": 720,
+      "reach": 32,
+      "box": [
+        42,
+        42
+      ],
+      "knock": 210,
+      "fx": "slC",
+      "fxScale": 2.0,
+      "heavy": 2,
+      "sfx": "sword"
+    },
+    {
+      "id": "bow",
+      "name": "短弓",
+      "kind": "ranged",
+      "icon": "wBow",
+      "inhand": null,
+      "dmgMul": 1.2,
+      "cd": 460,
+      "reach": 0,
+      "box": [
+        0,
+        0
+      ],
+      "knock": 60,
+      "proj": "arrow",
+      "projSpeed": 300,
+      "projLife": 700,
+      "pierce": 0,
+      "sfx": "sword"
+    },
+    {
+      "id": "wand",
+      "name": "魔杖",
+      "kind": "ranged",
+      "icon": "wWand",
+      "inhand": "hWand",
+      "dmgMul": 1.5,
+      "cd": 600,
+      "reach": 0,
+      "box": [
+        0,
+        0
+      ],
+      "knock": 40,
+      "proj": "fireball",
+      "projSpeed": 210,
+      "projLife": 900,
+      "projAnim": "fireball-play",
+      "pierce": 0,
+      "sfx": "magic"
+    },
+    {
+      "id": "kunai",
+      "name": "苦无",
+      "kind": "throw",
+      "icon": "wKunai",
+      "inhand": "hKunai",
+      "dmgMul": 1.1,
+      "cd": 400,
+      "reach": 0,
+      "box": [
+        0,
+        0
+      ],
+      "knock": 80,
+      "proj": "kunaiProj",
+      "projSpeed": 330,
+      "projLife": 650,
+      "pierce": 2,
+      "sfx": "sword"
+    }
+  ]
+}

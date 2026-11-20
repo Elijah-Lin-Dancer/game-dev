@@ -54,6 +54,7 @@ sfx "Menu/Accept.wav"      ui
 sfx "Game/Bonus.wav"       bonus
 sfx "Game/Explosion3.wav"  boom
 sfx "Game/Alert.wav"       alarm
+sfx "Game/Magic1.wav"      magic
 
 echo
 echo "产物："

@@ -25,6 +25,7 @@
 | `docs/ACCEPTANCE.md` | 验收标准（草案，未冻结） |
 | `docs/ROADMAP.md` | 后续扩展方案（8 批顺位 + 素材审计） |
 | `docs/AUDIO.md` | 音频清单 / 源→产物映射 / 转码参数 / 播放策略 |
+| `web/data/weapons.json` | 武器表（6 把，数值与表现全在这里；改数字不用改代码） |
 | `assets/` | 素材落地目录；`00-raw` 放原始包与包内 LICENSE，不入 git |
 | `assets/CREDITS.md` | 逐件素材登记表 |
 | `tools/fetch-assets.sh` | 拉取可 clone 的 CC0 素材仓库 |
@@ -93,6 +94,22 @@ bash tools/check-credits.sh
 ```
 
 `web/vendor/phaser.min.js` 为本地第三方依赖，已入库以保证离线可复现。
+
+## 武器
+
+6 把武器，三系：
+
+| 系 | 武器 | 手感 |
+|---|---|---|
+| 近战 | 忍者刀（快）、巨剑（重）、战锤（最重，补一档震屏） | 各自的斩击帧 + 矩形判定，击退与挥动幅度按重量分档 |
+| 远程 | 短弓（箭 300px/s）、魔杖（火球 210px/s，带飞行帧） | 玩家弹体独立表（`this.bolts`），撞墙消失，逐个命中 |
+| 投掷 | 苦无（330px/s，pierce 2） | 可穿三个目标，实测一穿二 |
+
+- 数值全在 `web/data/weapons.json`，`src/systems/weapons.js` 只做白名单归一化；坏字段退回内置默认
+- 伤害 = `playerDmg × dmgMul` + 力量强化；冷却 = `w.cd × (1 - atkStep × 攻速强化)`
+- 掉落即换装，旧武器掉在脚下（700ms 内不会被自己捡回去），取回可换回去
+- 每把武器的斩击帧来自包内 `FX/SlashFx/`（刀 Slash / 剑 SlashDoubleCurved / 锤 CircularSlash / 杖 SlashCurved），没有自绘特效
+- 加新武器：JSON 加一条 + 图集加图标/手持两张，不改战斗代码
 
 ## 字体
 

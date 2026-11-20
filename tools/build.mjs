@@ -35,6 +35,25 @@ const img = {
   villager: join(ASSET, 'Actor/Characters/Villager/SeparateAnim/Walk.png'),
   villager2: join(ASSET, 'Actor/Characters/Villager2/SeparateAnim/Walk.png'),
   statue: join(ASSET, 'Actor/Characters/Statue/SeparateAnim/Idle.png'),
+  /* 批 1 武器：6 张图标 + 5 张手持（弓没有手持帧，用图标顶）+ 4 套斩击 + 3 种弹体 */
+  wKatana: join(ASSET, 'Items/Weapons/Katana/Sprite.png'),
+  wBigSword: join(ASSET, 'Items/Weapons/BigSword/Sprite.png'),
+  wHammer: join(ASSET, 'Items/Weapons/Hammer/Sprite.png'),
+  wBow: join(ASSET, 'Items/Weapons/Bow/Sprite.png'),
+  wWand: join(ASSET, 'Items/Weapons/MagicWand/Sprite.png'),
+  wKunai: join(ASSET, 'Items/Weapons/Ninjaku/Sprite.png'),
+  hKatana: join(ASSET, 'Items/Weapons/Katana/SpriteInHand.png'),
+  hBigSword: join(ASSET, 'Items/Weapons/BigSword/SpriteInHand.png'),
+  hHammer: join(ASSET, 'Items/Weapons/Hammer/SpriteInHand.png'),
+  hWand: join(ASSET, 'Items/Weapons/MagicWand/SpriteInHand.png'),
+  hKunai: join(ASSET, 'Items/Weapons/Ninjaku/SpriteInHand.png'),
+  slA: join(ASSET, 'FX/SlashFx/Slash/SpriteSheet.png'),
+  slB: join(ASSET, 'FX/SlashFx/SlashDoubleCurved/SpriteSheet.png'),
+  slC: join(ASSET, 'FX/SlashFx/CircularSlash/SpriteSheet.png'),
+  slD: join(ASSET, 'FX/SlashFx/Cut/SpriteSheet.png'),
+  arrow: join(ASSET, 'FX/Projectile/Arrow.png'),
+  kunaiProj: join(ASSET, 'FX/Projectile/Kunai.png'),
+  fireball: join(ASSET, 'FX/Projectile/Fireball.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -43,6 +62,10 @@ const FRAME = {
   cyclope: [16, 16], eye: [16, 16], larva: [16, 16], ball: [16, 16],
   upgPower: [16, 16], upgSpeed: [16, 16], upgAtk: [16, 16],
   villager: [16, 16], villager2: [16, 16], statue: [16, 16],
+  wKatana: [6, 14], wBigSword: [7, 16], wHammer: [9, 16], wBow: [15, 7], wWand: [5, 18], wKunai: [7, 12],
+  hKatana: [6, 10], hBigSword: [7, 12], hHammer: [9, 9], hWand: [5, 10], hKunai: [3, 12],
+  slA: [32, 32], slB: [32, 32], slC: [32, 32], slD: [32, 32],
+  arrow: [13, 5], kunaiProj: [14, 5], fireball: [16, 16],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
@@ -66,6 +89,7 @@ const sfx = {
   bonus: join(SFX_DIR, 'bonus.mp3'),
   boom: join(SFX_DIR, 'boom.mp3'),
   alarm: join(SFX_DIR, 'alarm.mp3'),
+  magic: join(SFX_DIR, 'magic.mp3'),
 };
 
 const b64 = (p, mime) => `data:${mime};base64,${readFileSync(p).toString('base64')}`;
@@ -101,10 +125,12 @@ const FONT_SIZE = statSync(FONT_OUT).size;
 const BALANCE_FILE = join(ROOT, 'web/data/balance.json');
 const BALANCE = JSON.parse(readFileSync(BALANCE_FILE, 'utf8'));
 const STORY = JSON.parse(readFileSync(join(ROOT, 'web/data/story.json'), 'utf8'));
+const WEAPONS = JSON.parse(readFileSync(join(ROOT, 'web/data/weapons.json'), 'utf8'));
 
 function assetsJs(packUrl, dataUrl) {
   const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
-    balanceUrl: dataUrl, gameData: BALANCE, storyData: STORY, storyUrl: dataUrl.replace('balance', 'story') };
+    balanceUrl: dataUrl, gameData: BALANCE, storyData: STORY, storyUrl: dataUrl.replace('balance', 'story'),
+    weaponsUrl: dataUrl.replace('balance', 'weapons'), weaponsData: WEAPONS };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -169,7 +195,7 @@ writeFileSync(join(ROOT, 'index.html'), pagesHtml);
 let singleSize = 0;
 if (single) {
   const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
-    balanceUrl: './data/balance.json', gameData: BALANCE,
+    balanceUrl: './data/balance.json', gameData: BALANCE, weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3',
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };

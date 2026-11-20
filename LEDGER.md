@@ -43,5 +43,7 @@
 
 | 25 | 2026-11-20 22:40 | 批 1 素材关 | 逐个量 22 个武器目录：19 把有 `SpriteInHand`，Bow/Bow2 只有 `Sprite`+`Arrow`（用横弓顶替手持，不画）；发现 `FX/SlashFx/` 7 套 32×32 斩击帧（Slash/SlashCurved/SlashDouble/SlashDoubleCurved/CircularSlash/Cut/Claw）可与武器一一配对，取代原计划的纯代码画弧；判定外部件 0、自绘 0；出两张 4× 对照图与 W-1~W-5 判据 | `docs/BATCH1-ASSETS.md`、`docs/screens/g1-weapons.png`、`g2-slashfx.png` |
 
+| 26 | 2026-11-20 23:20 | 批 1 武器系统 | `web/data/weapons.json` 6 把 + `src/systems/weapons.js` 归一化；`attack()` 拆 melee/ranged/throw，玩家弹体独立 `this.bolts`（pierce/墙碰撞/逐目标命中）；掉落换装带 700ms 锁；HUD 武器行；图集 18→36 切片 30 KB；实测 6 把数据、苦无一穿二、换装往返；截图 w1–w4 | `docs/decisions/0014-weapons.md` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

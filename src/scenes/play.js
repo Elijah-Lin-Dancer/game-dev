@@ -4,6 +4,7 @@ import { playAct, hitStop as fxHitStop, resumeStop } from '../systems/fx.js';
 import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
+import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 
 const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
 const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
@@ -40,8 +41,8 @@ export class Play extends Phaser.Scene {
 
     // 音效实例表：键必须与 build.mjs 的 sfx 表一致，少一个就会在调用点静默失败
     this.sfx = {};
-    const SFX_KEYS = ['sword', 'hit', 'hurt', 'kill', 'gameover', 'coin', 'ui', 'bonus', 'boom', 'alarm'];
-    const SFX_VOL = { gameover: 0.45, boom: 0.55, alarm: 0.5, ui: 0.4, bonus: 0.5 };
+    const SFX_KEYS = ['sword', 'hit', 'hurt', 'kill', 'gameover', 'coin', 'ui', 'bonus', 'boom', 'alarm', 'magic'];
+    const SFX_VOL = { gameover: 0.45, boom: 0.55, alarm: 0.5, ui: 0.4, bonus: 0.5, magic: 0.45 };
     SFX_KEYS.forEach((k) => {
       this.sfx[k] = this.sound.add(k, { volume: SFX_VOL[k] || 0.5 });
     });
@@ -52,7 +53,11 @@ export class Play extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, CFG.camLerp, CFG.camLerp);
 
     this.enemies = [];
-    this.shots = [];
+    this.shots = [];          // 敌人射出的弹（会伤害玩家）
+    this.bolts = [];          // 玩家射出的弹（会伤害敌人）
+    this.W = normalizeWeapons(window.__weaponsData);
+    this.weapon = this.W.byId[this.W.global.startWeapon];
+    this.hand = this.add.image(0, 0, this.weapon.inhand || this.weapon.icon).setScale(2).setDepth(519);
     const legacy = Math.min(3, Math.max(0, (this.cycle - 1) * CFG.cycle.legacyPower));
     this.upg = { power: legacy, speed: 0, atk: 0 };
     this.drops = [];
@@ -90,7 +95,14 @@ export class Play extends Phaser.Scene {
         shotPos: () => this.shots.map((b) => [Math.round(b.spr.x), Math.round(b.spr.y)]),
         upgGive: (k, n) => { this.upg[k] += (n || 1); },
         atk: () => this.attack(),
-        stats: () => ({ dmg: this.dmg(), cd: Math.round(this.atkCd()), spd: Math.round(this.moveSpeed()) }),
+        // 截图用：出招后 ms 毫秒把场景冻住，保证每次抓到的都是同一帧
+        atkHold: (ms) => { this.attack(); this.time.delayedCall(ms || 80, () => this.scene.pause()); },
+        resume: () => this.scene.resume(),
+        stats: () => ({ dmg: this.wdmg(), cd: Math.round(this.wcd()), spd: Math.round(this.moveSpeed()), w: this.weapon.id }),
+        weapon: () => ({ id: this.weapon.id, name: this.weapon.name, kind: this.weapon.kind, dmg: this.wdmg(), cd: Math.round(this.wcd()) }),
+        give: (id) => { this.equipWeapon(id, true); return this.weapon.id; },
+        dropW: (id) => this.dropItem(this.player.x + 22, this.player.y + 8, 'weapon', null, id || 'bigsword'),
+        bolts: () => this.bolts.map((b) => [Math.round(b.spr.x), Math.round(b.spr.y), b.pierce]),
         props: () => this.props.map((p) => ({ k: p.kind, t: p.type, x: Math.round(p.spr.x), y: Math.round(p.spr.y), used: p.used })),
         dlg: () => (this.dlg ? { i: this.dlg.i, n: this.dlg.lines.length, line: this.dlg.lines[this.dlg.i], done: !this.dlg.timer } : null),
         panel: () => (this.panel ? { type: this.panel.prop.type, opts: this.panel.options.map((o) => o.label) } : null),
@@ -129,7 +141,7 @@ export class Play extends Phaser.Scene {
     const room = this.dungeon.rooms.get(key);
     // 离开上一间时，把它没捡的掉落记在房间上，回来还在
     if (this.room && this.drops) {
-      this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY }));
+      this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY, up: d.up, id: d.id }));
       this.drops.forEach((d) => d.spr.destroy());
     }
     this.room = room;
@@ -150,7 +162,7 @@ export class Play extends Phaser.Scene {
     this.paintFloorAndWalls(room);
     this.spawnRoomEnemies(room);
     this.spawnRoomProps(room);
-    (room.dropState || []).forEach((d) => this.dropItem(d.x, d.y, d.kind));
+    (room.dropState || []).forEach((d) => this.dropItem(d.x, d.y, d.kind, d.up, d.id));
 
     // 从哪个门进来，就落在对面的门口
     if (fromDir) {
@@ -581,54 +593,166 @@ export class Play extends Phaser.Scene {
   }
 
   /* ---------- 战斗 ---------- */
+  /* ---------- 武器与攻击（批 1） ----------
+   * 近战：按武器的斩击帧 + 矩形判定；远程/投掷：生成 this.bolts 里的弹体。
+   * 三系差异全部来自 web/data/weapons.json，这一段不写死任何一把武器。 */
   attack() {
     if (this.talking || this.panelOpen) return;
-    if (this.dead || this.won || this.time.now - this.atkAt < this.atkCd()) return;
+    if (this.dead || this.won) return;
+    if (this.time.now - this.atkAt < this.wcd()) return;
     this.atkAt = this.time.now;
-    this.sfx.sword.play({ rate: Phaser.Math.FloatBetween(0.95, 1.08) });
-
+    const w = this.weapon;
     const v = VEC[this.facing];
-    const fx = this.add.sprite(
-      this.player.x + v[0] * 18, this.player.y + v[1] * 16, 'slash'
-    ).setDepth(600).setRotation(ANGLE[this.facing] + Math.PI / 4).setScale(2.2);
-    fx.play('slash-play');
+    const s = this.sfx[w.sfx] || this.sfx.sword;
+    s.play({ rate: Phaser.Math.FloatBetween(0.95, 1.08), volume: 0.5 });
+    if (w.kind === 'melee') this.attackMelee(w, v);
+    else this.attackRanged(w, v);
+    this.swingHand(w);
+  }
+
+  /* 攻速强化对武器冷却同样生效，但每把武器有自己的基准节奏 */
+  wcd() {
+    const base = this.weapon.cd;
+    return Math.max(base * CFG.upgrades.minAtkMul, base * (1 - CFG.upgrades.atkStep * this.upg.atk));
+  }
+
+  /* 伤害 = 角色基础 × 武器倍率（乘区 1） + 力量强化（乘区 2） */
+  wdmg() {
+    return Math.round(CFG.playerDmg * this.weapon.dmgMul + CFG.upgrades.powerStep * this.upg.power);
+  }
+
+  attackMelee(w, v) {
+    // 斩击帧直接套在人物身上（只往前偏 8px）：32×32 的弧在 2.x 倍下会扩到 70px，
+    // 挂太远会"脱手"，观感像特效在人物外面独立播放
+    const rot = ANGLE[this.facing] + (w.fx === 'slC' ? 0 : Math.PI / 4);
+    const fx = this.add.sprite(this.player.x + v[0] * 12, this.player.y + v[1] * 9, w.fx)
+      .setDepth(600).setRotation(rot).setScale(w.fxScale);
+    fx.play(w.fx + '-play');
     this.tweens.add({
-      targets: fx, scale: 2.9, duration: 210, ease: 'Quad.easeOut',
+      targets: fx, scale: w.fxScale + 0.45, duration: 200, ease: 'Quad.easeOut',
       onComplete: () => fx.destroy(),
     });
 
+    // 挥动时向前顶半步 + 压扁：重武器的顶得更远、压得更狠
+    const push = w.hitHeavy >= 2 ? 6 : (w.hitHeavy ? 5 : 4);
     this.tweens.add({
       targets: this.player,
-      x: this.player.x + v[0] * 4, y: this.player.y + v[1] * 4,
+      x: this.player.x + v[0] * push, y: this.player.y + v[1] * push,
       duration: 90, yoyo: true, ease: 'Quad.easeOut',
     });
-    this.tweens.add({ targets: this.player, scaleX: 2.3, scaleY: 1.75, duration: 70, yoyo: true });
+    const sq = w.hitHeavy >= 2 ? [2.05, 1.9] : (w.hitHeavy ? [2.3, 1.8] : [2.35, 1.75]);
+    this.tweens.add({ targets: this.player, scaleX: sq[0], scaleY: sq[1], duration: 70, yoyo: true });
 
-    const cx = this.player.x + v[0] * CFG.atkReach;
-    const cy = this.player.y + v[1] * CFG.atkReach;
-    const hw = CFG.atkBox[0] / 2, hh = CFG.atkBox[1] / 2;
-    let hitAny = false, firstHit = null;
+    const cx = this.player.x + v[0] * w.reach;
+    const cy = this.player.y + v[1] * w.reach;
+    const hw = w.box[0] / 2, hh = w.box[1] / 2;
+    const dmg = this.wdmg();
+    let firstHit = null;
 
     this.enemies.forEach((e) => {
       if (e.hp <= 0) return;
       if (Math.abs(e.spr.x - cx) > hw + e.half || Math.abs(e.spr.y - cy) > hh + e.half) return;
-      hitAny = true;
       if (!firstHit) firstHit = e;
-      e.hp -= this.dmg();
-      e.flash = 70;
-      e.kb.set(v[0] * (e.type === 'boss' ? 40 : 120), v[1] * (e.type === 'boss' ? 40 : 120));
-      // 受击反馈：小怪直接打成白色剪影（像素游戏里最"脆"的反馈），
-      // Boss 有自己的阶段染色，用半透明代替，免得把变色覆盖掉
-      if (e.type === 'boss') e.spr.setAlpha(0.45);
-      else e.spr.setTintFill(0xffffff);
-      if (e.hp <= 0) this.killEnemy(e);
+      this.damageFoe(e, dmg, v[0] * w.knock, v[1] * w.knock);
     });
 
-    if (hitAny) {
+    if (firstHit) {
       this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(0.9, 1.12) });
-      // 顿帧 + 震屏 + 火花 + 碎片 + 目标压扁，全部由 ACTS.hit 这张表驱动
-      playAct(this, 'hit', cx, cy, { target: firstHit ? firstHit.spr : null });
+      playAct(this, 'hit', cx, cy, { target: firstHit.spr });
+      // 重武器额外补一档震屏：锤子砸下来要能"听见"
+      if (w.hitHeavy >= 2) this.cameras.main.shake(CFG.feel.shakeHeavyMs, CFG.feel.shakeHeavyMag);
+      else if (w.hitHeavy) this.cameras.main.shake(CFG.feel.shakeHitMs, CFG.feel.shakeHitMag);
     }
+  }
+
+  attackRanged(w, v) {
+    // 远程有一个极小的后坐：玩家往后缩 2px，表示"发出去的是东西"
+    this.tweens.add({
+      targets: this.player, x: this.player.x - v[0] * 2, y: this.player.y - v[1] * 2,
+      duration: 80, yoyo: true, ease: 'Quad.easeOut',
+    });
+    const spr = this.add.sprite(this.player.x + v[0] * 14, this.player.y + v[1] * 12, w.proj, 0)
+      .setDepth(610).setScale(w.proj === 'fireball' ? 2 : 2.2);
+    if (w.projAnim) spr.play(w.projAnim);
+    else spr.setRotation(Math.atan2(v[1], v[0]));
+    this.bolts.push({
+      spr, vx: v[0] * w.projSpeed, vy: v[1] * w.projSpeed,
+      life: w.projLife, dmg: this.wdmg(), pierce: w.pierce, knock: w.knock, hits: [],
+    });
+    playAct(this, 'pickup', spr.x, spr.y);
+  }
+
+  /* 玩家弹体：飞行 → 撞墙消失 → 逐个命中，pierce 允许多穿几个目标 */
+  updateBolts(dt) {
+    for (let i = this.bolts.length - 1; i >= 0; i--) {
+      const b = this.bolts[i];
+      b.life -= dt;
+      b.spr.x += b.vx * (dt / 1000);
+      b.spr.y += b.vy * (dt / 1000);
+      if (b.life <= 0 || this.isWall(b.spr.x, b.spr.y, 3)) {
+        b.spr.destroy();
+        this.bolts.splice(i, 1);
+        continue;
+      }
+      let spent = false;
+      for (const e of this.enemies) {
+        if (e.hp <= 0 || b.hits.indexOf(e) >= 0) continue;
+        if (Phaser.Math.Distance.Between(b.spr.x, b.spr.y, e.spr.x, e.spr.y) > 10 + e.half) continue;
+        b.hits.push(e);
+        const n = Math.hypot(b.vx, b.vy) || 1;
+        this.damageFoe(e, b.dmg, (b.vx / n) * b.knock, (b.vy / n) * b.knock);
+        playAct(this, 'hit', b.spr.x, b.spr.y, { target: e.spr });
+        this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(1.05, 1.2), volume: 0.45 });
+        if (b.pierce > 0) b.pierce -= 1;
+        else spent = true;
+        break;
+      }
+      if (spent) { b.spr.destroy(); this.bolts.splice(i, 1); }
+    }
+  }
+
+  /* 统一的"打到怪"：扣血、白闪、击退、死亡判定都在这里，武器只提供数值 */
+  damageFoe(e, dmg, kx, ky) {
+    e.hp -= dmg;
+    e.flash = 70;
+    e.kb.set(kx, ky);
+    if (e.type === 'boss') e.spr.setAlpha(0.45);
+    else e.spr.setTintFill(0xffffff);
+    if (e.hp <= 0) this.killEnemy(e);
+  }
+
+  /* 换武器：图标、手持贴图、HUD 一起换；旧武器由调用方决定要不要掉回地上 */
+  equipWeapon(id, silent) {
+    const w = this.W.byId[id];
+    if (!w) return;
+    this.weapon = w;
+    this.hand.setTexture(w.inhand || w.icon);
+    if (this.weaponIcon) this.weaponIcon.setTexture(w.icon);
+    if (this.weaponName) this.weaponName.setText(w.name);
+    if (!silent) this.floatText(this.player.x, this.player.y - 28, w.name, '#ffe9a8');
+  }
+
+  /* 手持武器只在出手瞬间出现：素材里每把武器只有"举着"的静态姿势，
+     常驻挂在手边会像肩上插了把剑；挥动时露 240ms，配合斩击帧反而更像挥砍 */
+  updateHand() {
+    const p = this.player;
+    const off = this.facing === 'right' ? [11, 1] : this.facing === 'left' ? [-11, 1]
+      : this.facing === 'up' ? [7, -7] : [8, 4];
+    this.hand.setPosition(p.x + off[0], p.y + off[1]);
+    this.hand.setFlipX(this.facing === 'left');
+    this.hand.setDepth(this.facing === 'up' ? 499 : 521);
+    this.hand.setVisible(this.time.now < (this.swingUntil || 0));
+  }
+
+  swingHand(w) {
+    const sign = this.facing === 'left' ? -1 : 1;
+    this.swingUntil = this.time.now + 260;
+    this.hand.setRotation(0);
+    this.tweens.add({
+      targets: this.hand, rotation: 0.75 * sign, duration: 120, yoyo: true,
+      ease: 'Quad.easeOut', onComplete: () => { this.hand.setRotation(0); },
+    });
+    if (w.hitHeavy) this.tweens.add({ targets: this.hand, scale: 2.4, duration: 100, yoyo: true });
   }
 
   /* Boss：靠近 → 蓄力（红身抖动）→ 直线冲撞 → 缓 0.38 秒 → 循环 */
@@ -941,24 +1065,37 @@ export class Play extends Phaser.Scene {
       this.dropItem(spot.x, spot.y, 'coin');
       this.dropItem(spot.x + 20, spot.y, 'heart');
       this.dropItem(spot.x - 20, spot.y, 'upg', this.rollUpgrade());
+      for (let i = 0; i < this.W.global.bossExtra; i++) {
+        const w = rollWeapon(this.W, this.weapon.id);
+        if (w) this.dropItem(spot.x + (i ? 24 : -44), spot.y - 14, 'weapon', null, w.id);
+      }
     } else {
       if (Math.random() < CFG.coinChance) this.dropItem(spot.x, spot.y, 'coin');
       if (Math.random() < CFG.heartChance) this.dropItem(spot.x + 12, spot.y, 'heart');
+      if (Math.random() < this.W.global.dropChance) {
+        const w = rollWeapon(this.W, this.weapon.id);
+        if (w) this.dropItem(spot.x - 14, spot.y, 'weapon', null, w.id);
+      }
     }
     if (isBoss) this.time.delayedCall(900, () => this.win());
   }
 
-  dropItem(x, y, kind, up) {
+  dropItem(x, y, kind, up, id) {
     let spr;
     if (kind === 'coin') {
       spr = this.add.sprite(x, y, 'coin', 0).setScale(2.4).setDepth(3).play('coin-spin');
     } else if (kind === 'upg') {
       spr = this.add.image(x, y, UPG_ICON[up], 0).setScale(2).setDepth(3);
+    } else if (kind === 'weapon') {
+      const w = this.W.byId[id] || this.W.list[0];
+      id = w.id;
+      spr = this.add.image(x, y, w.icon, 0).setScale(2.4).setDepth(3);
     } else {
       spr = this.add.image(x, y, 'heart', 4).setScale(1.6).setDepth(3);
     }
     this.tweens.add({ targets: spr, y: y - 6, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    this.drops.push({ kind, up, spr, baseX: x, baseY: y });
+    // lock：刚因换武器掉在地上的旧枪，别在同一帧又被自己捡回去
+    this.drops.push({ kind, up, id, spr, baseX: x, baseY: y, lock: 0 });
   }
 
   /* 伤害数字一样的飘字，拾取/击杀反馈用 */
@@ -1038,7 +1175,7 @@ export class Play extends Phaser.Scene {
     this.updateHud();
   }
 
-  restart() { this.committed = false; this.scene.restart(); }
+  restart() { this.committed = false; this.bolts.forEach((b) => b.spr.destroy()); this.scene.restart(); }
 
   /* ---------- 过门 ---------- */
   tryExit(dir, force) {
@@ -1071,7 +1208,7 @@ export class Play extends Phaser.Scene {
       fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
     }).setScrollFactor(0).setDepth(800);
-    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力', {
+    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 攻击 · 拾取武器自动换装 · M 静音', {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
@@ -1083,6 +1220,13 @@ export class Play extends Phaser.Scene {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
+    // 武器行：图标 2× 保证在 16px 图标上也认得出形状，底色加深以免压在墙上糊掉
+    this.weaponIcon = this.add.image(20, 78, this.weapon.icon)
+      .setScrollFactor(0).setDepth(800).setScale(2);
+    this.weaponName = this.add.text(32, 70, this.weapon.name, {
+      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
+      backgroundColor: '#000000cc', padding: { x: 6, y: 3 },
+    }).setScrollFactor(0).setDepth(800);
     this.promptT = this.add.text(0, 0, '', {
       fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
       backgroundColor: '#00000088', padding: { x: 4, y: 2 },
@@ -1253,6 +1397,8 @@ export class Play extends Phaser.Scene {
     });
 
     this.updateShots(dt);
+    this.updateBolts(dt);
+    this.updateHand();
 
     // 分离
     for (let i = 0; i < this.enemies.length; i++) {
@@ -1275,6 +1421,7 @@ export class Play extends Phaser.Scene {
     // 拾取
     for (let i = this.drops.length - 1; i >= 0; i--) {
       const it = this.drops[i];
+      if (it.lock > this.time.now) continue;
       if (Phaser.Math.Distance.Between(it.spr.x, it.spr.y, this.player.x, this.player.y) < 22
         && !this.dead && !this.won) {
         if (it.kind === 'coin') {
@@ -1285,6 +1432,19 @@ export class Play extends Phaser.Scene {
           this.upg[it.up] += 1;
           this.sfx.bonus.play({ rate: 1.15, volume: 0.8 });
           this.floatText(this.player.x, this.player.y - 22, UPG_NAME[it.up] + ' +1', '#ffd479');
+        } else if (it.kind === 'weapon') {
+          const old = this.weapon;
+          this.equipWeapon(it.id);
+          this.sfx.bonus.play({ rate: 1.3, volume: 0.7 });
+          playAct(this, 'upgrade', this.player.x, this.player.y - 6);
+          // 旧武器留在脚下，取回就能换回去（swapKeepOld 可关）
+          if (this.W.global.swapKeepOld) {
+            this.dropItem(this.player.x - 16, this.player.y + 6, 'weapon', null, old.id);
+            this.drops[this.drops.length - 1].lock = this.time.now + 700;
+          }
+          it.spr.destroy();
+          this.drops.splice(i, 1);
+          continue;
         } else {
           this.hp = Math.min(CFG.maxHp, this.hp + CFG.healAmount);
           this.sfx.coin.play({ rate: 0.8 });
@@ -1345,7 +1505,7 @@ export class Play extends Phaser.Scene {
       const m = this.meta || loadSave();
       this.metaText.setText(`第 ${this.cycle} 周目 · 累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6}`);
     }
-    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 挥砍' : 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力';
+    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击' : 'WASD 移动 · 空格 攻击 · 拾取武器自动换装 · M 静音';
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
       h.setFrame(Math.max(0, Math.min(4, this.hp - i * 4)));
@@ -1355,7 +1515,7 @@ export class Play extends Phaser.Scene {
       + ' · 金币 ' + this.coins + ' · HP ' + this.hp + '/' + CFG.maxHp
     );
 
-    if (this.room) this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY }));
+    if (this.room) this.room.dropState = this.drops.map((d) => ({ kind: d.kind, x: d.baseX, y: d.baseY, up: d.up, id: d.id }));
 
     const boss = this.enemies.find((e) => e.type === 'boss' && e.hp > 0);
     if (boss && this.bossBar && this.bossBarBg) {
@@ -1369,7 +1529,7 @@ export class Play extends Phaser.Scene {
     }
 
     window.__state = {
-      hp: this.hp, kills: this.kills, coins: this.coins,
+      hp: this.hp, kills: this.kills, coins: this.coins, weapon: this.weapon.id,
       room: this.roomKey, roomIdx: this.room.idx + 1, total: this.roomTotal,
       cleared: this.room.cleared, isBoss: this.room.isBoss,
       doors: Object.keys(this.room.doors), entry: this.entry,

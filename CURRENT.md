@@ -2,9 +2,10 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：音频线完成（6 首 BGM 按情绪切换 / 10 个音效挂点 / 一次性胜利曲 / 死亡停乐 / 脚本可复现），素材审计与 R7 可复现性同步补齐。三条内容线已走完，后续排序见 `docs/ROADMAP.md`（批 1 武器系统 → 批 2 房间编排 → …）
+当前段：批 1 武器系统完成（6 把武器 / 三系分派 / 掉落换装 / HUD 武器行，ADR 0014）。下一步批 2 房间编排（`docs/ROADMAP.md §4`）。
 
 已完成：
+- 批 1 武器系统（ADR 0014）：`web/data/weapons.json` 6 把（刀/巨剑/锤/弓/杖/苦无）、`attack()` 拆 melee/ranged/throw、`this.bolts` 玩家弹体、掉落换装（旧武器留地可取回）、HUD 武器行
 - 音频线（`docs/AUDIO.md`）：`tools/encode_audio.sh` 转 6 首 BGM（3.11 MB，懒加载）+ 10 个 SFX（51.6 KB，内联），按 mood 切换、`loop:false` 一次性胜利曲、死亡停乐、M 静音入档
 - 素材来源清单与授权策略（ADR 0001）
 - 主美术选定 Ninja Adventure（ADR 0002），素材已落地
@@ -22,8 +23,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 1 武器系统**（`docs/ROADMAP.md §4`）：`web/data/weapons.json` 6 把武器、`attack()` 拆三路、掉落可换武器、HUD 武器行
-- 批 2 房间编排 / 批 3 层间天赋（顺位见 ROADMAP §3）
+- **批 2 房间编排**（`docs/ROADMAP.md §4`）：宝箱房/商店房/篝火房/精英房四类，非战斗房权重 ≤35%
+- 批 3 层间天赋 / 批 4 敌人与 Boss（顺位见 ROADMAP §3）
 - 精英怪词缀 / 第二种 Boss
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD

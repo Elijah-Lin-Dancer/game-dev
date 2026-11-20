@@ -17,7 +17,7 @@
 
 合计 3.11 MB。按情绪首个出现时新建 `Audio`，**不同时下载**；当前只玩地牢时只会拉 `dungeon.mp3`。
 
-### SFX（10 个，`web/audio/sfx/`，base64 内联进 `assets.js`）
+### SFX（11 个，`web/audio/sfx/`，base64 内联进 `assets.js`）
 
 | key | 源文件 | 体积 | 挂点 |
 |---|---|---|---|
@@ -31,8 +31,9 @@
 | bonus | `Sounds/Game/Bonus.wav` | 4.9 KB | 拿到强化（石龛/祭坛/卷轴） |
 | boom | `Sounds/Game/Explosion3.wav` | 3.4 KB | Boss 砸地 |
 | alarm | `Sounds/Game/Alert.wav` | 4.5 KB | Boss 变身吼 |
+| magic | `Sounds/Game/Magic1.wav` | 3.9 KB | 魔杖开火 |
 
-合计 51.6 KB（`du` 按 4 KB 块对齐会报 72 KB）。base64 后约 69 KB，摊进 `assets.js`（65 KB → 71 KB）。
+合计 54.3 KB（`du` 按 4 KB 块对齐会报 76 KB）。base64 后约 72 KB，摊进 `assets.js`。
 
 ## 2. 转码参数（写死在脚本里，别随手改）
 
@@ -52,7 +53,7 @@ bash tools/encode_audio.sh
 | 类别 | 总量 | 已用 | 剩余 |
 |---|---|---|---|
 | BGM | 31 首 | 6 | 25（Dark Castle / Temple / Mystical / Curse / Aquatic / Final Area / Ruins / Tension…） |
-| Game SFX | 47 | 9 | 38 |
+| Game SFX | 47 | 10 | 37 |
 | Menu SFX | 15 | 1 | 14 |
 
 挑剩下曲子的原则：**先有挂点再入库**。没有明确场景（比如"某个房间进入时"）的曲子不收，避免 assets/首屏白白变重。批 1 之后预计会补 `magic`（法杖）与 `arrow`（弓）。

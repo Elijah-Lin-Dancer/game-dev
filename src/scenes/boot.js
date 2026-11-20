@@ -10,6 +10,7 @@ export class Boot extends Phaser.Scene {
     this.load.image('__pack', A.pack);
     this.load.json('__balance', A.balanceUrl);   // 外部数值：失败就用构建期内嵌副本
     this.load.json('__story', A.storyUrl);       // 对话与事件文本，同样有内嵌兜底
+    this.load.json('__weapons', A.weaponsUrl);   // 武器表，同样有内嵌兜底
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
@@ -32,6 +33,7 @@ export class Boot extends Phaser.Scene {
     const ext = this.cache.json.get('__balance');
     const applied = applyBalance(ext || A.gameData);
     window.__storyData = this.cache.json.get('__story') || A.storyData;
+    window.__weaponsData = this.cache.json.get('__weapons') || A.weaponsData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
@@ -57,6 +59,24 @@ export class Boot extends Phaser.Scene {
       key: 'slash-play',
       frames: this.anims.generateFrameNumbers('slash', { start: 0, end: 3 }),
       frameRate: 13, repeat: 0,
+    });
+    // 批 1：四套斩击（每把近战武器各一套）+ 火球
+    ['slA', 'slB', 'slC'].forEach((k) => {
+      this.anims.create({
+        key: k + '-play',
+        frames: this.anims.generateFrameNumbers(k, { start: 0, end: 3 }),
+        frameRate: 14, repeat: 0,
+      });
+    });
+    this.anims.create({
+      key: 'slD-play',
+      frames: this.anims.generateFrameNumbers('slD', { start: 0, end: 4 }),
+      frameRate: 16, repeat: 0,
+    });
+    this.anims.create({
+      key: 'fireball-play',
+      frames: this.anims.generateFrameNumbers('fireball', { start: 0, end: 3 }),
+      frameRate: 14, repeat: -1,
     });
     this.anims.create({
       key: 'ball-fly',
