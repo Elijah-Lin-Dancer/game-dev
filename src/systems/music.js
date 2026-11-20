@@ -51,6 +51,11 @@ export function unlockMusic() {
   return !!playing;
 }
 
+export function setMuted(v) {
+  if (!!v !== muted) toggleMute();
+  return muted;
+}
+
 export function toggleMute() {
   muted = !muted;
   Object.values(cache).forEach((a) => { a.volume = muted ? 0 : VOL; });

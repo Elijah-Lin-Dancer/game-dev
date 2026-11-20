@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "note": "改这里的数字不用重新构建；线上改 web/data/balance.json 刷新即生效，单文件版用构建时内嵌的副本",
+  "player": { "maxHp": 20, "touchDmg": 3, "playerDmg": 3, "atkCd": 300, "atkReach": 30, "iFrame": 700 },
+  "beast": { "hp": 6, "speed": 46, "chaseRange": 420, "stuckMs": 260, "slideMs": 420 },
+  "boss": {
+    "hp": 28, "speed": 52, "dmg": 3,
+    "windup": 420, "lungeSpeed": 190, "lungeTime": 220, "recover": 380, "lungeReach": 132
+  },
+  "camera": { "lerp": 0.12, "lookAhead": 22 },
+  "drops": { "healAmount": 4, "coinChance": 0.45, "heartChance": 0.12 },
+  "dungeon": { "roomEnemiesMin": 3, "roomEnemiesMax": 5, "maxRooms": 6 }
+}

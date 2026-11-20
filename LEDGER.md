@@ -25,5 +25,7 @@
 
 | 16 | 2026-11-20 10:20 | 资源管线落地 | 8 张切片打成 1024×240 图集（13.4 KB，1 请求），运行期 canvas 还原 spritesheet 帧号不变；音乐改 HTMLAudio 流式，普通房 dungeon / Boss 房 fight 自动切换，首次输入前不响；M 静音；单文件版双击可玩 | `docs/decisions/0008-asset-pipeline.md`、`web/atlas/core.png` |
 
+| 17 | 2026-11-20 11:05 | 数据驱动与存档 | 平衡数值外置 26 项（改 JSON 免构建，实测 enemyHp 6→12 生效）；存档 v2 存累计金币/击杀/最深/通关/静音，死亡与通关各记一次；v1 迁移与坏档兜底都实测通过；`?reset` 清档 | `docs/decisions/0009-data-and-save.md`、`web/data/balance.json` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

@@ -1,5 +1,6 @@
 /* 启动场景：加载素材、建动画、跳 Play */
 import { DIRS } from '../core/config.js';
+import { applyBalance, balanceDigest } from '../systems/data.js';
 export class Boot extends Phaser.Scene {
   constructor() { super('boot'); }
 
@@ -7,6 +8,7 @@ export class Boot extends Phaser.Scene {
     const A = window.ASSET_DATA;
     // 一次请求拿整张图集，切片在 create 里按区域还原成原来的 spritesheet
     this.load.image('__pack', A.pack);
+    this.load.json('__balance', A.balanceUrl);   // 外部数值：失败就用构建期内嵌副本
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
@@ -25,7 +27,11 @@ export class Boot extends Phaser.Scene {
   }
 
   create() {
-    this.unpackAtlas(window.ASSET_DATA.packMeta);
+    const A = window.ASSET_DATA;
+    const ext = this.cache.json.get('__balance');
+    const applied = applyBalance(ext || A.gameData);
+    if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
+    this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
       this.anims.create({
         key: 'walk-' + dir,

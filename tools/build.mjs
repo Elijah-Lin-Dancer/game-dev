@@ -62,8 +62,12 @@ if (packed.status !== 0) {
 }
 const PACK_META = JSON.parse(readFileSync(join(ROOT, 'web/atlas/core.json'), 'utf8'));
 
-function assetsJs(packUrl) {
-  const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC };
+const BALANCE_FILE = join(ROOT, 'web/data/balance.json');
+const BALANCE = JSON.parse(readFileSync(BALANCE_FILE, 'utf8'));
+
+function assetsJs(packUrl, dataUrl) {
+  const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
+    balanceUrl: dataUrl, gameData: BALANCE };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -89,7 +93,7 @@ const bundled = await build({
   logLevel: 'warning',
 });
 const code = bundled.outputFiles[0].text;
-const assetsCode = assetsJs('./web/atlas/core.png');
+const assetsCode = assetsJs('./web/atlas/core.png', './web/data/balance.json');
 
 const gameName = `game.${sha(code)}.js`;
 const assetsName = `assets.${sha(assetsCode)}.js`;
@@ -127,6 +131,7 @@ writeFileSync(join(ROOT, 'index.html'), pagesHtml);
 let singleSize = 0;
 if (single) {
   const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
+    balanceUrl: './data/balance.json', gameData: BALANCE,
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
   const singleHtml = `${head('Ninja Adventure · 单文件版')}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>

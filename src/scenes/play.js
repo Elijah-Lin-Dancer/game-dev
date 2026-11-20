@@ -1,11 +1,15 @@
 /* 主场景：移动 / 战斗 / 房间 / 门 / 掉落 / Boss / HUD */
 import { CFG, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
 import { makeDungeon } from '../systems/dungeon.js';
-import { setMood, toggleMute, isMuted, unlockMusic, musicState } from '../systems/music.js';
+import { setMood, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
+import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
 
   create() {
+    this.meta = loadSave();
+    setMuted(this.meta.muted);
+    this.meta = patchSave({ runs: this.meta.runs + 1 });
     this.hp = CFG.maxHp;
     this.kills = 0;
     this.coins = 0;
@@ -55,6 +59,11 @@ export class Play extends Phaser.Scene {
         exit: (dir) => this.tryExit(dir, true),
         tp: (x, y) => this.player.setPosition(x, y),
         music: () => musicState(),
+        save: () => loadSave(),
+        die: () => this.gameOver(),
+        win: () => this.win(),
+        reset: () => resetSave(),
+        bal: () => (window.__balance || null),
       };
     }
   }
@@ -435,6 +444,7 @@ export class Play extends Phaser.Scene {
 
   gameOver() {
     this.dead = true;
+    this.commitRun(false);
     this.sfx.gameover.play();
     this.player.setAlpha(0.7);
     this.showOverlay('你倒了',
@@ -444,6 +454,7 @@ export class Play extends Phaser.Scene {
   win() {
     if (this.won) return;
     this.won = true;
+    this.commitRun(true);
     this.showOverlay('通关',
       '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 剩 ' + this.hp + ' 血');
   }
@@ -463,7 +474,22 @@ export class Play extends Phaser.Scene {
     this.overlay = [shade, t1, t2, t3];
   }
 
-  restart() { this.scene.restart(); }
+  /* 一局结束才写盘：金币与击杀累加，最深取大值，通关次数单独计 */
+  commitRun(cleared) {
+    if (this.committed) return;
+    this.committed = true;
+    const m = this.meta || loadSave();
+    const depth = Math.max(m.bestRoom, this.room.idx + 1);
+    this.meta = patchSave({
+      coins: m.coins + this.coins,
+      kills: m.kills + this.kills,
+      bestRoom: depth,
+      wins: m.wins + (cleared ? 1 : 0),
+    });
+    this.updateHud();
+  }
+
+  restart() { this.committed = false; this.scene.restart(); }
 
   /* ---------- 过门 ---------- */
   tryExit(dir, force) {
@@ -500,6 +526,10 @@ export class Play extends Phaser.Scene {
       fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
+    this.metaText = this.add.text(S.W - 10, 12, '', {
+      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffcc',
+      backgroundColor: '#00000055', padding: { x: 5, y: 3 },
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
     this.fitHint();
     this.scale.on('resize', (gs) => {
       this.hint.setPosition(10, gs.height - 20);
@@ -521,7 +551,8 @@ export class Play extends Phaser.Scene {
     this.input.keyboard.on('keydown-K', () => this.attack());
     this.input.keyboard.on('keydown-R', () => { if (this.dead || this.won) this.restart(); });
     this.input.keyboard.on('keydown-M', () => {
-      toggleMute();
+      const m = toggleMute();
+      this.meta = patchSave({ muted: m });
       this.updateHud();
     });
     const unlockOnce = () => {
@@ -720,6 +751,10 @@ export class Play extends Phaser.Scene {
   }
 
   updateHud() {
+    if (this.metaText) {
+      const m = this.meta || loadSave();
+      this.metaText.setText(`累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6} · 通关 ${m.wins}`);
+    }
     const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 挥砍' : 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力';
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {

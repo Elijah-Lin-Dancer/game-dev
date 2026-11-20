@@ -2,8 +2,11 @@
 import { S, logicalSize } from './core/config.js';
 import { Boot } from './scenes/boot.js';
 import { Play } from './scenes/play.js';
+import { resetSave } from './systems/save.js';
 
 window.addEventListener('load', () => {
+  // ?reset 清掉本地存档（调试/换机器时用）
+  if (location.search.indexOf('reset') >= 0) resetSave();
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     width: S.W, height: S.H,
