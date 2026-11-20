@@ -1,5 +1,6 @@
 /* 主场景：移动 / 战斗 / 房间 / 门 / 掉落 / Boss / HUD */
-import { CFG, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
+import { CFG, FONT, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
+import { playAct, hitStop as fxHitStop, resumeStop } from '../systems/fx.js';
 import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
@@ -28,6 +29,7 @@ export class Play extends Phaser.Scene {
     this.lastHurtAt = -9999;
     this.atkAt = -9999;
     this.freeze = 0;
+    this.freezePaused = false;
     this.facing = 'down';
     this.press = null;
     this.stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
@@ -96,7 +98,20 @@ export class Play extends Phaser.Scene {
           this.props.forEach((p) => p.spr.destroy()); this.props = [];
           this.spawnRoomProps(this.room);
         },
+        slowmo: (k) => { this.tweens.timeScale = k || 1; },
+        pframe: () => (this.player.anims.currentFrame ? this.player.anims.currentFrame.index : -1),
+        fxCount: () => this.children.list.filter((c) => c.depth >= 620 && c.depth < 900).length,
+        slam: () => { const b = this.enemies.find((e) => e.type === 'boss'); if (b) this.slamImpact(b); },
         coins: (n) => { this.coins = n; },
+        jump: (i) => {
+          const rooms = [...this.dungeon.rooms.values()];
+          const target = typeof i === 'string' ? [...this.dungeon.rooms.values()].find((r) => r.isBoss)
+            : rooms[Math.max(0, Math.min(rooms.length - 1, i))];
+          if (!target) return;
+          this.enemies.forEach((e) => e.spr.destroy());
+          this.enemies = [];
+          this.enterRoom(target.x + ',' + target.y, null);
+        },
         hpv: () => this.hp,
         dropUpg: (k) => this.dropItem(this.player.x + 10, this.player.y + 6, 'upg', k),
         clearDead: () => { this.enemies = this.enemies.filter((e) => e.hp > 0); },
@@ -401,14 +416,14 @@ export class Play extends Phaser.Scene {
       .setOrigin(0, 0).setScrollFactor(0).setDepth(860);
     bg.setStrokeStyle(1, 0xffffff, 0.25);
     const nameT = this.add.text(20, H - 80, name || '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffd479',
+      fontFamily: FONT, fontSize: '12px', color: '#ffd479',
     }).setScrollFactor(0).setDepth(861);
     const body = this.add.text(20, H - 62, '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffff',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       wordWrap: { width: W - 40 },
     }).setScrollFactor(0).setDepth(861);
     const hint = this.add.text(W - 20, H - 26, 'E / 空格 继续', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '9px', color: '#ffffff77',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(861);
 
     this.dlg = { lines, i: 0, char: 0, name, onDone, ui: [bg, nameT, body, hint], timer: null };
@@ -470,10 +485,10 @@ export class Play extends Phaser.Scene {
     const bg = this.add.rectangle(W / 2, H / 2, bw, bh, 0x0d1017, 0.95)
       .setScrollFactor(0).setDepth(870).setStrokeStyle(1, 0xffffff, 0.22);
     const title = this.add.text(W / 2, top + 14, EV.title, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '14px', color: '#ffd479',
+      fontFamily: FONT, fontSize: '24px', color: '#ffd479',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
     const text = this.add.text(W / 2, top + 40, EV.text, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffffffcc',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
       wordWrap: { width: bw - 40 }, align: 'center',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
 
@@ -497,7 +512,7 @@ export class Play extends Phaser.Scene {
     options.push({ label: '离开', act: () => {} });
 
     const rows = options.map((o, i) => this.add.text(W / 2, top + 96 + i * 22, `${i + 1}. ${o.label}`, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffff',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(871).setInteractive({ useHandCursor: true }));
 
     this.panel = { dim, bg, title, text, rows, options, prop: p, hotkeys: [] };
@@ -533,6 +548,7 @@ export class Play extends Phaser.Scene {
   gainUpg(k) {
     this.upg[k] += 1;
     this.floatText(this.player.x, this.player.y - 24, UPG_NAME[k] + ' +1', '#ffd479');
+    playAct(this, 'upgrade', this.player.x, this.player.y - 10);
     this.sfx.coin.play({ rate: 1.5 });
     if (k === 'power') this.hp = Math.min(CFG.maxHp, this.hp);
   }
@@ -585,28 +601,27 @@ export class Play extends Phaser.Scene {
     const cx = this.player.x + v[0] * CFG.atkReach;
     const cy = this.player.y + v[1] * CFG.atkReach;
     const hw = CFG.atkBox[0] / 2, hh = CFG.atkBox[1] / 2;
-    let hitAny = false;
+    let hitAny = false, firstHit = null;
 
     this.enemies.forEach((e) => {
       if (e.hp <= 0) return;
       if (Math.abs(e.spr.x - cx) > hw + e.half || Math.abs(e.spr.y - cy) > hh + e.half) return;
       hitAny = true;
+      if (!firstHit) firstHit = e;
       e.hp -= this.dmg();
       e.flash = 70;
       e.kb.set(v[0] * (e.type === 'boss' ? 40 : 120), v[1] * (e.type === 'boss' ? 40 : 120));
-      e.spr.setAlpha(0.45);
+      // 受击反馈：小怪直接打成白色剪影（像素游戏里最"脆"的反馈），
+      // Boss 有自己的阶段染色，用半透明代替，免得把变色覆盖掉
+      if (e.type === 'boss') e.spr.setAlpha(0.45);
+      else e.spr.setTintFill(0xffffff);
       if (e.hp <= 0) this.killEnemy(e);
     });
 
     if (hitAny) {
-      this.freeze = CFG.hitStop;
-      this.cameras.main.shake(80, 0.006);
       this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(0.9, 1.12) });
-      const spark = this.add.circle(cx, cy, 7, 0xffffff, 1).setDepth(620);
-      this.tweens.add({
-        targets: spark, scale: 2.4, alpha: 0, duration: 160,
-        ease: 'Quad.easeOut', onComplete: () => spark.destroy(),
-      });
+      // 顿帧 + 震屏 + 火花 + 碎片 + 目标压扁，全部由 ACTS.hit 这张表驱动
+      playAct(this, 'hit', cx, cy, { target: firstHit ? firstHit.spr : null });
     }
   }
 
@@ -621,7 +636,7 @@ export class Play extends Phaser.Scene {
     if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * B2.at) {
       e.phase = 'roar';
       e.phaseT = B2.roarMs;
-      this.cameras.main.shake(260, 0.02);
+      playAct(this, 'roar', s.x, s.y);
       this.sfx.hurt.play({ rate: 0.4, volume: 0.5 });
       this.floatText(s.x, s.y - 26, '狂暴', '#ff8a7a');
       if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
@@ -720,10 +735,8 @@ export class Play extends Phaser.Scene {
   /* 砸地落点：只判定一次，预警圈消失，落点范围内的玩家吃伤害并被推开 */
   slamImpact(e) {
     const B2 = CFG.boss2;
-    this.cameras.main.shake(200, 0.02);
     this.sfx.kill.play({ rate: 0.5, volume: 0.55 });
-    const ring = this.add.circle(e.spr.x, e.spr.y, 20, 0xff8855, 0.5).setDepth(620);
-    this.tweens.add({ targets: ring, scale: 4.2, alpha: 0, duration: 340, onComplete: () => ring.destroy() });
+    playAct(this, 'slam', e.spr.x, e.spr.y);
     if (e.ring) { e.ring.destroy(); e.ring = null; }
     if (this.dead || this.won) return;
     const d = Phaser.Math.Distance.Between(e.spr.x, e.spr.y, this.player.x, this.player.y);
@@ -888,6 +901,7 @@ export class Play extends Phaser.Scene {
     e.hp = 0;
     this.kills += 1;
     this.sfx.kill.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
+    playAct(this, 'kill', e.spr.x, e.spr.y - 4);
     const isBoss = e.type === 'boss';
     this.tweens.add({
       targets: e.spr,
@@ -943,7 +957,7 @@ export class Play extends Phaser.Scene {
   /* 伤害数字一样的飘字，拾取/击杀反馈用 */
   floatText(x, y, text, color) {
     const t = this.add.text(x, y, text, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: color || '#ffffff',
+      fontFamily: FONT, fontSize: '12px', color: color || '#ffffff',
     }).setOrigin(0.5).setDepth(640);
     this.tweens.add({
       targets: t, y: y - 16, alpha: 0, duration: 620, ease: 'Quad.easeOut',
@@ -959,12 +973,7 @@ export class Play extends Phaser.Scene {
     this.hp = Math.max(0, this.hp - dmg);
     this.iframe = CFG.iFrame;
     this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
-    this.cameras.main.shake(180, 0.012);
-    const ring = this.add.circle(this.player.x, this.player.y, 10, 0xff5555, 0.85).setDepth(620);
-    this.tweens.add({
-      targets: ring, scale: 2.2, alpha: 0, duration: 220,
-      ease: 'Quad.easeOut', onComplete: () => ring.destroy(),
-    });
+    playAct(this, 'hurt', this.player.x, this.player.y);
     const dir = new Phaser.Math.Vector2(this.player.x - fromX, this.player.y - fromY);
     if (dir.lengthSq() < 0.01) dir.set(0, 1);
     dir.normalize().scale(150);
@@ -993,13 +1002,13 @@ export class Play extends Phaser.Scene {
     const shade = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.55)
       .setOrigin(0).setScrollFactor(0).setDepth(900);
     const t1 = this.add.text(S.W / 2, S.H / 2 - 18, title, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '22px', color: '#ffffff',
+      fontFamily: FONT, fontSize: '24px', color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
     const t2 = this.add.text(S.W / 2, S.H / 2 + 12, sub, {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffcc',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
     const t3 = this.add.text(S.W / 2, S.H / 2 + 34, '点击或按 R 重开', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffffff88',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
     this.overlay = [shade, t1, t2, t3];
   }
@@ -1049,24 +1058,24 @@ export class Play extends Phaser.Scene {
       this.hearts.push(this.add.image(10 + i * 18, 10, 'heart', 4)
         .setScrollFactor(0).setOrigin(0).setScale(1.1).setDepth(800));
     }
-    this.info = this.add.text(8, 26, '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '12px', color: '#ffffff',
+    this.info = this.add.text(8, 34, '', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
     }).setScrollFactor(0).setDepth(800);
     this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 挥砍 · M 静音 · Boss 红身=蓄力', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffee',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
-    this.upgText = this.add.text(S.W - 10, 30, '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: '#ffd479cc',
+    this.upgText = this.add.text(S.W - 10, 36, '', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffd479cc',
       backgroundColor: '#00000044', padding: { x: 4, y: 2 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
     this.metaText = this.add.text(S.W - 10, 12, '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#ffffffcc',
+      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
     this.promptT = this.add.text(0, 0, '', {
-      fontFamily: 'ui-monospace, monospace', fontSize: '9px', color: '#ffe9b0',
+      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
       backgroundColor: '#00000088', padding: { x: 4, y: 2 },
     }).setOrigin(0.5, 1).setDepth(850).setVisible(false);
     this.fitHint();
@@ -1148,6 +1157,9 @@ export class Play extends Phaser.Scene {
     this.input.addPointer(1);
   }
 
+  /* 顿帧入口：表现层（fx.js）通过它把世界、补间、动画一起冻住 */
+  hitStop(ms) { fxHitStop(this, ms); }
+
   /* ---------- 主循环 ---------- */
   update(_t, dtRaw) {
     // 卡帧保护：浏览器切后台/追帧时 delta 会飙到几百毫秒，不夹住会把无敌帧一帧烧完
@@ -1165,6 +1177,7 @@ export class Play extends Phaser.Scene {
     if (this.talking || this.panelOpen) { this.updateHud(); return; }
     if (this.freeze > 0) {
       this.freeze -= dt;
+      if (this.freeze <= 0) { this.freeze = 0; resumeStop(this); }
       this.updateHud();
       return;
     }
@@ -1207,7 +1220,7 @@ export class Play extends Phaser.Scene {
       const s = e.spr;
       if (e.flash > 0) {
         e.flash -= dt;
-        if (e.flash <= 0) s.setAlpha(1);
+        if (e.flash <= 0) { s.setAlpha(1); if (e.type !== 'boss') s.clearTint(); }
       }
 
       if (e.kb.lengthSq() > 1) {
@@ -1257,6 +1270,7 @@ export class Play extends Phaser.Scene {
         && !this.dead && !this.won) {
         if (it.kind === 'coin') {
           this.coins += 1;
+          playAct(this, 'pickup', it.spr.x, it.spr.y);
           this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
         } else if (it.kind === 'upg') {
           this.upg[it.up] += 1;
@@ -1362,6 +1376,7 @@ export class Play extends Phaser.Scene {
       bossY: Math.round((this.enemies.find((e) => e.type === 'boss') || {}).spr ? this.enemies.find((e) => e.type === 'boss').spr.y : -1),
       dropList: this.drops.map((d) => ({ k: d.kind, x: Math.round(d.baseX), y: Math.round(d.baseY) })),
       dead: this.dead, won: this.won, iframe: Math.round(this.iframe),
+      freeze: Math.round(this.freeze), freezePaused: !!this.freezePaused,
       px: Math.round(this.player.x), py: Math.round(this.player.y),
       camX: Math.round(this.cameras.main.scrollX), camY: Math.round(this.cameras.main.scrollY),
       w: this.scale.width, h: this.scale.height,

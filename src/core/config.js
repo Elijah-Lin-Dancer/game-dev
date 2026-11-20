@@ -4,6 +4,10 @@ const COLS = 24, ROWS = 26; // 房间格数：768 × 832 世界像素
 const RW = COLS * TILE, RH = ROWS * TILE;
 const MINOR = 360, MAX_MAJOR = 800;
 
+/* 字体：NinjaPixel 是 Fusion Pixel 12px 的构建期子集（tools/subset_font.py 生成）。
+ * 像素字体只有 12px 一个设计尺寸，字号请用 12 / 24 的倍数，其它尺寸会糊。 */
+const FONT = '"NinjaPixel", ui-monospace, monospace';
+
 const CFG = {
   maxHp: 20, touchDmg: 3, playerDmg: 3, enemyHp: 6,
   atkCd: 300, atkReach: 30, atkBox: [34, 30],
@@ -19,6 +23,15 @@ const CFG = {
   cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },
+  /* 打击表现：顿帧分级、震屏分级、闪屏强度。全是可调数值，改 balance.json 即可 */
+  feel: {
+    stopLight: 42, stopKill: 78, stopHurt: 95, stopSlam: 130, stopPhase: 190,
+    shakeLightMs: 70, shakeLightMag: 0.005,
+    shakeHitMs: 95, shakeHitMag: 0.009,
+    shakeHeavyMs: 210, shakeHeavyMag: 0.019,
+    shakeBossMs: 340, shakeBossMag: 0.028,
+    flashHurt: 0.26, flashSlam: 0.3, flashPhase: 0.26,
+  },
 };
 
 const DIRS = { down: 0, up: 1, left: 2, right: 3 };
@@ -40,4 +53,4 @@ const S = logicalSize();
 
 /* ---------- 地牢生成：3×3 网格随机游走，从 (0,0) 走到 (2,2) ---------- */
 
-export { TILE, COLS, ROWS, RW, RH, MINOR, MAX_MAJOR, CFG, DIRS, ANGLE, VEC, DOOR_VEC, OPPOSITE, logicalSize, S };
+export { TILE, COLS, ROWS, RW, RH, MINOR, MAX_MAJOR, FONT, CFG, DIRS, ANGLE, VEC, DOOR_VEC, OPPOSITE, logicalSize, S };

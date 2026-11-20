@@ -75,6 +75,16 @@ if (packed.status !== 0) {
 }
 const PACK_META = JSON.parse(readFileSync(join(ROOT, 'web/atlas/core.json'), 'utf8'));
 
+/* ---------- 字体：构建期子集化（900 KB 全字库 → 游戏实际用到的字符） ---------- */
+const FONT_SRC = join(ROOT, 'assets/01-primary/fonts/fusion-pixel-12px-monospaced-zh_hans.ttf.woff2');
+const FONT_OUT = join(ROOT, 'web/fonts/game.woff2');
+const subset = spawnSync('python3', [join(ROOT, 'tools/subset_font.py'), FONT_SRC, FONT_OUT], { encoding: 'utf8' });
+if (subset.status !== 0) {
+  console.error('字体子集化失败：\n' + (subset.stderr || subset.error));
+  process.exit(1);
+}
+const FONT_SIZE = statSync(FONT_OUT).size;
+
 const BALANCE_FILE = join(ROOT, 'web/data/balance.json');
 const BALANCE = JSON.parse(readFileSync(BALANCE_FILE, 'utf8'));
 const STORY = JSON.parse(readFileSync(join(ROOT, 'web/data/story.json'), 'utf8'));
@@ -116,7 +126,7 @@ writeFileSync(join(ROOT, 'dist', assetsName), assetsCode);
 
 const phaser = readFileSync(join(ROOT, 'web/vendor/phaser.min.js'), 'utf8');
 
-const head = (title) => `<html lang="zh-CN">
+const head = (title, fontUrl) => `<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -127,6 +137,7 @@ const head = (title) => `<html lang="zh-CN">
   #game { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
   canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   .fallback { color: #fff; font: 14px ui-monospace, monospace; padding: 16px; }
+  @font-face { font-family: "NinjaPixel"; src: url("${fontUrl}") format("woff2"); font-display: block; }
 </style>
 </head>
 <body>
@@ -134,7 +145,7 @@ const head = (title) => `<html lang="zh-CN">
 `;
 
 /* ---------- Pages 入口：引擎与资源分开，可被缓存 ---------- */
-const pagesHtml = `${head('Ninja Adventure · 开发中')}<script src="./web/vendor/phaser.min.js"></script>
+const pagesHtml = `${head('Ninja Adventure · 开发中', './web/fonts/game.woff2')}<script src="./web/vendor/phaser.min.js"></script>
 <script src="./dist/${assetsName}"></script>
 <script src="./dist/${gameName}"></script>
 </body>
@@ -148,7 +159,7 @@ if (single) {
     balanceUrl: './data/balance.json', gameData: BALANCE,
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
-  const singleHtml = `${head('Ninja Adventure · 单文件版')}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
+  const singleHtml = `${head('Ninja Adventure · 单文件版', b64(FONT_OUT, 'font/woff2'))}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
 <script>${code}</script>
 </body>
@@ -160,6 +171,7 @@ if (single) {
 
 console.log(`已生成 index.html`);
 console.log(`  引擎(单独缓存) ${kb(statSync(join(ROOT, 'web/vendor/phaser.min.js')).size)}  → web/vendor/phaser.min.js`);
+console.log(`  字体           ${kb(FONT_SIZE)}  → web/fonts/game.woff2（NinjaPixel，子集）`);
 console.log(`  图集           ${kb(statSync(join(ROOT, 'web/atlas/core.png')).size)}  → web/atlas/core.png（${Object.keys(PACK_META.sheets).length} 张切片）`);
 console.log(`  素材数据       ${kb(statSync(join(ROOT, 'dist', assetsName)).size)}  → dist/${assetsName}`);
 console.log(`  游戏逻辑       ${kb(statSync(join(ROOT, 'dist', gameName)).size)}  → dist/${gameName}`);

@@ -31,5 +31,7 @@
 
 | 19 | 2026-11-20 13:30 | 叙事层落地 | 引路人 3 行对话（28ms 打字、E 推进、对话期世界暂停）；石龛/行脚商/祭坛三事件（面板可点可按 1-4）；存档 v3 加 cycle，通关 +1，新局继承起步强化并按周目放血；实测 10→4 金币、20→15 血、6→7 小怪血 | `docs/decisions/0011-narrative.md`、`web/data/story.json` |
 
+| 20 | 2026-11-20 16:30 | 表现力线落地 | 字体：Fusion Pixel 12px → 构建期子集 3911 字 / 129.8 KB，改名 NinjaPixel，先 load 后建 Phaser；特效：act 时间轴 8 套（hit/kill/hurt/slam/roar/pickup/upgrade），十字星+环+碎片+压扁；顿帧 42/78/95/130/190，震屏 4 档；顿帧只冻动画不冻特效补间；小怪受击白色剪影 | `docs/decisions/0012-feel-and-font.md`、`src/systems/fx.js`、`tools/subset_font.py` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

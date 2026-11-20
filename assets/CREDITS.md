@@ -15,6 +15,8 @@
 |---|---|---|---|---|---|---|
 | Ninja Adventure - Asset Pack | Pixel-Boy / AAA | CC0 1.0（已核对全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存，原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
 
+| Fusion Pixel 12px Mono zh-Hans（子集改名 NinjaPixel） | TakWolf | OFL 1.1（已随文件入库） | https://github.com/TakWolf/fusion-pixel-font （release 2026.11.10） | 是（OFL 要求保留协议；已改名，未使用保留字体名） | `Font: Fusion Pixel Font by TakWolf — https://github.com/TakWolf/fusion-pixel-font (SIL OFL 1.1)` | `assets/01-primary/fonts/OFL.txt` |
+
 ## 鸣谢页生成
 
 把「是否需署名」为「是」的行，取「署名模板」列拼成一段文本，直接用于游戏的关于页。

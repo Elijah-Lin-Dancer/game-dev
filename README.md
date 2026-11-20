@@ -91,3 +91,11 @@ bash tools/check-credits.sh
 ```
 
 `web/vendor/phaser.min.js` 为本地第三方依赖，已入库以保证离线可复现。
+
+## 字体
+
+中文用像素字体 **NinjaPixel**（Fusion Pixel 12px Mono 的子集，构建期由 `tools/subset_font.py` 生成）：
+
+- 原始 957 KB 全字库 → 3911 字子集 130 KB `web/fonts/game.woff2`（单文件版内联为 data URI）
+- 字符集 = 运行时文案用字 ∪ GB2312 一级字库；子集字体按 OFL 要求改名，协议见 `assets/01-primary/fonts/OFL.txt`
+- 字号只用 12 / 24：像素字只有 12px 一个设计尺寸，其它字号会糊

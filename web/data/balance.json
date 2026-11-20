@@ -90,5 +90,23 @@
     "hpMul": 0.15,
     "bossMul": 0.2,
     "legacyPower": 1
+  },
+  "feel": {
+    "stopLight": 42,
+    "stopKill": 78,
+    "stopHurt": 95,
+    "stopSlam": 130,
+    "stopPhase": 190,
+    "shakeLightMs": 70,
+    "shakeLightMag": 0.005,
+    "shakeHitMs": 95,
+    "shakeHitMag": 0.009,
+    "shakeHeavyMs": 210,
+    "shakeHeavyMag": 0.019,
+    "shakeBossMs": 340,
+    "shakeBossMag": 0.028,
+    "flashHurt": 0.26,
+    "flashSlam": 0.3,
+    "flashPhase": 0.26
   }
 }
