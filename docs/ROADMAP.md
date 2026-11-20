@@ -261,6 +261,8 @@
 
 **风险**：动画复用导致三个角色"看着一样"（解法：先接受，皮肤差异 + 技能差异足够；后续再做专属动作帧）。
 
+**状态：已完成（2026-11-20）**。`web/data/chars.json` 三只（忍者/法师/骑士），`src/systems/chars.js` 归一化；新增 `src/scenes/select.js` 选人界面（键盘 ←/→ + Enter、点卡即确认）；`play.js` 按皮肤切 `p-<skin>-walk/idle-<dir>`，基础血量/伤害/移速读角色表，技能统一走 `castSkill()`（冲刺/火球/壁垒，CD 8s）；存档 v4 记 `lastChar/chars`。验收 V-1~V-8 全过（见 `docs/BATCH5-CHARS.md §5`）。
+
 ---
 
 ### 批 6 · 场景、光照与转场（M 级，预计 250–400 行）

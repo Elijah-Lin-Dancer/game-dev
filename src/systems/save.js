@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 3;
+const VERSION = 4;
 
 const defaults = () => ({
   v: VERSION,
@@ -15,6 +15,8 @@ const defaults = () => ({
   cycle: 1,          // 周目：通关一次 +1，新一局继承一点强度
   muted: false,
   roomsSeen: {},     // 各房型进过的次数（图鉴用，批 7 消费）
+  lastChar: 'ninja', // 上次选的角色（批 5）
+  chars: ['ninja', 'mage', 'knight'], // 已解锁角色（默认三只全开）
   updatedAt: 0,
 });
 
@@ -29,6 +31,14 @@ function sanitizeSeen(v) {
   return out;
 }
 
+/* 角色解锁表：只允许三只已知角色，去重后按固定顺序；旧档没有就全开 */
+const CHARS = ['ninja', 'mage', 'knight'];
+function sanitizeChars(v) {
+  if (!Array.isArray(v)) return CHARS.slice();
+  const list = CHARS.filter((id) => v.includes(id));
+  return list.length ? list : CHARS.slice();
+}
+
 /* v1 → v2：v1 只有 coins/kills，缺的字段补齐即可，不需要丢弃 */
 function migrate(old) {
   const base = defaults();
@@ -40,6 +50,8 @@ function migrate(old) {
     cycle: Math.max(1, num(old.cycle, 1)),
     muted: !!old.muted, updatedAt: num(old.updatedAt),
     roomsSeen: sanitizeSeen(old.roomsSeen),
+    lastChar: ['ninja', 'mage', 'knight'].includes(old.lastChar) ? old.lastChar : 'ninja',
+    chars: sanitizeChars(old.chars),
     v: VERSION,
   };
 }
@@ -67,6 +79,8 @@ export function patchSave(patch) {
   next.wins = num(next.wins); next.bestRoom = num(next.bestRoom);
   next.cycle = Math.max(1, num(next.cycle, 1));
   next.roomsSeen = sanitizeSeen(next.roomsSeen);
+  next.chars = sanitizeChars(next.chars);
+  if (!CHARS.includes(next.lastChar)) next.lastChar = 'ninja';
   return writeSave(next);
 }
 

@@ -51,5 +51,7 @@
 
 | 29 | 2026-11-20 20:55 | 批 4 敌人与 Boss | 6 新怪全部用包内 4×4 表（Slime 分裂/Spider 吐网减速/Owl 悬停俯冲/Mushroom 毒雾/Mole 钻地冒头/Skull 追踪弹），新增 `zones` 区域与敌弹 `slow/homing` 字段；4 精英词缀（狂暴/护盾/分裂/迅捷）随机挂载、`enemyList` 可读；`spawnBoss` 双 Boss 随机、新增 `updateSamurai + samuraiSlash`（横斩/突进/召唤/50% 血 roar 二阶段）；同屏上限 8；图集 40→52 切片。验收 U-1~U-12 全过（web slows 1483ms、护盾先破后伤、Boss 打死 `won=true`、无 pageerror） | `docs/BATCH4-ASSETS.md`、`docs/ACCEPTANCE.md`、`docs/screens/b4-*.png` |
 
+| 30 | 2026-11-20 21:40 | 批 5 多角色与技能 | `web/data/chars.json` 三只（忍者 20/3/96 刀·冲刺、法师 16/3/90 杖·火球、骑士 26/4/84 巨剑·壁垒）；`src/systems/chars.js` 白名单归一化；新增 `src/scenes/select.js`（立绘卡 + ←/→ + Enter/点卡）；`play.js` 按皮肤切 `p-<skin>-walk/idle-<dir>`、基础属性读角色、`castSkill()` 三分支（冲刺 100px/0.4s 无敌、火球穿透 2 + 44px 爆炸、壁垒 3s 半伤 + 震开）、HUD 技能行；存档 v4 加 `lastChar/chars`；图集 52→59 切片。验收 V-1~V-8 全过（火球一发死 2、壁垒 3→2 伤、重开记住骑士） | `docs/BATCH5-CHARS.md`、`docs/ACCEPTANCE.md`、`docs/screens/b5-*.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

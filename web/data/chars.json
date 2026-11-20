@@ -1,0 +1,67 @@
+[
+  {
+    "id": "ninja",
+    "name": "忍者",
+    "tag": "均衡·位移",
+    "skin": "ninja",
+    "hp": 20,
+    "dmg": 3,
+    "speed": 96,
+    "weapon": "katana",
+    "face": "faceNinja",
+    "desc": "血/攻/速都在中位，技能用来进出包围。",
+    "skill": {
+      "id": "dash",
+      "name": "疾影冲刺",
+      "cd": 8000,
+      "desc": "向前瞬移 100px，落地 0.4s 无敌",
+      "distance": 100,
+      "invuln": 400
+    }
+  },
+  {
+    "id": "mage",
+    "name": "法师",
+    "tag": "低血·爆发",
+    "skin": "mage",
+    "hp": 16,
+    "dmg": 3,
+    "speed": 90,
+    "weapon": "wand",
+    "face": "faceMage",
+    "desc": "血最少，靠火球穿透和爆炸清成排的小怪。",
+    "skill": {
+      "id": "fireball",
+      "name": "烈焰贯穿",
+      "cd": 8000,
+      "desc": "火球穿透 2 个目标，命中后小范围爆炸",
+      "speed": 260,
+      "dmg": 7,
+      "pierce": 2,
+      "blast": 44,
+      "blastDmg": 3,
+      "life": 900
+    }
+  },
+  {
+    "id": "knight",
+    "name": "骑士",
+    "tag": "高血·硬扛",
+    "skin": "knight",
+    "hp": 26,
+    "dmg": 4,
+    "speed": 84,
+    "weapon": "bigsword",
+    "face": "faceKnight",
+    "desc": "血最厚、出手最重，技能用来顶住围殴。",
+    "skill": {
+      "id": "guard",
+      "name": "壁垒",
+      "cd": 8000,
+      "desc": "3s 内受伤减半，并把身边敌人震开",
+      "duration": 3000,
+      "takenMul": 0.5,
+      "push": 96
+    }
+  }
+]

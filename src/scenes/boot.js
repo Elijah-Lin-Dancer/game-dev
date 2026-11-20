@@ -12,6 +12,7 @@ export class Boot extends Phaser.Scene {
     this.load.json('__story', A.storyUrl);       // 对话与事件文本，同样有内嵌兜底
     this.load.json('__weapons', A.weaponsUrl);   // 武器表，同样有内嵌兜底
     this.load.json('__talents', A.talentsUrl);   // 天赋表，同样有内嵌兜底
+    this.load.json('__chars', A.charsUrl);       // 角色表，同样有内嵌兜底
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
@@ -36,6 +37,7 @@ export class Boot extends Phaser.Scene {
     window.__storyData = this.cache.json.get('__story') || A.storyData;
     window.__weaponsData = this.cache.json.get('__weapons') || A.weaponsData;
     window.__talentsData = this.cache.json.get('__talents') || A.talentsData;
+    window.__charsData = this.cache.json.get('__chars') || A.charsData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
@@ -49,6 +51,22 @@ export class Boot extends Phaser.Scene {
           key: k + '-' + dir,
           frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
           frameRate: 8, repeat: -1,
+        });
+      });
+    });
+    // 批 5：三套角色皮肤（忍者沿用 walk/idle，法师与骑士各自一套）
+    const SKIN = { ninja: ['walk', 'idle'], mage: ['walkMage', 'idleMage'], knight: ['walkKnight', 'idleKnight'] };
+    Object.entries(SKIN).forEach(([skin, [wk, ik]]) => {
+      Object.entries(DIRS).forEach(([dir, col]) => {
+        this.anims.create({
+          key: 'p-' + skin + '-walk-' + dir,
+          frames: [0, 4, 8, 12].map((row) => ({ key: wk, frame: row + col })),
+          frameRate: 9, repeat: -1,
+        });
+        this.anims.create({
+          key: 'p-' + skin + '-idle-' + dir,
+          frames: [{ key: ik, frame: col }],
+          frameRate: 1, repeat: -1,
         });
       });
     });
@@ -125,6 +143,8 @@ export class Boot extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('boss', { start: 0, end: 4 }),
       frameRate: 7, repeat: -1,
     });
-    this.scene.start('play');
+    const m = /(?:\?|&)char=([a-z]+)/.exec(location.search);
+    if (m && ['ninja', 'mage', 'knight'].includes(m[1])) this.scene.start('play', { char: m[1] });
+    else this.scene.start('select');
   }
 }

@@ -72,6 +72,14 @@ const img = {
   key: join(ASSET, 'Items/Treasure/GoldKey.png'),
   aura: join(ASSET, 'FX/Magic/Circle/SpriteSheetOrange.png'),
   campfire: join(ROOT, 'assets/01-primary/external/campfire-16x16.png'),
+  /* 批 5 角色：三张皮肤 + 三张立绘 */
+  walkMage: join(ASSET, 'Actor/Characters/SorcererBlack/SeparateAnim/Walk.png'),
+  idleMage: join(ASSET, 'Actor/Characters/SorcererBlack/SeparateAnim/Idle.png'),
+  walkKnight: join(ASSET, 'Actor/Characters/Knight/SeparateAnim/Walk.png'),
+  idleKnight: join(ASSET, 'Actor/Characters/Knight/SeparateAnim/Idle.png'),
+  faceNinja: join(ASSET, 'Actor/Characters/BlueNinja/Faceset.png'),
+  faceMage: join(ASSET, 'Actor/Characters/SorcererBlack/Faceset.png'),
+  faceKnight: join(ASSET, 'Actor/Characters/Knight/Faceset.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -88,6 +96,8 @@ const FRAME = {
   slime: [16, 16], spider: [16, 16], owl: [16, 16], mush: [16, 16], mole: [16, 16], skull: [16, 16],
   samIdle: [48, 48], samWalk: [48, 48], samAtkL: [96, 96], samAtkR: [96, 96],
   samChgL: [96, 96], samChgR: [96, 96],
+  walkMage: [16, 16], idleMage: [16, 16], walkKnight: [16, 16], idleKnight: [16, 16],
+  faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
@@ -149,12 +159,14 @@ const BALANCE = JSON.parse(readFileSync(BALANCE_FILE, 'utf8'));
 const STORY = JSON.parse(readFileSync(join(ROOT, 'web/data/story.json'), 'utf8'));
 const WEAPONS = JSON.parse(readFileSync(join(ROOT, 'web/data/weapons.json'), 'utf8'));
 const TALENTS = JSON.parse(readFileSync(join(ROOT, 'web/data/talents.json'), 'utf8'));
+const CHARS = JSON.parse(readFileSync(join(ROOT, 'web/data/chars.json'), 'utf8'));
 
 function assetsJs(packUrl, dataUrl) {
   const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
     balanceUrl: dataUrl, gameData: BALANCE, storyData: STORY, storyUrl: dataUrl.replace('balance', 'story'),
     weaponsUrl: dataUrl.replace('balance', 'weapons'), weaponsData: WEAPONS,
-    talentsUrl: dataUrl.replace('balance', 'talents'), talentsData: TALENTS };
+    talentsUrl: dataUrl.replace('balance', 'talents'), talentsData: TALENTS,
+    charsUrl: dataUrl.replace('balance', 'chars'), charsData: CHARS };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -221,6 +233,7 @@ if (single) {
   const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
     balanceUrl: './data/balance.json', gameData: BALANCE, weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
     talentsUrl: './data/talents.json', talentsData: TALENTS,
+    charsUrl: './data/chars.json', charsData: CHARS,
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3',
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };

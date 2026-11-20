@@ -2,6 +2,7 @@
 import { S, logicalSize } from './core/config.js';
 import { Boot } from './scenes/boot.js';
 import { Play } from './scenes/play.js';
+import { Select } from './scenes/select.js';
 import { resetSave } from './systems/save.js';
 
 // 像素字体按 12px 设计；用带引号的族名，避免被当成通用族名解析
@@ -35,7 +36,7 @@ window.addEventListener('load', () => {
       roundPixels: true,
       scale: { mode: Phaser.Scale.NONE, width: S.W, height: S.H },
       audio: { disableWebAudio: true },
-      scene: [Boot, Play],
+      scene: [Boot, Select, Play],
     });
 
     function present() {

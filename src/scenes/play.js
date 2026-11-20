@@ -6,6 +6,7 @@ import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMu
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
+import { normalizeChars, pickChar } from '../systems/chars.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -17,10 +18,20 @@ const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
 
-  create() {
+  create(data) {
     this.meta = loadSave();
     setMuted(this.meta.muted);
     this.meta = patchSave({ runs: this.meta.runs + 1 });
+    // 批 5：角色决定起始血量/伤害/移速/武器/技能；数值来自 chars.json
+    this.chars = normalizeChars(window.__charsData);
+    this.charId = (data && data.char) || this.meta.lastChar || 'ninja';
+    this.char = pickChar(this.chars, this.charId);
+    this.charId = this.char.id;
+    patchSave({ lastChar: this.char.id });
+    this.skillAt = -9999;
+    this.guardUntil = 0;
+    this.skillInvulnUntil = 0;
+    this.guardAura = null;
     this.story = window.__storyData || {};
     this.cycle = this.meta.cycle;
     this.talking = false;
@@ -56,8 +67,9 @@ export class Play extends Phaser.Scene {
       this.sfx[k] = this.sound.add(k, { volume: SFX_VOL[k] || 0.5 });
     });
 
-    this.player = this.add.sprite(RW / 2, RH / 2, 'walk', 0).setScale(2).setDepth(500);
-    this.player.play('walk-down');
+    const SKIN_TEX = { ninja: 'walk', mage: 'walkMage', knight: 'walkKnight' };
+    this.player = this.add.sprite(RW / 2, RH / 2, SKIN_TEX[this.char.skin] || 'walk', 0).setScale(2).setDepth(500);
+    this.player.play('p-' + this.char.skin + '-idle-' + this.facing);
     this.camLook = { x: 0, y: 0 };
     this.cameras.main.startFollow(this.player, true, CFG.camLerp, CFG.camLerp);
 
@@ -65,7 +77,7 @@ export class Play extends Phaser.Scene {
     this.shots = [];          // 敌人射出的弹（会伤害玩家）
     this.bolts = [];          // 玩家射出的弹（会伤害敌人）
     this.W = normalizeWeapons(window.__weaponsData);
-    this.weapon = this.W.byId[this.W.global.startWeapon];
+    this.weapon = this.W.byId[this.char.weapon] || this.W.byId[this.W.global.startWeapon];
     // 天赋：本局三选一，重开清零；与 upg 分开算（flat 先、mul 后）
     this.T = normalizeTalents(window.__talentsData);
     this.talents = [];
@@ -213,6 +225,16 @@ export class Play extends Phaser.Scene {
         boss: (k) => { this.forceKind = k; this.spawnBoss(); return this.bossKind; },
         forceBoss: (k) => { this.bossKind = k; return this.bossKind; },
         clock: () => Math.round(this.time.now),
+        char: () => ({ id: this.char.id, hp: this.maxHp(), dmg: this.dmg(), spd: Math.round(this.moveSpeed()), w: this.weapon.id, skill: this.char.skill.id }),
+        chars: () => this.chars.map((c) => [c.id, c.hp, c.dmg, c.speed, c.weapon, c.skill.id]),
+        skill: () => this.castSkill(),
+        skillState: () => ({
+          id: this.char.skill.id,
+          left: Math.max(0, Math.round(this.char.skill.cd - (this.time.now - this.skillAt))),
+          guard: Math.max(0, Math.round(this.guardUntil - this.time.now)),
+          invuln: Math.max(0, Math.round(this.skillInvulnUntil - this.time.now)),
+        }),
+        pickChar: (id) => this.scene.restart({ char: id }),
         wallAt: (x, y, h) => this.isWall(x, y, h || 10),
         bossInfo: () => { const b = this.enemies.find((e) => e.type === 'boss'); return b ? { x: Math.round(b.spr.x), y: Math.round(b.spr.y), ph: b.phase, dist: Math.round(Phaser.Math.Distance.Between(b.spr.x, b.spr.y, this.player.x, this.player.y)), px: Math.round(this.player.x), py: Math.round(this.player.y), speed: b.speed, blockedW: this.isWall(b.spr.x, b.spr.y, b.half) } : null; },
         slowNow: () => (this.time.now < this.slowUntil ? Math.round(this.slowUntil - this.time.now) : 0),
@@ -1007,6 +1029,76 @@ export class Play extends Phaser.Scene {
   /* ---------- 武器与攻击（批 1） ----------
    * 近战：按武器的斩击帧 + 矩形判定；远程/投掷：生成 this.bolts 里的弹体。
    * 三系差异全部来自 web/data/weapons.json，这一段不写死任何一把武器。 */
+  /* ---------- 批 5：角色主动技能（统一 8s 冷却，走 castSkill 入口） ---------- */
+  castSkill() {
+    if (this.talking || this.panelOpen || this.dead || this.won) return;
+    const K = this.char.skill;
+    if (this.time.now - this.skillAt < K.cd) {
+      const left = Math.ceil((K.cd - (this.time.now - this.skillAt)) / 1000);
+      this.floatText(this.player.x, this.player.y - 30, '冷却 ' + left + 's', '#8fa0a8');
+      return;
+    }
+    this.skillAt = this.time.now;
+    if (K.id === 'dash') return this.skillDash(K);
+    if (K.id === 'fireball') return this.skillFireball(K);
+    if (K.id === 'guard') return this.skillGuard(K);
+  }
+
+  /* 忍者：向前瞬移，落地 0.4s 无敌（无敌期间不受碰撞/弹体伤害） */
+  skillDash(K) {
+    const v = VEC[this.facing] || [0, 1];
+    const steps = 5;
+    for (let i = 0; i < steps; i++) {
+      this.moveActor(this.player, (v[0] * K.distance) / steps, (v[1] * K.distance) / steps, 10);
+      if (i === 1 || i === 3) {
+        const ghost = this.add.image(this.player.x - v[0] * 7, this.player.y - v[1] * 7, this.player.texture.key, 0)
+          .setScale(2).setAlpha(0.55).setDepth(499).setTint(0x9fd8ff);
+        this.tweens.add({ targets: ghost, alpha: 0, duration: 260, onComplete: () => ghost.destroy() });
+      }
+    }
+    this.skillInvulnUntil = this.time.now + K.invuln;
+    this.floatText(this.player.x, this.player.y - 32, '疾影', '#9fd8ff');
+    this.sfx.ui.play({ rate: 1.8, volume: 0.45 });
+    playAct(this, 'pickup', this.player.x, this.player.y);
+  }
+
+  /* 法师：穿透火球，命中后小范围爆炸（爆炸只结算一次，不递归） */
+  skillFireball(K) {
+    const v = VEC[this.facing] || [0, 1];
+    const spr = this.add.sprite(this.player.x + v[0] * 14, this.player.y + v[1] * 12, 'fireball', 0)
+      .setScale(2.4).setDepth(612);
+    spr.play('fireball-play');
+    this.bolts.push({
+      spr, vx: v[0] * K.speed, vy: v[1] * K.speed,
+      life: K.life, dmg: K.dmg, pierce: K.pierce, knock: 90, hits: [],
+      blast: K.blast, blastDmg: K.blastDmg,
+    });
+    this.cameras.main.shake(60, 0.004);
+    this.sfx.magic.play({ rate: 0.8, volume: 0.6 });
+  }
+
+  /* 骑士：3s 受伤减半 + 把身边敌人震开 */
+  skillGuard(K) {
+    this.guardUntil = this.time.now + K.duration;
+    if (this.guardAura) this.guardAura.destroy();
+    this.guardAura = this.add.sprite(this.player.x, this.player.y + 6, 'aura', 0)
+      .setScale(2.6).setAlpha(0.9).setDepth(498).setTint(0xffe08a).play('aura-pulse');
+    this.guardAuraTween = this.tweens.add({
+      targets: this.guardAura, alpha: 0.35, duration: 500, yoyo: true, repeat: 3,
+    });
+    this.enemies.forEach((e) => {
+      if (e.hp <= 0 || e.type === 'boss') return;
+      const d = new Phaser.Math.Vector2(e.spr.x - this.player.x, e.spr.y - this.player.y);
+      if (d.length() > 90) return;
+      if (d.lengthSq() < 1) d.set(0, 1);
+      d.normalize().scale(K.push * 2);
+      e.kb.copy(d);
+    });
+    this.cameras.main.shake(80, 0.006);
+    this.floatText(this.player.x, this.player.y - 34, '壁垒', '#ffe08a');
+    this.sfx.bonus.play({ rate: 0.6, volume: 0.5 });
+  }
+
   attack() {
     if (this.talking || this.panelOpen) return;
     if (this.dead || this.won) return;
@@ -1114,6 +1206,7 @@ export class Play extends Phaser.Scene {
         this.damageFoe(e, b.dmg, (b.vx / n) * b.knock, (b.vy / n) * b.knock);
         playAct(this, 'hit', b.spr.x, b.spr.y, { target: e.spr });
         this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(1.05, 1.2), volume: 0.45 });
+        if (b.blast) this.blastAt(b.spr.x, b.spr.y, b.blast, b.blastDmg);
         if (b.pierce > 0) b.pierce -= 1;
         else spent = true;
         break;
@@ -1123,6 +1216,18 @@ export class Play extends Phaser.Scene {
   }
 
   /* 统一的"打到怪"：扣血、白闪、击退、死亡判定都在这里，武器只提供数值 */
+  /* 火球爆炸：以命中点为中心的短半径伤害，不再连锁爆炸 */
+  blastAt(x, y, radius, dmg) {
+    const ring = this.add.circle(x, y, radius, 0xffb04a, 0.35).setDepth(611);
+    this.tweens.add({ targets: ring, alpha: 0, scale: 1.25, duration: 240, onComplete: () => ring.destroy() });
+    playAct(this, 'slam', x, y);
+    this.enemies.forEach((e) => {
+      if (e.hp <= 0) return;
+      if (Phaser.Math.Distance.Between(x, y, e.spr.x, e.spr.y) > radius + e.half) return;
+      this.damageFoe(e, dmg, 0, 0);
+    });
+  }
+
   damageFoe(e, dmg, kx, ky) {
     if (e.invuln) { this.floatText(e.spr.x, e.spr.y - 20, '无敌', '#c8b48a'); return; }
     if (e.shield > 0) {
@@ -1776,16 +1881,16 @@ export class Play extends Phaser.Scene {
   }
 
   /* 强化：翻倍吃到就叠层，直接改伤害/攻速/移速 */
-  maxHp() { return Math.max(1, CFG.maxHp + this.mods.maxHp); }
+  maxHp() { return Math.max(1, (this.char ? this.char.hp : CFG.maxHp) + this.mods.maxHp); }
   atkCd() {
     const base = Math.max(CFG.atkCd * CFG.upgrades.minAtkMul, CFG.atkCd * (1 - CFG.upgrades.atkStep * this.upg.atk));
     return Math.max(120, base * (1 + this.mods.atkCd));
   }
   dmg() {
-    const flat = CFG.playerDmg + CFG.upgrades.powerStep * this.upg.power + this.mods.atk;
+    const flat = (this.char ? this.char.dmg : CFG.playerDmg) + CFG.upgrades.powerStep * this.upg.power + this.mods.atk;
     return Math.max(1, Math.round(flat * this.mods.dmgMul));
   }
-  moveSpeed() { return 96 * Math.max(0.4, 1 + CFG.upgrades.speedStep * this.upg.speed + this.mods.speed); }
+  moveSpeed() { return (this.char ? this.char.speed : 96) * Math.max(0.4, 1 + CFG.upgrades.speedStep * this.upg.speed + this.mods.speed); }
 
   rollUpgrade() {
     const pool = ['power', 'speed', 'atk', 'power', 'speed'];
@@ -1923,10 +2028,12 @@ export class Play extends Phaser.Scene {
 
   hurtPlayer(fromX, fromY, dmg) {
     if (this.dead || this.won) return;
+    if (this.time.now < this.skillInvulnUntil) return;   // 疾影冲刺的落地无敌
     // 冷却按时钟算，不按帧累积：掉帧时也不会被连击打穿
     if (this.time.now - this.lastHurtAt < CFG.iFrame) return;
     this.lastHurtAt = this.time.now;
-    const taken = Math.max(1, Math.round(dmg * this.mods.takenMul));
+    let taken = Math.max(1, Math.round(dmg * this.mods.takenMul));
+    if (this.time.now < this.guardUntil) taken = Math.max(1, Math.round(taken * this.char.skill.takenMul));
     this.hp = Math.max(0, this.hp - taken);
     this.iframe = CFG.iFrame;
     this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
@@ -2017,9 +2124,13 @@ export class Play extends Phaser.Scene {
       fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       backgroundColor: '#00000099', padding: { x: 6, y: 4 },
     }).setScrollFactor(0).setDepth(800);
-    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 攻击 · 拾取武器自动换装 · M 静音', {
+    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音', {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffee',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
+    }).setScrollFactor(0).setDepth(800);
+    this.skillText = this.add.text(10, S.H - 46, '', {
+      fontFamily: FONT, fontSize: '12px', color: '#9fd8ff',
+      backgroundColor: '#00000077', padding: { x: 5, y: 3 },
     }).setScrollFactor(0).setDepth(800);
     this.upgText = this.add.text(S.W - 10, 36, '', {
       fontFamily: FONT, fontSize: '12px', color: '#ffd479cc',
@@ -2077,6 +2188,7 @@ export class Play extends Phaser.Scene {
       if (this.panelOpen) return;
       this.interact();
     });
+    this.input.keyboard.on('keydown-Q', () => this.castSkill());
     this.input.keyboard.on('keydown-J', () => this.attack());
     this.input.keyboard.on('keydown-K', () => this.attack());
     this.input.keyboard.on('keydown-R', () => { if (this.dead || this.won) this.restart(); });
@@ -2172,14 +2284,14 @@ export class Play extends Phaser.Scene {
       const dir = Math.abs(d.x) > Math.abs(d.y) ? (d.x > 0 ? 'right' : 'left') : (d.y > 0 ? 'down' : 'up');
       if (dir !== this.facing) {
         this.facing = dir;
-        this.player.play('walk-' + dir);
+        this.player.play('p-' + this.char.skin + '-walk-' + dir);
       } else if (!this.player.anims.isPlaying) {
-        this.player.play('walk-' + dir);
+        this.player.play('p-' + this.char.skin + '-walk-' + dir);
       }
     } else if (!this.dead && !this.won && this.player.anims.isPlaying) {
       this.player.stop();
       this.player.setFrame(DIRS[this.facing]);
-      if (this.facing === 'down') this.player.play('idle-down');
+      this.player.play('p-' + this.char.skin + '-idle-' + this.facing);
     }
 
     if (this.iframe > 0) {
@@ -2339,7 +2451,18 @@ export class Play extends Phaser.Scene {
       const m = this.meta || loadSave();
       this.metaText.setText(`第 ${this.cycle} 周目 · 累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6}`);
     }
-    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击' : 'WASD 移动 · 空格 攻击 · 拾取武器自动换装 · M 静音';
+    if (this.skillText) {
+      const K = this.char.skill;
+      const left = Math.max(0, K.cd - (this.time.now - this.skillAt));
+      const cdTxt = left > 0 ? ' ' + Math.ceil(left / 1000) + 's' : '';
+      this.skillText.setText('Q ' + K.name + cdTxt);
+      this.skillText.setColor(left > 0 ? '#8fa0a8' : '#9fd8ff');
+    }
+    if (this.guardAura) {
+      this.guardAura.setVisible(this.time.now < this.guardUntil);
+      this.guardAura.setPosition(this.player.x, this.player.y + 6);
+    }
+    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音';
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
       const left = Math.max(0, Math.min(4, Math.min(this.hp, this.maxHp()) - i * 4));
