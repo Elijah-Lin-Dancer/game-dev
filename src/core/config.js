@@ -16,6 +16,7 @@ const CFG = {
   cyclope: { hp: 10, speed: 30, dmg: 4, dashSpeed: 230, dashTime: 260, dashCd: 1400, dashRange: 170 },
   eye: { hp: 8, speed: 34, dmg: 2, shotCd: 1600, shotSpeed: 150, keepMin: 110, keepMax: 230, range: 380, shotDmg: 2 },
   larva: { hp: 9, speed: 56, dmg: 3, miniHp: 3, miniSpeed: 74, miniHalf: 10, splitCount: 2 },
+  cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },
 };

@@ -29,5 +29,7 @@
 
 | 18 | 2026-11-20 12:10 | 内容扩充第 1 批 | 四种小怪行为（冲刺/远程/分裂）、Boss 半血二阶段（moveCount%3 砸地+78px 预警圈）、三张强化卷轴可叠层；自测抓出 phaseT 漏减、roar 重入、UPG_ICON 未定义三个 bug | `docs/decisions/0010-content-expansion.md` |
 
+| 19 | 2026-11-20 13:30 | 叙事层落地 | 引路人 3 行对话（28ms 打字、E 推进、对话期世界暂停）；石龛/行脚商/祭坛三事件（面板可点可按 1-4）；存档 v3 加 cycle，通关 +1，新局继承起步强化并按周目放血；实测 10→4 金币、20→15 血、6→7 小怪血 | `docs/decisions/0011-narrative.md`、`web/data/story.json` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

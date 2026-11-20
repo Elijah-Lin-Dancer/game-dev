@@ -32,6 +32,9 @@ const img = {
   upgPower: join(ASSET, 'Items/Scroll/ScrollFire.png'),
   upgSpeed: join(ASSET, 'Items/Scroll/ScrollPlant.png'),
   upgAtk: join(ASSET, 'Items/Scroll/ScrollIce.png'),
+  villager: join(ASSET, 'Actor/Characters/Villager/SeparateAnim/Walk.png'),
+  villager2: join(ASSET, 'Actor/Characters/Villager2/SeparateAnim/Walk.png'),
+  statue: join(ASSET, 'Actor/Characters/Statue/SeparateAnim/Idle.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -39,6 +42,7 @@ const FRAME = {
   slash: [32, 32], heart: [16, 16], boss: [40, 40], coin: [10, 10],
   cyclope: [16, 16], eye: [16, 16], larva: [16, 16], ball: [16, 16],
   upgPower: [16, 16], upgSpeed: [16, 16], upgAtk: [16, 16],
+  villager: [16, 16], villager2: [16, 16], statue: [16, 16],
 };
 const SFX_DIR = join(ROOT, 'web/audio');
 const MUSIC = { dungeon: './web/audio/music/dungeon.mp3', fight: './web/audio/music/fight.mp3' };
@@ -73,10 +77,11 @@ const PACK_META = JSON.parse(readFileSync(join(ROOT, 'web/atlas/core.json'), 'ut
 
 const BALANCE_FILE = join(ROOT, 'web/data/balance.json');
 const BALANCE = JSON.parse(readFileSync(BALANCE_FILE, 'utf8'));
+const STORY = JSON.parse(readFileSync(join(ROOT, 'web/data/story.json'), 'utf8'));
 
 function assetsJs(packUrl, dataUrl) {
   const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
-    balanceUrl: dataUrl, gameData: BALANCE };
+    balanceUrl: dataUrl, gameData: BALANCE, storyData: STORY, storyUrl: dataUrl.replace('balance', 'story') };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;

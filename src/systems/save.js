@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 2;
+const VERSION = 3;
 
 const defaults = () => ({
   v: VERSION,
@@ -12,6 +12,7 @@ const defaults = () => ({
   runs: 0,
   wins: 0,
   bestRoom: 0,       // 到过的最深房间序号
+  cycle: 1,          // 周目：通关一次 +1，新一局继承一点强度
   muted: false,
   updatedAt: 0,
 });
@@ -26,6 +27,7 @@ function migrate(old) {
     ...base,
     coins: num(old.coins), kills: num(old.kills), runs: num(old.runs),
     wins: num(old.wins), bestRoom: num(old.bestRoom),
+    cycle: Math.max(1, num(old.cycle, 1)),
     muted: !!old.muted, updatedAt: num(old.updatedAt),
     v: VERSION,
   };
@@ -52,6 +54,7 @@ export function patchSave(patch) {
   const next = { ...loadSave(), ...patch, v: VERSION, updatedAt: Date.now() };
   next.coins = num(next.coins); next.kills = num(next.kills); next.runs = num(next.runs);
   next.wins = num(next.wins); next.bestRoom = num(next.bestRoom);
+  next.cycle = Math.max(1, num(next.cycle, 1));
   return writeSave(next);
 }
 
