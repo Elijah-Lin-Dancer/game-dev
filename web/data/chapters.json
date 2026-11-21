@@ -1,0 +1,331 @@
+{
+  "v": 1,
+  "starRule": {
+    "clear": 1,
+    "hp70": 1,
+    "noRest": 1
+  },
+  "chapters": [
+    {
+      "id": "bamboo",
+      "name": "竹林村",
+      "theme": "field",
+      "stages": 5,
+      "rooms": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "diff": 1.0,
+      "pressure": [],
+      "bossPool": [
+        "frog",
+        "racoon"
+      ],
+      "monsters": [
+        "beast",
+        "cyclope",
+        "eye",
+        "racoon"
+      ],
+      "unlock": "start"
+    },
+    {
+      "id": "fort",
+      "name": "旧堡",
+      "theme": "dungeon",
+      "stages": 6,
+      "rooms": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "diff": 1.15,
+      "pressure": [
+        "gate"
+      ],
+      "bossPool": [
+        "samBlue",
+        "samRed"
+      ],
+      "monsters": [
+        "larva",
+        "skull",
+        "spider",
+        "mole",
+        "slime"
+      ],
+      "unlock": "bamboo.stage5"
+    },
+    {
+      "id": "desert",
+      "name": "沙海遗迹",
+      "theme": "desert",
+      "stages": 7,
+      "rooms": [
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7
+      ],
+      "diff": 1.3,
+      "pressure": [
+        "quicksand",
+        "poison"
+      ],
+      "bossPool": [
+        "tenguBlue",
+        "tenguRed"
+      ],
+      "monsters": [
+        "snake",
+        "reptile",
+        "lizard",
+        "mollusc",
+        "mouse"
+      ],
+      "unlock": "fort.stage6"
+    },
+    {
+      "id": "sunken",
+      "name": "沉水神殿",
+      "theme": "water",
+      "stages": 8,
+      "rooms": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "diff": 1.45,
+      "pressure": [
+        "waterSlow",
+        "current"
+      ],
+      "bossPool": [
+        "spirit",
+        "demonCyclop"
+      ],
+      "monsters": [
+        "fish",
+        "octopus",
+        "kappa",
+        "mollusc",
+        "axolot"
+      ],
+      "unlock": "desert.stage7"
+    },
+    {
+      "id": "lava",
+      "name": "熔岩地心",
+      "theme": "lava",
+      "stages": 9,
+      "rooms": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "diff": 1.6,
+      "pressure": [
+        "burn",
+        "firerain"
+      ],
+      "bossPool": [
+        "flam",
+        "demonCyclop2"
+      ],
+      "monsters": [
+        "flam",
+        "dragon",
+        "demon",
+        "lantern",
+        "spirit"
+      ],
+      "unlock": "sunken.stage8"
+    },
+    {
+      "id": "final",
+      "name": "星火之巅",
+      "theme": "sky",
+      "stages": 1,
+      "rooms": [
+        1
+      ],
+      "diff": 1.8,
+      "pressure": [
+        "threePhase"
+      ],
+      "bossPool": [
+        "weaver"
+      ],
+      "monsters": [],
+      "unlock": "lava.stage9"
+    }
+  ],
+  "side": [
+    {
+      "id": "firefly",
+      "chapter": "bamboo",
+      "gates": {
+        "starsInChapter": 15
+      },
+      "rooms": 5,
+      "reward": {
+        "gem": 20
+      }
+    },
+    {
+      "id": "cellar",
+      "chapter": "fort",
+      "gates": {
+        "beat": "samRed",
+        "noRestInStage": true
+      },
+      "rooms": 3,
+      "reward": {
+        "gem": 25
+      }
+    },
+    {
+      "id": "caravan",
+      "chapter": "desert",
+      "gates": {
+        "resources": 30
+      },
+      "rooms": 5,
+      "reward": {
+        "gem": 30
+      }
+    },
+    {
+      "id": "ship",
+      "chapter": "sunken",
+      "gates": {
+        "noHitStage": true
+      },
+      "rooms": 4,
+      "reward": {
+        "gem": 35
+      }
+    },
+    {
+      "id": "forge",
+      "chapter": "lava",
+      "gates": {
+        "braziers": 3
+      },
+      "rooms": 4,
+      "reward": {
+        "gem": 40
+      }
+    },
+    {
+      "id": "epilogue",
+      "chapter": "final",
+      "gates": {
+        "clear": "final"
+      },
+      "rooms": 3,
+      "reward": {
+        "gem": 50
+      }
+    }
+  ],
+  "hidden": [
+    {
+      "id": "darkhall",
+      "gates": {
+        "stars": 100
+      },
+      "rooms": 6,
+      "bossPool": [
+        "spirit",
+        "demonCyclop"
+      ],
+      "diff": 1.5
+    },
+    {
+      "id": "mirror",
+      "gates": {
+        "fullStarsChapter": "desert"
+      },
+      "rooms": 5,
+      "bossPool": [
+        "tenguBlue",
+        "tenguRed"
+      ],
+      "diff": 1.4
+    },
+    {
+      "id": "ashfall",
+      "gates": {
+        "clear": "darkhall"
+      },
+      "rooms": 7,
+      "bossPool": [
+        "flam",
+        "demonCyclop2"
+      ],
+      "diff": 1.7
+    }
+  ],
+  "conditional": [
+    {
+      "id": "kunai",
+      "gates": {
+        "weapon": "kunai"
+      },
+      "rooms": 5,
+      "loadout": {
+        "weapons": [
+          "kunai"
+        ]
+      }
+    },
+    {
+      "id": "fists",
+      "gates": {
+        "clear": "fort"
+      },
+      "rooms": 5,
+      "loadout": {
+        "weapons": []
+      }
+    },
+    {
+      "id": "poor",
+      "gates": {
+        "coins": 200
+      },
+      "rooms": 6,
+      "rule": "noCoinPickup"
+    },
+    {
+      "id": "speedrun",
+      "gates": {
+        "clear": "desert"
+      },
+      "rooms": 5,
+      "rule": "timer",
+      "seconds": 300
+    }
+  ]
+}
