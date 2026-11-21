@@ -8,11 +8,9 @@ export class Boot extends Phaser.Scene {
     const A = window.ASSET_DATA;
     // 一次请求拿整张图集，切片在 create 里按区域还原成原来的 spritesheet
     this.load.image('__pack', A.pack);
-    this.load.json('__balance', A.balanceUrl);   // 外部数值：失败就用构建期内嵌副本
-    this.load.json('__story', A.storyUrl);       // 对话与事件文本，同样有内嵌兜底
-    this.load.json('__weapons', A.weaponsUrl);   // 武器表，同样有内嵌兜底
-    this.load.json('__talents', A.talentsUrl);   // 天赋表，同样有内嵌兜底
-    this.load.json('__chars', A.charsUrl);       // 角色表，同样有内嵌兜底
+    // 数值/文案/武器/天赋/角色全部用构建期内嵌副本：不再等 5 个外部 JSON。
+    // 线上 CDN 偶发单文件卡住时，loader 会一直等，导致停在启动画面。
+    // web/data/*.json 仍是构建源，改完重跑 build 即可。
     Object.entries(A.sfx).forEach(([k, uri]) => this.load.audio(k, uri));
   }
 
@@ -32,14 +30,13 @@ export class Boot extends Phaser.Scene {
 
   create() {
     const A = window.ASSET_DATA;
-    const ext = this.cache.json.get('__balance');
-    const applied = applyBalance(ext || A.gameData);
-    window.__storyData = this.cache.json.get('__story') || A.storyData;
-    window.__weaponsData = this.cache.json.get('__weapons') || A.weaponsData;
-    window.__talentsData = this.cache.json.get('__talents') || A.talentsData;
-    window.__charsData = this.cache.json.get('__chars') || A.charsData;
+    const applied = applyBalance(A.gameData);
+    window.__storyData = A.storyData;
+    window.__weaponsData = A.weaponsData;
+    window.__talentsData = A.talentsData;
+    window.__charsData = A.charsData;
     window.__chaptersData = A.chaptersData;
-    if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
+    if (location.search.indexOf('debug') >= 0) window.__balance = { source: 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
       this.anims.create({
