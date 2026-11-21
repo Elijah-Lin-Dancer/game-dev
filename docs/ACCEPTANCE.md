@@ -208,3 +208,16 @@
 | O-5 | 两章怪池不串池 | 逐房收集 `__dbg.foes()` 与 `chapters.monsters` 比对 | 通过；沙漠只出 snake/reptile/lizard/mollusc/mouse；水殿只出 fish/octopus/kappa/mollusc/axolot |
 | O-6 | 旧区域跨房不残留 | 沙漠战斗房→Boss 房读 `zones`/`waterSlow` | 通过；`zones 2→0`、`waterSlow 0` |
 | O-7 | 单文件版数据完整、可走通 | `web/game.html?debug` 起三章，读三份数据与流沙 | 通过；`__chaptersData/__enemiesData/__bossesData` 均在，`zones=2`，`errs=[]` |
+
+## P. 五章熔岩地心（2026-11-21 追加，批 12A）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| P-1 | 10 房关可推进到通关 | 开 GOD，逐房 `clear + next`，读房型/结算 | 通过；battle×4 → elite×2 → treasure → shop → rest → boss，`won=true`、`hp=20`；GOD 只验流程，不代表真实难度 |
+| P-2 | 9 关编排一致、难度递进 | 逐关起 `lava`，读 `plan/diff/template` 与首间怪 | 通过；9 关均 10 房、模板一致，diff 1.6→2.24，首间 flam/demon 交替 |
+| P-3 | 两只 Boss 可打、按池轮换 | 逐关 `jump('boss')` 读 `bossId`；强制两只读状态机 | 通过；奇数关 flam、偶数关 demonCyclop2；flam `castWindup`、demon2 召唤 2 只 flam |
+| P-4 | 5 只新怪有独立行为 | 逐只 `__dbg.newFoe()`，3s 内采样 `shots/phase` | 通过；flam 1 / dragon 3 / lantern 1 / spirit 5 弹；demon 进入 `charge/windup`，无远程弹 |
+| P-5 | 灼烧/火雨生效且不残留 | `__dbg.pressure()` + 站圈扣血 + 跳 Boss 房 | 通过；`burn=3, fireRain=2`；圈内 HP 20→18；Boss 房 `burn=0, fireRain=0` |
+| P-6 | HUD 不被暗角压、图鉴 25/10 | 熔岩截图 + Hall 全量 `markSeen` 后截图 | 通过；HUD 完整；怪物 25/25、Boss 10/10；Boss 第二行不压武器栏 |
+| P-7 | 单文件版数据/字体/图集完整 | `web/game.html` 起熔岩，读 `plan/tex/font` | 通过；1807 KB；5 小怪 frames=16，flamIdle=5，字体 `NinjaPixel` 可用，`errs=[]` |
+| P-8 | 火雨相对不掉帧 | 同房间开/关火雨各采样 2.6s | 通过（相对）；`24.3 vs 25.1 fps`，约 −3%，worst 60.6ms vs 47.8ms；绝对 60fps 未在真实 GPU 验证 |

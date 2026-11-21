@@ -39,6 +39,12 @@ const CFG = {
   octopus: { hp: 11, speed: 24, dmg: 2, half: 12, shotCd: 1550, shotSpeed: 118, shotDmg: 2, keepMin: 105, keepMax: 230, range: 380, inkSlow: 0.5, inkSlowMs: 1200 },
   kappa: { hp: 14, speed: 30, dmg: 3, half: 12, shieldCd: 3000, shieldMs: 1500 },
   axolot: { hp: 10, speed: 30, dmg: 2, half: 11, shotCd: 1650, shotSpeed: 105, shotDmg: 2, healCd: 2400, heal: 1, range: 360 },
+  /* 批 12A：熔岩地心五只小怪。全部保留一个可读的“破法” */
+  flam: { hp: 9, speed: 38, dmg: 2, half: 10, shotCd: 1700, shotSpeed: 126, shotDmg: 2, keepMin: 95, keepMax: 220, range: 360, windup: 280 },
+  dragon: { hp: 14, speed: 28, dmg: 3, half: 14, shotCd: 2300, shotSpeed: 112, shotDmg: 2, keepMin: 150, keepMax: 300, range: 420, windup: 420, spread: 3 },
+  demon: { hp: 15, speed: 46, dmg: 4, half: 14, chargeCd: 1600, chargeSpeed: 220, chargeTime: 240, chargeRange: 210, windup: 380 },
+  lantern: { hp: 7, speed: 22, dmg: 2, half: 10, shotCd: 2000, shotSpeed: 96, shotDmg: 2, keepMin: 110, keepMax: 210, range: 380, homing: 0.35 },
+  spirit: { hp: 8, speed: 40, dmg: 2, half: 9, shotCd: 1800, shotSpeed: 120, shotDmg: 2, keepMin: 100, keepMax: 200, range: 380, burst: 3 },
   /* 精英词缀：任意怪都能带一个 */
   elite: { hpMul: 1.8, affix: { enrage: { speed: 1.4, dmg: 1.5, hp: 1.2 }, swift: { speed: 1.1, windup: 0.7 }, split: {}, shield: {} } },
   /* 第二只 Boss：蓝武士（横斩 / 突进斩 / 召小怪） */
@@ -63,6 +69,11 @@ const CFG = {
   demonBoss: {
     at: 0.5, speed: 48, speedMul: 1.3, chargeWindup: 440, chargeTime: 300, chargeSpeed: 235, chargeDmg: 4,
     slamWindup: 520, slamRadius: 72, slamDmg: 4, summonCd: 3000, summonCount: 2, windupMul: 0.78,
+  },
+  /* 批 12A：炎狱巨灵（扇射 + 近身火环；半血更急） */
+  flamBoss: {
+    at: 0.5, speed: 44, speedMul: 1.2, castWindup: 480, castCd: 1500, burst: 4, burst2: 6,
+    orbSpeed: 145, orbDmg: 2, ringRadius: 92, ringDmg: 3, keepMin: 110, keepMax: 240,
   },
   /* 打击表现：顿帧分级、震屏分级、闪屏强度。全是可调数值，改 balance.json 即可 */
   feel: {

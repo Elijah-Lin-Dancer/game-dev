@@ -2,7 +2,9 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 11 三、四章内容完成（沙海 / 沉水神殿皮肤、9 张新怪、4 只 Boss、流沙 / 水流压力、图鉴 20 怪 / 8 Boss）。下一步按 `docs/MASTERPLAN.md` 做批 12：五章与终章（熔岩素材、火雨/灼烧、终章三阶段、9 关 ×10 房）。
+当前段：批 12A 第五章熔岩地心完成（熔岩皮肤、5 张新怪、2 只 Boss、灼烧/火雨、9 关 ×10 房、图鉴 25 怪 / 10 Boss、单文件 1807 KB）。下一步按 `docs/MASTERPLAN.md` 做批 12B 终章：影织者三阶段、终章编排与结局衔接。
+
+已完成的批 12A：`web/data/chapters.json` 第五章 `lava` 落地为 9 关 ×10 房（`diff 1.6` 逐关 +0.08、模板 battle×4/elite×2/treasure/shop/rest/boss、怪池 flam/dragon/demon/lantern/spirit、Boss 池 flam/demonCyclop2、压力 burn/firerain）；`enemies.json` 25 条、`bosses.json` 11 条；新增 5 张 16px 四向小怪与 `flamIdle/demon2Idle/demon2Walk` 三张 Boss 切片，图集 97 切片 / 168 KB；`flam` 中距火球、`dragon` 三连扇、`demon` 直线冲撞、`lantern` 追踪火、`spirit` 三向扇射；炎巨灵近身火环/远距扇火/半血加速，熔火独眼复用恶魔状态机并每 3s 召 2 只 flam；`burn` 每战斗/精英房 3 圈（半径 44、1 伤/650ms、不减速），`firerain` 1.8s 首波后每 2.8s 两圈（半径 34、预警 850ms、2 伤）；暗角从 camera postFX 改为 HUD 下方 Canvas 贴图，修顶栏被压黑；图鉴 25 怪/10 Boss，修 `samurai/samuraiRed` 键与 10 Boss 两行布局；首间改为 flam/demon 交替。验收 P-1~P-8 见 `docs/BATCH12A-LAVA.md`，构建 `dist/game.4bc90aed.js`，单文件 `web/game.html` 1807 KB。
 
 已完成的批 11：`web/data/enemies.json` 扩到 20 怪、`web/data/bosses.json` 扩到 9 Boss；新增 snake / reptile / lizard / mollusc / mouse / fish / octopus / kappa / axolot 九张 16px 四向图与行为；三章 Boss 池 `tenguBlue/tenguRed`、四章 `spirit/demonCyclop`；`desert` 暖砂褐 + 沙尘 + 流沙（2 圈，圈内速度 0.62、向心 52px/s），`sunken` 深青蓝 + 冷雾 + 水沟（全房 0.85、2 条 ±34px/s 暗流）；`enterRoom` 统一清 `zones/currents/waterSlow`；图鉴 20 怪 / 8 Boss（修正 `samBlue/samRed` id，8/8 点亮）；验收 O-1~O-7 见 `docs/BATCH11-CHAPTER34.md`，构建 `dist/game.19c18ee6.js`，单文件 `web/game.html` 1776 KB。
 
@@ -13,6 +15,7 @@
 已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
+- 批 12A 第五章熔岩地心：9 关 ×10 房、5 新怪、2 Boss、灼烧/火雨、暗角贴图修 HUD、图鉴 25/10、单文件 1807 KB（`docs/BATCH12A-LAVA.md`）
 - 批 9 章节骨架：六章 36 关主线（5/6/7/8/9+终章，单关房数 5/6/7/8/10）、108★、259 房；地图六章页签 + 关卡卡 + 章面板；星级三判据（通关/剩血≥70%/未用休整房）写 `na.save.stars` 并取最高；存档 v6；单文件版可走通（`docs/BATCH9-STAGE.md`）
 - 批 7 大厅、宝石与图鉴：`src/scenes/hall.js` 三页签、宝石 Boss 1–3 + 通关 5、解锁（弓15/锤20/法师30/骑士40）、掉落池按解锁过滤、存档 v5（`gem/unlockedWeapons/seen`）、图鉴四类首次点亮、流程 `Boot→Hall→Select→Play`；验收 X-1~X-8 全过（`docs/BATCH7-HALL.md`）
 - 批 6 场景、光照与转场：`paintFloorAndWalls()` 按 `isBoss/idx≥中段/cycle≥2` 切 `dungeon|field`，石砖 `Interior` frame 322 + 草地 frame 21、16 个 `TilesetFloorDetail` 贴花、相机 `addVignette`（`[0.62,0.2]/[0.72,0.12]`）、墙角火把 ×2、石砖房 `Raylight` 光柱、`Snow.png` 灰尘粒子（上限 14）、`fadeIn(120)` + `roomBanner()`；调试口 `theme/light/dustCount/hearts`；验收 W-1~W-9 全过（`docs/BATCH6-SCENE.md`）
@@ -38,7 +41,7 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 12 五章与终章**：熔岩素材、火雨/灼烧、终章三阶段、9 关 ×10 房（顺位见 `docs/MASTERPLAN.md`）
+- **批 12B 终章**：影织者 `weaver` 三阶段、终章编排、结局与 12A 衔接（顺位见 `docs/MASTERPLAN.md`）
 - G0 开放世界雏形、批 13–17
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD

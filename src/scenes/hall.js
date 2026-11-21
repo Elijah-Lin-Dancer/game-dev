@@ -29,12 +29,14 @@ const FOES = [
   ['mole', '鼹鼠'], ['skull', '骷髅'], ['racoon', '浣熊'], ['snake', '蛇'],
   ['reptile', '爬虫'], ['lizard', '蜥蜴'], ['mollusc', '软体'], ['mouse', '老鼠'],
   ['fish', '鱼人'], ['octopus', '章鱼'], ['kappa', '河童'], ['axolot', '蝾螈'],
+  ['flam', '火灵'], ['dragon', '火龙'], ['demon', '炎魔'], ['lantern', '鬼灯'], ['spirit', '火魂'],
 ];
 const BOSSES = [
   ['frog', '蛙王', 'boss', 0.75], ['racoon', '巨浣熊', 'racoonIdle', 0.55],
-  ['samBlue', '蓝武士', 'samIdle', 0.36], ['samRed', '赤武士', 'rsamIdle', 0.36],
+  ['samurai', '蓝武士', 'samIdle', 0.36], ['samuraiRed', '赤武士', 'rsamIdle', 0.36],
   ['tenguBlue', '蓝天狗', 'tenguBlueWalk', 0.4], ['tenguRed', '赤天狗', 'tenguRedWalk', 0.4],
   ['spirit', '魂灵', 'spiritIdle', 0.62], ['demonCyclop', '恶魔眼', 'demonIdle', 0.62],
+  ['flam', '炎巨灵', 'flamIdle', 0.72], ['demonCyclop2', '火独眼', 'demon2Idle', 0.72],
 ];
 
 export class Hall extends Phaser.Scene {
@@ -204,8 +206,8 @@ export class Hall extends Phaser.Scene {
       enemies: seen.enemies || {}, weapons: seen.weapons || {},
       bosses: seen.bosses || {}, rooms: seen.rooms || {},
     };
-    const cols = S.W >= 560 ? 8 : 6;
-    const cell = S.W >= 560 ? 38 : 36;
+    const cols = S.W >= 560 ? 9 : 6;
+    const cell = S.W >= 560 ? 40 : 36;
     const startX = 12;
 
     const section = (title, y, items, key, iconScale) => {
@@ -230,9 +232,11 @@ export class Hall extends Phaser.Scene {
     const bossY = 56 + 16 + monsterRows * cell;
     section('怪物', 56, FOES, 'enemies');
     section('Boss', bossY, BOSSES, 'bosses', 0.8);
+    const bossRows = Math.ceil(BOSSES.length / cols);
+    const wpnY = bossY + 16 + bossRows * cell;
     const wpn = ((window.__weaponsData && window.__weaponsData.list) || [])
       .map((w) => [w.id, w.name, w.icon]).slice(0, 6);
-    section('武器', bossY + 16 + cell, wpn, 'weapons');
+    section('武器', wpnY, wpn, 'weapons');
 
     // 房间事件放右侧，竖排小字，不抢网格
     const rx = startX + cols * cell + 10;

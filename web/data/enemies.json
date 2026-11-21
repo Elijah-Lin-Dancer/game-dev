@@ -1,25 +1,155 @@
 {
- "v": 1,
- "list": [
-  {"id": "beast", "name": "野兽", "sheet": "beast", "kind": "melee"},
-  {"id": "cyclope", "name": "独眼", "sheet": "cyclope", "kind": "dash"},
-  {"id": "eye", "name": "眼球", "sheet": "eye", "kind": "ranged"},
-  {"id": "larva", "name": "幼虫", "sheet": "larva", "kind": "split"},
-  {"id": "slime", "name": "史莱姆", "sheet": "slime", "kind": "split"},
-  {"id": "spider", "name": "蜘蛛", "sheet": "spider", "kind": "web"},
-  {"id": "owl", "name": "夜枭", "sheet": "owl", "kind": "dive"},
-  {"id": "mush", "name": "毒菇", "sheet": "mush", "kind": "zone"},
-  {"id": "mole", "name": "鼹鼠", "sheet": "mole", "kind": "burrow"},
-  {"id": "skull", "name": "骷髅", "sheet": "skull", "kind": "homing"},
-  {"id": "racoon", "name": "浣熊", "sheet": "racoon", "kind": "skirmish"},
-  {"id": "snake", "name": "蛇", "sheet": "snake", "kind": "weave"},
-  {"id": "reptile", "name": "爬虫", "sheet": "reptile", "kind": "brute"},
-  {"id": "lizard", "name": "蜥蜴", "sheet": "lizard", "kind": "dash"},
-  {"id": "mollusc", "name": "软体", "sheet": "mollusc", "kind": "slow"},
-  {"id": "mouse", "name": "老鼠", "sheet": "mouse", "kind": "skitter"},
-  {"id": "fish", "name": "鱼人", "sheet": "fish", "kind": "dash"},
-  {"id": "octopus", "name": "章鱼", "sheet": "octopus", "kind": "ink"},
-  {"id": "kappa", "name": "河童", "sheet": "kappa", "kind": "shield"},
-  {"id": "axolot", "name": "蝾螈", "sheet": "axolot", "kind": "heal"}
- ]
+  "v": 1,
+  "list": [
+    {
+      "id": "beast",
+      "name": "野兽",
+      "sheet": "beast",
+      "kind": "melee"
+    },
+    {
+      "id": "cyclope",
+      "name": "独眼",
+      "sheet": "cyclope",
+      "kind": "dash"
+    },
+    {
+      "id": "eye",
+      "name": "眼球",
+      "sheet": "eye",
+      "kind": "ranged"
+    },
+    {
+      "id": "larva",
+      "name": "幼虫",
+      "sheet": "larva",
+      "kind": "split"
+    },
+    {
+      "id": "slime",
+      "name": "史莱姆",
+      "sheet": "slime",
+      "kind": "split"
+    },
+    {
+      "id": "spider",
+      "name": "蜘蛛",
+      "sheet": "spider",
+      "kind": "web"
+    },
+    {
+      "id": "owl",
+      "name": "夜枭",
+      "sheet": "owl",
+      "kind": "dive"
+    },
+    {
+      "id": "mush",
+      "name": "毒菇",
+      "sheet": "mush",
+      "kind": "zone"
+    },
+    {
+      "id": "mole",
+      "name": "鼹鼠",
+      "sheet": "mole",
+      "kind": "burrow"
+    },
+    {
+      "id": "skull",
+      "name": "骷髅",
+      "sheet": "skull",
+      "kind": "homing"
+    },
+    {
+      "id": "racoon",
+      "name": "浣熊",
+      "sheet": "racoon",
+      "kind": "skirmish"
+    },
+    {
+      "id": "snake",
+      "name": "蛇",
+      "sheet": "snake",
+      "kind": "weave"
+    },
+    {
+      "id": "reptile",
+      "name": "爬虫",
+      "sheet": "reptile",
+      "kind": "brute"
+    },
+    {
+      "id": "lizard",
+      "name": "蜥蜴",
+      "sheet": "lizard",
+      "kind": "dash"
+    },
+    {
+      "id": "mollusc",
+      "name": "软体",
+      "sheet": "mollusc",
+      "kind": "slow"
+    },
+    {
+      "id": "mouse",
+      "name": "老鼠",
+      "sheet": "mouse",
+      "kind": "skitter"
+    },
+    {
+      "id": "fish",
+      "name": "鱼人",
+      "sheet": "fish",
+      "kind": "dash"
+    },
+    {
+      "id": "octopus",
+      "name": "章鱼",
+      "sheet": "octopus",
+      "kind": "ink"
+    },
+    {
+      "id": "kappa",
+      "name": "河童",
+      "sheet": "kappa",
+      "kind": "shield"
+    },
+    {
+      "id": "axolot",
+      "name": "蝾螈",
+      "sheet": "axolot",
+      "kind": "heal"
+    },
+    {
+      "id": "flam",
+      "name": "火焰精灵",
+      "sheet": "flam",
+      "kind": "flam"
+    },
+    {
+      "id": "dragon",
+      "name": "熔岩龙",
+      "sheet": "dragon",
+      "kind": "dragon"
+    },
+    {
+      "id": "demon",
+      "name": "炎魔",
+      "sheet": "demon",
+      "kind": "demon"
+    },
+    {
+      "id": "lantern",
+      "name": "鬼灯",
+      "sheet": "lantern",
+      "kind": "lantern"
+    },
+    {
+      "id": "spirit",
+      "name": "火魂",
+      "sheet": "spirit",
+      "kind": "spirit"
+    }
+  ]
 }

@@ -47,7 +47,8 @@ export class Boot extends Phaser.Scene {
         frameRate: 9, repeat: -1,
       });
       ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull', 'racoon',
-        'snake', 'reptile', 'lizard', 'mollusc', 'mouse', 'fish', 'octopus', 'kappa', 'axolot'].forEach((k) => {
+        'snake', 'reptile', 'lizard', 'mollusc', 'mouse', 'fish', 'octopus', 'kappa', 'axolot',
+        'flam', 'dragon', 'demon', 'lantern', 'spirit'].forEach((k) => {
         this.anims.create({
           key: k + '-' + dir,
           frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
@@ -187,6 +188,19 @@ export class Boot extends Phaser.Scene {
     });
     this.anims.create({
       key: 'demon-walk', frames: this.anims.generateFrameNumbers('demonWalk', { start: 0, end: 5 }),
+      frameRate: 10, repeat: -1,
+    });
+    // 批 12A：炎狱巨灵（50px 单尺寸）+ 熔火独眼（换前缀复用恶魔状态机）
+    this.anims.create({
+      key: 'flam-idle', frames: this.anims.generateFrameNumbers('flamIdle', { start: 0, end: 4 }),
+      frameRate: 7, repeat: -1,
+    });
+    this.anims.create({
+      key: 'demon2-idle', frames: this.anims.generateFrameNumbers('demon2Idle', { start: 0, end: 4 }),
+      frameRate: 7, repeat: -1,
+    });
+    this.anims.create({
+      key: 'demon2-walk', frames: this.anims.generateFrameNumbers('demon2Walk', { start: 0, end: 5 }),
       frameRate: 10, repeat: -1,
     });
     this.anims.create({
