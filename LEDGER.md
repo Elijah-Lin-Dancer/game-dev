@@ -53,5 +53,7 @@
 
 | 30 | 2026-11-20 21:40 | 批 5 多角色与技能 | `web/data/chars.json` 三只（忍者 20/3/96 刀·冲刺、法师 16/3/90 杖·火球、骑士 26/4/84 巨剑·壁垒）；`src/systems/chars.js` 白名单归一化；新增 `src/scenes/select.js`（立绘卡 + ←/→ + Enter/点卡）；`play.js` 按皮肤切 `p-<skin>-walk/idle-<dir>`、基础属性读角色、`castSkill()` 三分支（冲刺 100px/0.4s 无敌、火球穿透 2 + 44px 爆炸、壁垒 3s 半伤 + 震开）、HUD 技能行；存档 v4 加 `lastChar/chars`；图集 52→59 切片。验收 V-1~V-8 全过（火球一发死 2、壁垒 3→2 伤、重开记住骑士） | `docs/BATCH5-CHARS.md`、`docs/ACCEPTANCE.md`、`docs/screens/b5-*.png` |
 
+| 31 | 2026-11-21 | 批 6 场景、光照与转场 | `paintFloorAndWalls()` 主题切换（Boss 房/后半程/二周目强制石砖）、石砖 `Interior` 322 + 草地 21 整屏平铺、16 个 `TilesetFloorDetail` 贴花、相机 `addVignette` `[0.62,0.2]/[0.72,0.12]`、墙角火把 ×2（ADD 呼吸）、石砖房 `Raylight` 光柱、`Snow.png` 灰尘粒子（lifespan 2.4–4.6s / 上限 14）、`enterRoom` 120ms `fadeIn` + 1100ms 房名横幅、删旧房名 `floatText`；`TilesetDungeon.png` 实测为道具图不铺地。验收 W-1~W-9 全过（开/关光照同为 23 fps、`errs=[]`） | `docs/BATCH6-SCENE.md`、`docs/ACCEPTANCE.md`、`docs/screens/b6-*.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

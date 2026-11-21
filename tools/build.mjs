@@ -80,6 +80,11 @@ const img = {
   faceNinja: join(ASSET, 'Actor/Characters/BlueNinja/Faceset.png'),
   faceMage: join(ASSET, 'Actor/Characters/SorcererBlack/Faceset.png'),
   faceKnight: join(ASSET, 'Actor/Characters/Knight/Faceset.png'),
+  /* 批 6 场景：石砖地面、地板贴花、光柱、灰尘粒子 */
+  floorDungeon: join(ASSET, 'Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png'),
+  floorDetail: join(ASSET, 'Backgrounds/Tilesets/TilesetFloorDetail.png'),
+  ray: join(ASSET, 'FX/Environment/Raylight.png'),
+  dust: join(ASSET, 'FX/Particle/Snow.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -98,6 +103,7 @@ const FRAME = {
   samChgL: [96, 96], samChgR: [96, 96],
   walkMage: [16, 16], idleMage: [16, 16], walkKnight: [16, 16], idleKnight: [16, 16],
   faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
+  floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */

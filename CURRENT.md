@@ -2,9 +2,10 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 5 多角色与主动技能完成（忍者/法师/骑士 + 选人界面 + 三技能 + 存档记角色）。下一步批 6 表现力与反馈升级（`docs/ROADMAP.md §8`）。
+当前段：批 6 场景、光照与转场完成（两套皮肤 + 地板贴花 + 伪光照 + 灰尘粒子 + 过门黑场与房名横幅）。下一步批 7 跨局进程：大厅、宝石、图鉴（`docs/ROADMAP.md §8`）。
 
 已完成：
+- 批 6 场景、光照与转场：`paintFloorAndWalls()` 按 `isBoss/idx≥中段/cycle≥2` 切 `dungeon|field`，石砖 `Interior` frame 322 + 草地 frame 21、16 个 `TilesetFloorDetail` 贴花、相机 `addVignette`（`[0.62,0.2]/[0.72,0.12]`）、墙角火把 ×2、石砖房 `Raylight` 光柱、`Snow.png` 灰尘粒子（上限 14）、`fadeIn(120)` + `roomBanner()`；调试口 `theme/light/dustCount/hearts`；验收 W-1~W-9 全过（`docs/BATCH6-SCENE.md`）
 - 批 5 多角色与主动技能：`web/data/chars.json` 3 只、`src/systems/chars.js` 归一化、`src/scenes/select.js` 选人界面、`play.js` 按皮肤切动画与 `castSkill()`（疾影冲刺/烈焰贯穿/壁垒，CD 8s）、存档 v4 记 `lastChar/chars`；验收 V-1~V-8 全过（`docs/BATCH5-CHARS.md`）
 - 批 4 敌人与 Boss 扩展：6 新怪（Slime 分裂/Spider 吐网减速/Owl 悬停俯冲/Mushroom 毒雾/Mole 钻地冒头/Skull 追踪弹）、4 词缀（狂暴/护盾/分裂/迅捷）、第二只 Boss 蓝武士（横斩/突进斩/召唤/半血二阶段）、同屏上限 8；素材全部包内，外部件 0、自绘 0；验收 U-1~U-12 全过（`docs/BATCH4-ASSETS.md`）
 - 批 3 层间天赋：`web/data/talents.json` 14 张（6/5/3 档）、`src/systems/talents.js`（归一化/深度加权抽卡/修正合并）、`play.js` 三列卡片 UI（点卡或 1–3）、上限/伤害/攻速/移速/受伤/金币/击杀与进房回血接入、动态心数；验收 T-1~T-9 全过（`docs/BATCH3-TALENTS.md`）

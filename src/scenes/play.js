@@ -14,6 +14,7 @@ const ROOM_COLOR = {
 };
 const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
 const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
+const TYPE_NAME = { battle: '战斗', elite: '精英', treasure: '宝箱', shop: '行脚商', shrine: '石龛', rest: '篝火', boss: '首领' };
 
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
@@ -160,6 +161,7 @@ export class Play extends Phaser.Scene {
           this.enterRoom(target.x + ',' + target.y, null);
         },
         hpv: () => this.hp,
+        hearts: () => this.hearts.map((h) => ({ x: h.x, y: h.y, v: h.visible, a: h.alpha, d: h.depth, f: h.frame.name })),
         dropUpg: (k) => this.dropItem(this.player.x + 10, this.player.y + 6, 'upg', k),
         // 批 2：房间编排
         roomTypes: () => this.dungeon.path.map(([x, y]) => {
@@ -226,6 +228,18 @@ export class Play extends Phaser.Scene {
         forceBoss: (k) => { this.bossKind = k; return this.bossKind; },
         clock: () => Math.round(this.time.now),
         char: () => ({ id: this.char.id, hp: this.maxHp(), dmg: this.dmg(), spd: Math.round(this.moveSpeed()), w: this.weapon.id, skill: this.char.skill.id }),
+        theme: () => this.theme || '',
+        light: (on) => {
+          if (this.roomFx) this.roomFx.setVisible(!!on);
+          if (this._vig) { this._vig.destroy(); this._vig = null; }
+          else if (on && this._vigCfg && this.cameras.main.postFX) {
+            this._vig = this.cameras.main.postFX.addVignette(0.5, 0.5, this._vigCfg[0], this._vigCfg[1], 0x000000);
+          }
+          return !!on;
+        },
+        dustCount: () => (this.dust ? this.dust.getAliveParticleCount() : 0),
+        dust: (on) => { if (this.dust) { on ? this.dust.start() : this.dust.stop(); } return !!on; },
+        fxChild: (i, on) => { if (!this.roomFx) return false; const c = this.roomFx.getAt ? this.roomFx.getAt(i) : null; if (!c) return false; c.setVisible(!!on); return true; },
         chars: () => this.chars.map((c) => [c.id, c.hp, c.dmg, c.speed, c.weapon, c.skill.id]),
         skill: () => this.castSkill(),
         skillState: () => ({
@@ -254,6 +268,8 @@ export class Play extends Phaser.Scene {
     this.room = room;
     this.roomKey = key;
     if (this.roomWrap) this.roomWrap.destroy(true);
+    if (this.roomFx) { this.roomFx.destroy(true); this.roomFx = null; }
+    if (this.dust) { this.dust.destroy(); this.dust = null; }
     this.roomWrap = this.add.container(0, 0).setDepth(0);
     this.enemies = [];
     this.drops = [];
@@ -301,7 +317,23 @@ export class Play extends Phaser.Scene {
       this.time.delayedCall(240, () => this.offerTalent());
     }
     const RD = (this.story.rooms || {})[t] || {};
-    if (RD.name && room.idx > 0) this.floatText(this.player.x, this.player.y - 46, RD.name, '#ffe9b0');
+
+    // 转场：120ms 黑场淡入 + 屏幕中央房名横幅（Boss 房用红字）
+    this.cameras.main.fadeIn(120, 0, 0, 0);
+    this.roomBanner(RD.name || TYPE_NAME[t] || '', room.isBoss);
+  }
+
+  /* 房名横幅：屏幕中央淡入淡出，不挡 HUD */
+  roomBanner(name, boss) {
+    if (!name) return;
+    const txt = this.add.text(S.W / 2, S.H * 0.3, name, {
+      fontFamily: FONT, fontSize: '16px', color: boss ? '#ff8a7a' : '#ffe9b0',
+      backgroundColor: '#00000066', padding: { x: 10, y: 6 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(830).setAlpha(0);
+    this.tweens.add({ targets: txt, alpha: 1, y: S.H * 0.3 - 6, duration: 260, ease: 'Quad.easeOut' });
+    this.time.delayedCall(1100, () => {
+      this.tweens.add({ targets: txt, alpha: 0, duration: 300, onComplete: () => txt.destroy() });
+    });
   }
 
   /* 房型进过一次就记一笔（只写不读，给批 7 的图鉴用） */
@@ -339,7 +371,23 @@ export class Play extends Phaser.Scene {
 
   paintFloorAndWalls(room) {
     const wrap = this.roomWrap;
-    wrap.add(this.add.tileSprite(0, 0, RW, RH, 'field', 21).setOrigin(0));
+    // 主题：前半程草地、后半程石砖；Boss 房与二周目起强制石砖
+    const theme = (room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field';
+    this.theme = theme;
+    const floorKey = theme === 'dungeon' ? 'floorDungeon' : 'field';
+    // 石砖房用 Interior 花砖（322）作底，整屏统一但配合裂纹/碎石贴花与暗角读作旧地砖
+    const floorFrame = theme === 'dungeon' ? 322 : 21;
+    const floor = this.add.tileSprite(0, 0, RW, RH, floorKey, floorFrame).setOrigin(0);
+    wrap.add(floor);
+
+    // 地板贴花：石砖用裂纹/碎石/头骨，草地用草簇（全部取自 TilesetFloorDetail，半透明压在地面）
+    const decals = theme === 'dungeon' ? [0, 1, 6, 8, 9, 12, 15] : [32, 35, 39, 44, 46, 47];
+    for (let i = 0; i < 16; i++) {
+      const dx = Phaser.Math.Between(TILE * 3, RW - TILE * 3);
+      const dy = Phaser.Math.Between(TILE * 3, RH - TILE * 3);
+      wrap.add(this.add.image(dx, dy, 'floorDetail', decals[i % decals.length])
+        .setAlpha(theme === 'dungeon' ? 0.55 : 0.4).setDepth(0.4));
+    }
 
     if (room.isBoss) wrap.add(this.add.rectangle(0, 0, RW, RH, 0x223322, 0.25).setOrigin(0));
 
@@ -356,8 +404,9 @@ export class Play extends Phaser.Scene {
       x * TILE + TILE / 2, y * TILE + TILE / 2, TILE, TILE, color
     ).setStrokeStyle(2, 0x0b120a, 0.45));
 
+    const WALL_TONE = theme === 'dungeon' ? 0x2a2426 : 0x2b3a20;
     const wallAt = (x, y) => {
-      wallRect(wrap, x, y, 0x2b3a20);
+      wallRect(wrap, x, y, WALL_TONE);
       this.walls.add(x + ',' + y);
     };
 
@@ -404,6 +453,46 @@ export class Play extends Phaser.Scene {
       for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) wallAt(bx + ix, by + iy);
       placed++;
     }
+    /* 伪光照：镜头暗角（玩家恒在镜头中心，天然跟随）+ 墙角火把 + 石砖房光柱 + 灰尘粒子 */
+    if (this._vig) { this._vig.destroy(); this._vig = null; }
+    // 暗度上限 0.3（ROADMAP 要求 ≤0.35）；中心半径 0.55≈180px，怪与预警圈都在亮区
+    this._vigCfg = theme === 'dungeon' ? [0.62, 0.2] : [0.72, 0.12];
+    if (this.cameras.main.postFX) {
+      this._vig = this.cameras.main.postFX.addVignette(0.5, 0.5, this._vigCfg[0], this._vigCfg[1], 0x000000);
+    }
+    const fx = this.add.container(0, 0).setDepth(615);
+    this.roomFx = fx;
+
+    const corners = [[TILE * 3, TILE * 3], [RW - TILE * 3, TILE * 3], [TILE * 3, RH - TILE * 3], [RW - TILE * 3, RH - TILE * 3]];
+    for (let i = 0; i < 2; i++) {
+      const [tx, ty] = corners[i === 0 ? 0 : 3];
+      const torch = this.add.image(tx, ty, 'aura', 0)
+        .setScale(2.6).setAlpha(0.32).setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(theme === 'dungeon' ? 0xff9a4a : 0xffc27a);
+      fx.add(torch);
+      this.tweens.add({ targets: torch, alpha: 0.18, scale: 3.2, duration: 520 + i * 90, yoyo: true, repeat: -1 });
+    }
+
+    if (theme === 'dungeon') {
+      const beam = this.add.image(RW * 0.32, RH * 0.36, 'ray', 0)
+        .setScale(1.6).setRotation(0.42).setAlpha(0.1)
+        .setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe0b0);
+      fx.add(beam);
+      this.tweens.add({ targets: beam, alpha: 0.05, duration: 1600, yoyo: true, repeat: -1 });
+    }
+
+    this.dust = this.add.particles(0, 0, 'dust', {
+      x: { min: TILE * 2, max: RW - TILE * 2 },
+      y: { min: TILE * 2, max: RH - TILE * 2 },
+      lifespan: { min: 2400, max: 4600 },
+      speedX: { min: -8, max: 8 }, speedY: { min: -12, max: -3 },
+      scale: { min: 0.35, max: 0.8 },
+      alpha: { start: 0.28, end: 0 },
+      quantity: 1, frequency: 520, maxAliveParticles: 14,
+      tint: theme === 'dungeon' ? 0xd8c8a8 : 0xf2ecc8,
+      blendMode: 'ADD',
+    }).setDepth(614);
+
   }
 
   refreshDoorLocks() {
