@@ -103,15 +103,15 @@
     },
     {
       "id": "weaver",
-      "name": "织命者",
-      "kind": "frog",
-      "sheet": "boss",
+      "name": "影织者",
+      "kind": "weaver",
+      "sheet": "spiritIdle",
       "seen": "weaver",
-      "hp": 30,
+      "hp": 108,
       "dmg": 3,
-      "speed": 56,
-      "half": 24,
-      "scale": 1.6
+      "speed": 52,
+      "half": 30,
+      "scale": 2.2
     },
     {
       "id": "flam",

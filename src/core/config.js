@@ -75,6 +75,16 @@ const CFG = {
     at: 0.5, speed: 44, speedMul: 1.2, castWindup: 480, castCd: 1500, burst: 4, burst2: 6,
     orbSpeed: 145, orbDmg: 2, ringRadius: 92, ringDmg: 3, keepMin: 110, keepMax: 240,
   },
+  /* 批 12B：影织者。三幕：影袭追击 → 影仆+环形弹 → 星火火雨 */
+  weaverBoss: {
+    at1: 0.66, at2: 0.33,
+    speed: 52, speed3: 66,
+    dashWindup: 430, dashTime: 260, dashSpeed: 250, dashCd: 1150,
+    blinkCd: 2600, blinkMs: 260, keepMin: 120, keepMax: 190,
+    summonCd: 4200, summonCount: 2,
+    castWindup: 480, castCd: 2100, burst: 12, burst3: 16,
+    orbSpeed: 112, orbDmg: 2, rainCd: 1600, rainCount: 4,
+  },
   /* 打击表现：顿帧分级、震屏分级、闪屏强度。全是可调数值，改 balance.json 即可 */
   feel: {
     stopLight: 42, stopKill: 78, stopHurt: 95, stopSlam: 130, stopPhase: 190,

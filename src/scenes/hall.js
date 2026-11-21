@@ -37,6 +37,7 @@ const BOSSES = [
   ['tenguBlue', '蓝天狗', 'tenguBlueWalk', 0.4], ['tenguRed', '赤天狗', 'tenguRedWalk', 0.4],
   ['spirit', '魂灵', 'spiritIdle', 0.62], ['demonCyclop', '恶魔眼', 'demonIdle', 0.62],
   ['flam', '炎巨灵', 'flamIdle', 0.72], ['demonCyclop2', '火独眼', 'demon2Idle', 0.72],
+  ['weaver', '影织者', 'spiritIdle', 0.62, 0xb8a0ff],
 ];
 
 export class Hall extends Phaser.Scene {
@@ -220,8 +221,10 @@ export class Hall extends Phaser.Scene {
         const got = !!marks[key][it[0]];
         this.keep(this.add.rectangle(cx, cy, cell - 4, cell - 4, 0x141a16, 0.9)
           .setOrigin(0).setStrokeStyle(1, got ? 0x4a5f42 : 0x2a3229));
-        if (got && it[2]) this.keep(this.add.image(cx + cell / 2, cy + 12, it[2], 0).setScale(it[3] || iconScale || 1.6));
-        else if (got) this.keep(this.add.image(cx + cell / 2, cy + 12, it[0], 4).setScale(1.0));
+        if (got && it[2]) {
+          const icon = this.keep(this.add.image(cx + cell / 2, cy + 12, it[2], 0).setScale(it[3] || iconScale || 1.6));
+          if (it[4]) icon.setTint(it[4]);
+        } else if (got) this.keep(this.add.image(cx + cell / 2, cy + 12, it[0], 4).setScale(1.0));
         this.keep(this.add.text(cx + cell / 2, cy + 23, got ? it[1] : '???', {
           fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',
         }).setOrigin(0.5, 0));

@@ -221,3 +221,17 @@
 | P-6 | HUD 不被暗角压、图鉴 25/10 | 熔岩截图 + Hall 全量 `markSeen` 后截图 | 通过；HUD 完整；怪物 25/25、Boss 10/10；Boss 第二行不压武器栏 |
 | P-7 | 单文件版数据/字体/图集完整 | `web/game.html` 起熔岩，读 `plan/tex/font` | 通过；1807 KB；5 小怪 frames=16，flamIdle=5，字体 `NinjaPixel` 可用，`errs=[]` |
 | P-8 | 火雨相对不掉帧 | 同房间开/关火雨各采样 2.6s | 通过（相对）；`24.3 vs 25.1 fps`，约 −3%，worst 60.6ms vs 47.8ms；绝对 60fps 未在真实 GPU 验证 |
+
+## Q. 终章星火之巅（2026-11-21 追加，批 12B）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| Q-1 | 终章入口正确 | 起 `final` 第 1 关读 `chapter/rooms/plan/theme/boss/pips` | 通过；`final / 1 房 / ['0:boss'] / sky / weaver / 3 幕` |
+| Q-2 | 第一幕影袭可复现 | 冻结在 `dashWindup` 截图 | 通过；`fp=1`，Boss/玩家完整入镜（`docs/screens/b12b-1-phase1.png`） |
+| Q-3 | 第二幕转场、召唤、环弹 | `bosshp(0.65*max)`，轮询 `fp=2`、`n>=3`、`shots>0` | 通过；约 2.0s `shift` → `hover`；约 2.8s 召 2 影仆；约 3.4s 12 发环弹（`b12b-2-phase2.png`） |
+| Q-4 | 第三幕火雨与密集弹 | `bosshp(0.32*max)`，轮询 `fireRain>0` | 通过；`fp=3 / storm`、`fireRain=4`、`shots=17`、`n=5`；4 圈紫粉火雨都在镜头内（`b12b-3-phase3.png`） |
+| Q-5 | 真实武器链路不跨幕 | `upg.power=80` 测试配装，近身按实际 `attack()` 挥刀，每幕等 `shift` 结束 | 通过；`hp 194→128→64→0`、`fp 1→2→3→won`；3 刀落在 66%/33% 门槛。高力量只用于缩短验收，不代表平衡 |
+| Q-6 | 结局/周目写盘 | 清场后读 `won/save` | 通过；`won=true`、`cycle 1→2`、`wins 0→1`、`gem 8`（`b12b-4-ending.png`） |
+| Q-7 | 图鉴 25 怪 / 11 Boss | `markSeen` 全量后 Hall 截图 | 通过；`enemies 25/25`、`bosses 11/11`、`bossRows=11`（`b12b-5-hall.png`） |
+| Q-8 | 单文件版可起终章 | `web/game.html?debug` 起 `final`，读数据/字体/Boss | 通过；1817 KB；`__bossesData` 11 条、`NinjaPixel` 可用、`weaver` 三幕；`errs=[]`（`b12b-6-single.png`） |
+| Q-9 | 12A 火雨回归 | 起 `lava` 战斗房，强制 `rainOn/fireRainT=0` 调 `updateFireRain` | 通过；`burn=3`，火雨 2 圈，落点均在玩家 ±132 内；`errs=[]` |

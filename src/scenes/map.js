@@ -13,14 +13,14 @@ const PRESSURE = {
 const CN = ['一', '二', '三', '四', '五', '六', '七', '八'];
 const BOSS_CN = {
   frog: '巨蛙', racoon: '浣熊', samBlue: '蓝武士', samRed: '赤武士', spirit: '魂灵',
-  demonCyclop: '恶魔独眼', demonCyclop2: '恶魔独眼·改', tenguBlue: '蓝天狗', tenguRed: '赤天狗', flam: '炎魔', weaver: '织命者',
+  demonCyclop: '恶魔独眼', demonCyclop2: '恶魔独眼·改', tenguBlue: '蓝天狗', tenguRed: '赤天狗', flam: '炎魔', weaver: '影织者',
 };
 const MOB_CN = {
   beast: '野兽', cyclope: '独眼', eye: '眼球', racoon: '浣熊', bamboo: '竹精', larva: '幼虫',
   slime: '史莱姆', spider: '蜘蛛', owl: '猫头鹰', mush: '蘑菇怪', mole: '地鼠', skull: '骷髅',
   snake: '蛇', reptile: '爬虫', lizard: '蜥蜴', mollusc: '软体', mouse: '老鼠', fish: '鱼人',
   octopus: '章鱼', kappa: '河童', axolot: '蝾螈', flam: '炎魔', dragon: '幼龙', demon: '恶魔',
-  lantern: '灯笼鬼', weaver: '织命者',
+  lantern: '灯笼鬼', weaver: '影织者',
 };
 const cn = (id, dict) => dict[id] || id;
 
