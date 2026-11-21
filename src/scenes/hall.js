@@ -26,11 +26,15 @@ const ROOM_NAME = {
 const FOES = [
   ['beast', '野兽'], ['cyclope', '独眼'], ['eye', '眼球'], ['larva', '幼虫'],
   ['slime', '史莱姆'], ['spider', '蜘蛛'], ['owl', '夜枭'], ['mush', '毒菇'],
-  ['mole', '鼹鼠'], ['skull', '骷髅'], ['racoon', '浣熊'],
+  ['mole', '鼹鼠'], ['skull', '骷髅'], ['racoon', '浣熊'], ['snake', '蛇'],
+  ['reptile', '爬虫'], ['lizard', '蜥蜴'], ['mollusc', '软体'], ['mouse', '老鼠'],
+  ['fish', '鱼人'], ['octopus', '章鱼'], ['kappa', '河童'], ['axolot', '蝾螈'],
 ];
 const BOSSES = [
-  ['frog', '青蛙大王', 'boss', 1.4], ['racoon', '巨浣熊', 'racoonIdle', 1.0],
-  ['samurai', '蓝武士', 'samIdle', 0.5], ['samuraiRed', '赤武士', 'rsamIdle', 0.5],
+  ['frog', '蛙王', 'boss', 0.75], ['racoon', '巨浣熊', 'racoonIdle', 0.55],
+  ['samBlue', '蓝武士', 'samIdle', 0.36], ['samRed', '赤武士', 'rsamIdle', 0.36],
+  ['tenguBlue', '蓝天狗', 'tenguBlueWalk', 0.4], ['tenguRed', '赤天狗', 'tenguRedWalk', 0.4],
+  ['spirit', '魂灵', 'spiritIdle', 0.62], ['demonCyclop', '恶魔眼', 'demonIdle', 0.62],
 ];
 
 export class Hall extends Phaser.Scene {
@@ -200,8 +204,8 @@ export class Hall extends Phaser.Scene {
       enemies: seen.enemies || {}, weapons: seen.weapons || {},
       bosses: seen.bosses || {}, rooms: seen.rooms || {},
     };
-    const cols = 6;
-    const cell = 44;
+    const cols = S.W >= 560 ? 8 : 6;
+    const cell = S.W >= 560 ? 38 : 36;
     const startX = 12;
 
     const section = (title, y, items, key, iconScale) => {
@@ -214,28 +218,30 @@ export class Hall extends Phaser.Scene {
         const got = !!marks[key][it[0]];
         this.keep(this.add.rectangle(cx, cy, cell - 4, cell - 4, 0x141a16, 0.9)
           .setOrigin(0).setStrokeStyle(1, got ? 0x4a5f42 : 0x2a3229));
-        if (got && it[2]) this.keep(this.add.image(cx + 20, cy + 13, it[2], 0).setScale(it[3] || iconScale || 1.6));
-        else if (got) this.keep(this.add.image(cx + 20, cy + 13, it[0], 4).setScale(1.2));
-        this.keep(this.add.text(cx + 20, cy + 26, got ? it[1] : '???', {
+        if (got && it[2]) this.keep(this.add.image(cx + cell / 2, cy + 12, it[2], 0).setScale(it[3] || iconScale || 1.6));
+        else if (got) this.keep(this.add.image(cx + cell / 2, cy + 12, it[0], 4).setScale(1.0));
+        this.keep(this.add.text(cx + cell / 2, cy + 23, got ? it[1] : '???', {
           fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',
         }).setOrigin(0.5, 0));
       });
     };
 
+    const monsterRows = Math.ceil(FOES.length / cols);
+    const bossY = 56 + 16 + monsterRows * cell;
     section('怪物', 56, FOES, 'enemies');
-    section('Boss', 162, BOSSES, 'bosses', 0.8);
+    section('Boss', bossY, BOSSES, 'bosses', 0.8);
     const wpn = ((window.__weaponsData && window.__weaponsData.list) || [])
       .map((w) => [w.id, w.name, w.icon]).slice(0, 6);
-    section('武器', 226, wpn, 'weapons');
+    section('武器', bossY + 16 + cell, wpn, 'weapons');
 
-    // 房间事件放右下角，竖排小字，不抢网格
-    const rx = startX + cols * cell + 16;
-    this.keep(this.add.text(rx, 162, '房间事件', {
+    // 房间事件放右侧，竖排小字，不抢网格
+    const rx = startX + cols * cell + 10;
+    this.keep(this.add.text(rx, 56, '房间事件', {
       fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
     }));
     Object.keys(ROOM_NAME).forEach((k, i) => {
       const got = !!marks.rooms[k];
-      this.keep(this.add.text(rx, 182 + i * 18, (got ? '● ' : '○ ') + (got ? ROOM_NAME[k] : '???'), {
+      this.keep(this.add.text(rx, 76 + i * 18, (got ? '● ' : '○ ') + (got ? ROOM_NAME[k] : '???'), {
         fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',
       }));
     });

@@ -46,7 +46,8 @@ export class Boot extends Phaser.Scene {
         frames: [0, 4, 8, 12].map((row) => ({ key: 'walk', frame: row + col })),
         frameRate: 9, repeat: -1,
       });
-      ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull', 'racoon'].forEach((k) => {
+      ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull', 'racoon',
+        'snake', 'reptile', 'lizard', 'mollusc', 'mouse', 'fish', 'octopus', 'kappa', 'axolot'].forEach((k) => {
         this.anims.create({
           key: k + '-' + dir,
           frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
@@ -160,6 +161,33 @@ export class Boot extends Phaser.Scene {
     this.anims.create({
       key: 'racoon-chg', frames: this.anims.generateFrameNumbers('racoonChg', { start: 0, end: 1 }),
       frameRate: 8, repeat: 0,
+    });
+    // 批 11：天狗双色共用状态机（Walk 10 帧当 idle+walk），魂灵/恶魔 50px 帧
+    [['tengu', 'tenguBlueWalk'], ['rtengu', 'tenguRedWalk']].forEach(([q, tex]) => {
+      this.anims.create({
+        key: q + '-idle', frames: this.anims.generateFrameNumbers(tex, { start: 0, end: 3 }),
+        frameRate: 6, repeat: -1,
+      });
+      this.anims.create({
+        key: q + '-walk', frames: this.anims.generateFrameNumbers(tex, { start: 0, end: 9 }),
+        frameRate: 10, repeat: -1,
+      });
+      this.anims.create({
+        key: q + '-atk', frames: this.anims.generateFrameNumbers(tex, { start: 0, end: 9 }),
+        frameRate: 18, repeat: 0,
+      });
+    });
+    this.anims.create({
+      key: 'spirit-idle', frames: this.anims.generateFrameNumbers('spiritIdle', { start: 0, end: 4 }),
+      frameRate: 8, repeat: -1,
+    });
+    this.anims.create({
+      key: 'demon-idle', frames: this.anims.generateFrameNumbers('demonIdle', { start: 0, end: 4 }),
+      frameRate: 7, repeat: -1,
+    });
+    this.anims.create({
+      key: 'demon-walk', frames: this.anims.generateFrameNumbers('demonWalk', { start: 0, end: 5 }),
+      frameRate: 10, repeat: -1,
     });
     this.anims.create({
       key: 'fireball-play',

@@ -65,5 +65,7 @@
 
 | 38 | 2026-11-21 | 批 10 一、二章内容 | 两章怪物池/Boss 池/房型模板全部落地：竹林 beast/cyclope/eye/racoon → frog/racoon；旧堡 larva/skull/spider/mole/slime → samBlue/samRed；旧堡模板改为战斗×2+宝箱+精英+机关+Boss。新增 `enemies.json`（11 怪）、`bosses.json`（5 Boss，含巨浣熊/赤武士）；巨浣熊跃扑+抓击+半血狂暴，赤武士复用武士行为换 `rsam-*` 前缀；机关房 3 守卫+石像，清怪后必须按 E 拉机关才开门；`fort` 皮肤暖褐石砖+加法暖光，与草地可分；修正蓝武士 96×48 帧尺寸（原 48×48 只播半身）；图鉴补浣熊/巨浣熊/赤武士/机关并让房型首次进入点亮。验收 N-1~N-6 全过（四 Boss id、旧堡 6 房模板、门锁 true→false、单文件 `errs=[]`） | `docs/BATCH10-CHAPTER12.md`、`docs/ACCEPTANCE.md`、`docs/screens/b10-*.png`、`web/data/enemies.json`、`web/data/bosses.json` |
 
+| 39 | 2026-11-21 | 批 11 三、四章内容 | 三、四章皮肤与压力机制落地：`desert` 暖砂褐 tint + 沙尘 + 流沙（每战斗/精英房 2 圈，半径 58，圈内速度 0.62、向心 52px/s、无伤害）；`sunken` 深青蓝 + 冷雾 + 水沟（全房 `waterSlow=0.85`、2 条反向暗流 ±34px/s）；`enterRoom` 统一清 `zones/currents`，修跨房毒雾残留。新增 9 张 16px 四向小怪（snake/reptile/lizard/mollusc/mouse/fish/octopus/kappa/axolot）与四 Boss：天狗双色扇射/俯冲、魂灵环形弹幕/瞬移、恶魔独眼冲撞/震地/召唤；`enemies.json` 20 条、`bosses.json` 9 条、图集 89 切片 155 KB、`core.png` 155 KB。图鉴 20 怪/8 Boss，修 `samBlue/samRed` id 后 8/8 点亮。验收 O-1~O-7 全过（沙漠 `zones=2/envSpeed=0.62`、水殿 `waterSlow=0.85/currents±34`、四 Boss 池与二阶段、单文件 `errs=[]`）。构建 `dist/game.19c18ee6.js`，截图 b11-1~b11-7 | `docs/BATCH11-CHAPTER34.md`、`docs/ACCEPTANCE.md`、`docs/screens/b11-*.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`

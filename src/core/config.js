@@ -29,6 +29,16 @@ const CFG = {
   skull: { hp: 7, speed: 26, dmg: 2, shotCd: 2100, shotSpeed: 105, shotDmg: 2, turn: 0.6, range: 420 },
   /* 批 10：小浣熊（快近战，偶尔侧跳） */
   racoon: { hp: 8, speed: 66, dmg: 2, half: 10, hopCd: 1300, hopRange: 150, hopSpeed: 155 },
+  /* 批 11：沙海遗迹 / 沉水神殿的十只小怪。每只保留一个可读的"破法" */
+  snake: { hp: 7, speed: 58, dmg: 2, half: 10, weave: 26, weaveHz: 4.2 },
+  reptile: { hp: 13, speed: 24, dmg: 3, half: 14 },
+  lizard: { hp: 8, speed: 42, dmg: 3, half: 10, dashSpeed: 214, dashTime: 260, dashCd: 1500, dashRange: 200, windup: 360 },
+  mollusc: { hp: 16, speed: 14, dmg: 4, half: 15 },
+  mouse: { hp: 5, speed: 74, dmg: 2, half: 9, dashSpeed: 188, dashTime: 150, dashCd: 760, dashRange: 150 },
+  fish: { hp: 8, speed: 34, dmg: 3, half: 10, dashSpeed: 208, dashTime: 260, dashCd: 1350, dashRange: 190, windup: 320 },
+  octopus: { hp: 11, speed: 24, dmg: 2, half: 12, shotCd: 1550, shotSpeed: 118, shotDmg: 2, keepMin: 105, keepMax: 230, range: 380, inkSlow: 0.5, inkSlowMs: 1200 },
+  kappa: { hp: 14, speed: 30, dmg: 3, half: 12, shieldCd: 3000, shieldMs: 1500 },
+  axolot: { hp: 10, speed: 30, dmg: 2, half: 11, shotCd: 1650, shotSpeed: 105, shotDmg: 2, healCd: 2400, heal: 1, range: 360 },
   /* 精英词缀：任意怪都能带一个 */
   elite: { hpMul: 1.8, affix: { enrage: { speed: 1.4, dmg: 1.5, hp: 1.2 }, swift: { speed: 1.1, windup: 0.7 }, split: {}, shield: {} } },
   /* 第二只 Boss：蓝武士（横斩 / 突进斩 / 召小怪） */
@@ -40,6 +50,20 @@ const CFG = {
   cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },
+  /* 批 11：天狗（飞行扇射 + 俯冲）/ 魂灵（瞬移环形弹）/ 恶魔独眼（冲撞 + 震地 + 召唤） */
+  tenguBoss: {
+    at: 0.5, roarMs: 620, speed: 78, speedMul: 1.25, fanWindup: 380, fanCd: 950, fanCount: 3, fanCount2: 5,
+    fanSpread: 0.34, fanSpeed: 150, fanDmg: 2, diveWindup: 320, diveTime: 240, diveSpeed: 255, diveDmg: 4,
+    keepMin: 180, keepMax: 270, bob: 3.2,
+  },
+  spiritBoss: {
+    at: 0.5, speed: 36, speedMul: 1.2, castWindup: 430, castCd: 1150, burst: 6, burst2: 8,
+    orbSpeed: 108, orbDmg: 2, blinkCd: 1700, blinkMs: 260, keepMin: 120, keepMax: 210,
+  },
+  demonBoss: {
+    at: 0.5, speed: 48, speedMul: 1.3, chargeWindup: 440, chargeTime: 300, chargeSpeed: 235, chargeDmg: 4,
+    slamWindup: 520, slamRadius: 72, slamDmg: 4, summonCd: 3000, summonCount: 2, windupMul: 0.78,
+  },
   /* 打击表现：顿帧分级、震屏分级、闪屏强度。全是可调数值，改 balance.json 即可 */
   feel: {
     stopLight: 42, stopKill: 78, stopHurt: 95, stopSlam: 130, stopPhase: 190,

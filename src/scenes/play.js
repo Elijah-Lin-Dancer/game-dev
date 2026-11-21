@@ -266,6 +266,7 @@ export class Play extends Phaser.Scene {
           return { kind: e.kind, affix: e.affix, hp: e.hp, shield: e.shield };
         },
         zonesList: () => this.zones.map((z) => [Math.round(z.x), Math.round(z.y), Math.round(z.radius), z.spr.alpha]),
+        pressure: () => ({ waterSlow: this.waterSlow || 0, envSpeed: this.envSpeedMul(), currents: (this.currents || []).map((c) => [c.y, c.vx]), zones: this.zones.filter((z) => z.kind === 'quicksand').length }),
         bossKind: () => this.bossKind || '',
         boss: (k) => { this.forceKind = k; this.spawnBoss(); return this.bossKind; },
         forceBoss: (k) => { this.bossKind = k; return this.bossKind; },
@@ -318,6 +319,12 @@ export class Play extends Phaser.Scene {
     this.drops = [];
     this.doorLocks = {};
     this.walls = new Set();
+    // 批 11：跨房清理毒雾/流沙/水流，避免上一间的区域残留
+    (this.zones || []).forEach((z) => { if (z.spr) z.spr.destroy(); });
+    this.zones = [];
+    (this.currents || []).forEach((c) => { if (c.spr) c.spr.destroy(); });
+    this.currents = [];
+    this.waterSlow = 0;
 
     const t = room.type || 'battle';
     setMood(room.isBoss ? 'fight' : (t === 'shop' ? 'shop' : (t === 'rest' ? 'cave' : 'dungeon')));
@@ -343,6 +350,7 @@ export class Play extends Phaser.Scene {
     } else {
       this.player.setPosition(RW / 2, RH / 2);
     }
+    if (this.spec) this.applyRoomPressure(room);
     this.cameras.main.setBounds(0, 0, RW, RH);
     this.cameras.main.centerOn(this.player.x, this.player.y);
     this.room.built = true;
@@ -416,27 +424,32 @@ export class Play extends Phaser.Scene {
   paintFloorAndWalls(room) {
     const wrap = this.roomWrap;
     // 主题：前半程草地、后半程石砖；Boss 房与二周目起强制石砖
-    // 章节模式：主题按章给（沙漠/水/熔岩的专属图集在批 11 接，先统一回落石砖）
+    // 章节模式：沙漠/水殿沿用石砖底板，靠染色 + 环境粒子/光柱区分（包内没有整屏专属地板）
+    const THEME_SET = ['field', 'fort', 'desert', 'water'];
     const theme = this.spec
-      ? (this.chapterTheme === 'field' ? 'field' : (this.chapterTheme === 'fort' ? 'fort' : 'dungeon'))
+      ? (THEME_SET.indexOf(this.chapterTheme) >= 0 ? this.chapterTheme : 'dungeon')
       : ((room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field');
     this.theme = theme;
     const stone = theme !== 'field';
     const floorKey = stone ? 'floorDungeon' : 'field';
-    // 石砖房用 Interior 花砖（322）作底；旧堡再压一层暖色，和后期地宫分开
+    // 石砖房用 Interior 花砖（322）作底；旧堡/沙海/水殿再压一层主题色
     const floorFrame = stone ? 322 : 21;
     const floor = this.add.tileSprite(0, 0, RW, RH, floorKey, floorFrame).setOrigin(0);
     wrap.add(floor);
-    if (theme === 'fort') {
-      // 旧堡：石砖底压一层暖光（加法混合只提亮地面，不盖住墙和角色）
-      floor.setTint(0xffcbb0);
-      const warm = this.add.rectangle(0, 0, RW, RH, 0xff9a50, 0.22).setOrigin(0)
+    if (theme === 'fort' || theme === 'desert' || theme === 'water') {
+      const TINT = { fort: 0xffcbb0, desert: 0xf2cf9a, water: 0x9fd8e8 };
+      const GLOW = { fort: 0xff9a50, desert: 0xffc060, water: 0x3a9fd0 };
+      floor.setTint(TINT[theme]);
+      const warm = this.add.rectangle(0, 0, RW, RH, GLOW[theme], theme === 'water' ? 0.2 : 0.22).setOrigin(0)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(0.15);
       wrap.add(warm);
     }
 
     // 地板贴花：石砖用裂纹/碎石/头骨，草地用草簇（全部取自 TilesetFloorDetail，半透明压在地面）
-    const decals = theme === 'field' ? [32, 35, 39, 44, 46, 47] : (theme === 'fort' ? [0, 1, 6, 8, 12] : [0, 1, 6, 8, 9, 12, 15]);
+    const decals = theme === 'field' ? [32, 35, 39, 44, 46, 47]
+      : (theme === 'fort' ? [0, 1, 6, 8, 12]
+        : (theme === 'desert' ? [0, 6, 8, 9, 12]
+          : (theme === 'water' ? [0, 1, 6, 8, 15] : [0, 1, 6, 8, 9, 12, 15])));
     for (let i = 0; i < 16; i++) {
       const dx = Phaser.Math.Between(TILE * 3, RW - TILE * 3);
       const dy = Phaser.Math.Between(TILE * 3, RH - TILE * 3);
@@ -444,7 +457,10 @@ export class Play extends Phaser.Scene {
         .setAlpha(theme === 'field' ? 0.4 : 0.55).setDepth(0.4));
     }
 
-    if (room.isBoss) wrap.add(this.add.rectangle(0, 0, RW, RH, 0x223322, 0.25).setOrigin(0));
+    if (room.isBoss) {
+      const BT = { dungeon: 0x223322, fort: 0x33221a, desert: 0x33220f, water: 0x0e2633 };
+      wrap.add(this.add.rectangle(0, 0, RW, RH, BT[theme] || 0x223322, 0.25).setOrigin(0));
+    }
 
     const midX = Math.floor(COLS / 2), midY = Math.floor(ROWS / 2);
     const doorGap = (x, y) => {
@@ -459,7 +475,10 @@ export class Play extends Phaser.Scene {
       x * TILE + TILE / 2, y * TILE + TILE / 2, TILE, TILE, color
     ).setStrokeStyle(2, 0x0b120a, 0.45));
 
-    const WALL_TONE = theme === 'field' ? 0x2b3a20 : (theme === 'fort' ? 0x3a2822 : 0x2a2426);
+    const WALL_TONE = theme === 'field' ? 0x2b3a20
+      : (theme === 'fort' ? 0x3a2822
+        : (theme === 'desert' ? 0x5a4128
+          : (theme === 'water' ? 0x22364a : 0x2a2426)));
     const wallAt = (x, y) => {
       wallRect(wrap, x, y, WALL_TONE);
       this.walls.add(x + ',' + y);
@@ -511,7 +530,10 @@ export class Play extends Phaser.Scene {
     /* 伪光照：镜头暗角（玩家恒在镜头中心，天然跟随）+ 墙角火把 + 石砖房光柱 + 灰尘粒子 */
     if (this._vig) { this._vig.destroy(); this._vig = null; }
     // 暗度上限 0.3（ROADMAP 要求 ≤0.35）；中心半径 0.55≈180px，怪与预警圈都在亮区
-    this._vigCfg = theme === 'field' ? [0.72, 0.12] : (theme === 'fort' ? [0.66, 0.16] : [0.62, 0.2]);
+    this._vigCfg = theme === 'field' ? [0.72, 0.12]
+      : (theme === 'fort' ? [0.66, 0.16]
+        : (theme === 'desert' ? [0.68, 0.15]
+          : (theme === 'water' ? [0.62, 0.18] : [0.62, 0.2])));
     if (this.cameras.main.postFX) {
       this._vig = this.cameras.main.postFX.addVignette(0.5, 0.5, this._vigCfg[0], this._vigCfg[1], 0x000000);
     }
@@ -523,17 +545,21 @@ export class Play extends Phaser.Scene {
       const [tx, ty] = corners[i === 0 ? 0 : 3];
       const torch = this.add.image(tx, ty, 'aura', 0)
         .setScale(2.6).setAlpha(0.32).setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(theme === 'field' ? 0xffc27a : (theme === 'fort' ? 0xff8a5a : 0xff9a4a));
+        .setTint(theme === 'field' ? 0xffc27a
+          : (theme === 'fort' ? 0xff8a5a
+            : (theme === 'desert' ? 0xffb060 : (theme === 'water' ? 0x8ad8ff : 0xff9a4a))));
       fx.add(torch);
       this.tweens.add({ targets: torch, alpha: 0.18, scale: 3.2, duration: 520 + i * 90, yoyo: true, repeat: -1 });
     }
 
-    if (theme === 'dungeon') {
+    if (theme === 'dungeon' || theme === 'water' || theme === 'desert') {
+      const BEAM_TINT = { dungeon: 0xffe0b0, water: 0x9fe4ff, desert: 0xffd08a };
       const beam = this.add.image(RW * 0.32, RH * 0.36, 'ray', 0)
-        .setScale(1.6).setRotation(0.42).setAlpha(0.1)
-        .setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe0b0);
+        .setScale(theme === 'water' ? 1.9 : 1.6).setRotation(theme === 'water' ? 0.2 : 0.42)
+        .setAlpha(theme === 'water' ? 0.14 : 0.1)
+        .setBlendMode(Phaser.BlendModes.ADD).setTint(BEAM_TINT[theme]);
       fx.add(beam);
-      this.tweens.add({ targets: beam, alpha: 0.05, duration: 1600, yoyo: true, repeat: -1 });
+      this.tweens.add({ targets: beam, alpha: theme === 'water' ? 0.07 : 0.05, duration: 1600, yoyo: true, repeat: -1 });
     }
 
     this.dust = this.add.particles(0, 0, 'dust', {
@@ -544,10 +570,95 @@ export class Play extends Phaser.Scene {
       scale: { min: 0.35, max: 0.8 },
       alpha: { start: 0.28, end: 0 },
       quantity: 1, frequency: 520, maxAliveParticles: 14,
-      tint: theme === 'field' ? 0xf2ecc8 : (theme === 'fort' ? 0xe8c4a8 : 0xd8c8a8),
+      tint: theme === 'field' ? 0xf2ecc8
+        : (theme === 'fort' ? 0xe8c4a8
+          : (theme === 'desert' ? 0xf0d8a8 : (theme === 'water' ? 0xb8ecff : 0xd8c8a8))),
       blendMode: 'ADD',
     }).setDepth(614);
 
+  }
+
+  /* 批 11 环境压力：沙海流沙 / 水殿水沟。
+   * 只作用于战斗与精英房，Boss 房保持干净读招；进房时旧区域已被 enterRoom 清空。 */
+  applyRoomPressure(room) {
+    if (!this.spec) return;
+    const t = room.type || 'battle';
+    if (t !== 'battle' && t !== 'elite') return;
+    const press = (this.spec.chapter && this.spec.chapter.pressure) || [];
+
+    if (press.indexOf('quicksand') >= 0) {
+      for (let i = 0; i < 2; i++) {
+        let x = 0, y = 0, ok = false;
+        for (let tries = 0; tries < 30 && !ok; tries++) {
+          x = Phaser.Math.Between(TILE * 4, RW - TILE * 4);
+          y = Phaser.Math.Between(TILE * 4, RH - TILE * 4);
+          ok = !this.isWall(x, y, 58)
+            && Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) > 120;
+        }
+        if (!ok) continue;
+        const radius = 58;
+        const spr = this.add.circle(x, y, radius, 0x6a4a28, 0.26)
+          .setDepth(0.8).setStrokeStyle(3, 0xe8c890, 0.82);
+        const core = this.add.circle(x, y, radius * 0.55, 0x3a2410, 0.28)
+          .setDepth(0.82).setStrokeStyle(1, 0xd8b070, 0.55);
+        this.tweens.add({ targets: [spr, core], alpha: 0.24, scale: 1.06, duration: 900 + i * 120, yoyo: true, repeat: -1 });
+        this.zones.push({
+          kind: 'quicksand', x, y, radius, pull: 52, slow: 0.62,
+          until: Number.MAX_SAFE_INTEGER, tickAt: 0, tick: 1, dmg: 0, spr,
+        });
+        this.roomWrap.add(core);
+        this.roomWrap.add(spr);
+        spr.setDepth(0.8); core.setDepth(0.82);
+      }
+      // 沙尘横吹，给一张"风在动"的底
+      const haze = this.add.rectangle(0, 0, RW, RH, 0xd8a860, 0.06).setOrigin(0)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(0.2);
+      this.roomWrap.add(haze);
+    }
+
+    if (press.indexOf('waterSlow') >= 0) {
+      this.waterSlow = 0.85;
+      for (let i = 0; i < 2; i++) {
+        const y = Math.round(RH * (i ? 0.64 : 0.36));
+        const h = TILE * 2.4;
+        const dir = i ? -1 : 1;
+        const spr = this.add.rectangle(RW / 2, y, RW - TILE * 4, h, 0x4aa8d8, 0.10)
+          .setDepth(0.9).setStrokeStyle(1, 0x8ad8ff, 0.25);
+        this.roomWrap.add(spr);
+        for (let k = 0; k < 4; k++) {
+          const ax = RW * (0.18 + k * 0.2);
+          const tri = this.add.triangle(ax, y, 0, 0, 16, 8, 0, 16, 0x8ad8ff, 0.28)
+            .setDepth(1).setAngle(dir > 0 ? 0 : 180);
+          this.roomWrap.add(tri);
+        }
+        this.currents.push({ x: RW / 2, y, w: RW - TILE * 4, h, vx: dir * 34, spr });
+      }
+    }
+  }
+
+  envSpeedMul() {
+    let m = this.waterSlow || 1;
+    for (const z of this.zones) {
+      if (z.kind !== 'quicksand') continue;
+      const d = Phaser.Math.Distance.Between(z.x, z.y, this.player.x, this.player.y);
+      if (d <= z.radius) m *= z.slow;
+    }
+    return m;
+  }
+
+  applyEnvForces(dt) {
+    const p = this.player;
+    for (const z of this.zones) {
+      if (z.kind !== 'quicksand') continue;
+      const d = Phaser.Math.Distance.Between(z.x, z.y, p.x, p.y);
+      if (d > z.radius || d < 2) continue;
+      const pull = z.pull * (dt / 1000);
+      this.moveActor(p, (z.x - p.x) / d * pull, (z.y - p.y) / d * pull, 10);
+    }
+    for (const c of this.currents) {
+      if (Math.abs(p.y - c.y) > c.h / 2) continue;
+      this.moveActor(p, c.vx * (dt / 1000), 0, 10);
+    }
   }
 
   refreshDoorLocks() {
@@ -660,11 +771,13 @@ export class Play extends Phaser.Scene {
       speed: cfg.speed, dmg: cfg.dmg * (1 + (this.stageMul - 1) * 0.4), half: cfg.half || 12,
       stuckT: 0, slideT: 0, slide: new Phaser.Math.Vector2(),
       phase: 'walk', phaseT: 0, cdT: 0, mini: false,
-      shield: 0, invuln: false, affix: '', windupMul: 1,
+      shield: 0, invuln: false, affix: '', windupMul: 1, baseScale: 2,
     };
     if (kind === 'owl') { e.phase = 'hover'; e.phaseT = cfg.hoverMs; }
     if (kind === 'mush') { e.phase = 'walk'; e.cdT = cfg.poisonCd; }
     if (kind === 'racoon') { e.hop = new Phaser.Math.Vector2(); e.cdT = cfg.hopCd; }
+    if (kind === 'axolot') e.healT = cfg.healCd;
+    if (kind === 'kappa') e.phaseT = 0;
     this.enemies.push(e);
     return e;
   }
@@ -677,7 +790,7 @@ export class Play extends Phaser.Scene {
         .filter((k) => k === 'beast' || CFG[k]);
       if (pool.length) {
         if (idx <= 0) {
-          const easy = ['beast', 'larva', 'slime', 'racoon', 'spider', 'mole'].find((k) => pool.includes(k));
+          const easy = ['beast', 'larva', 'slime', 'racoon', 'spider', 'mole', 'snake', 'lizard', 'mouse', 'fish', 'axolot', 'mollusc'].find((k) => pool.includes(k));
           return easy || pool[0];
         }
         return pool[Phaser.Math.Between(0, pool.length - 1)];
@@ -706,10 +819,11 @@ export class Play extends Phaser.Scene {
   }
 
   spawnBoss() {
-    // 生成在对侧，别压在玩家进门的位置上
+    // 生成在对侧，别压在玩家进门的位置上；用相对距离而不是固定半场，
+    // 这样从任何门进来 Boss 都在镜头附近，不会一开局就在屏幕外。
     const p = this.player;
     const bx = RW / 2;
-    const by = p.y < RH / 2 ? RH * 0.72 : RH * 0.28;
+    const by = Phaser.Math.Clamp(p.y + (p.y >= RH / 2 ? 150 : -150), TILE * 3, RH - TILE * 3);
     const id = this.pickBossKind();
     const def = bossMeta(id) || bossMeta('frog');
     this.forceKind = null;
@@ -746,6 +860,44 @@ export class Play extends Phaser.Scene {
         speed, dmg, half,
         phase: 'approach', phaseT: 0, moveCount: 0,
         lunge: new Phaser.Math.Vector2(0, 1),
+      });
+    } else if (def.kind === 'tengu') {
+      const prefix = def.prefix || 'tengu';
+      const spr = this.add.sprite(bx, by, def.sheet || 'tenguBlueWalk', 0)
+        .setScale(def.scale || 1.45).setDepth(2);
+      spr.play(prefix + '-idle');
+      this.enemies.push({
+        type: 'boss', bossKind: 'tengu', bossId: def.id, prefix, spr,
+        hp, maxHp: hp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed, dmg, half,
+        phase: 'hover', phaseT: 700, cdT: 620, dive: new Phaser.Math.Vector2(0, 1),
+        baseScale: def.scale || 1.45,
+      });
+    } else if (def.kind === 'spirit') {
+      const spr = this.add.sprite(bx, by, 'spiritIdle', 0)
+        .setScale(def.scale || 2.2).setDepth(2).setAlpha(0.88);
+      spr.play('spirit-idle');
+      this.enemies.push({
+        type: 'boss', bossKind: 'spirit', bossId: def.id, spr,
+        hp, maxHp: hp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed, dmg, half,
+        phase: 'hover', phaseT: 700, castT: 900, blinkT: CFG.spiritBoss.blinkCd,
+        baseScale: def.scale || 2.2,
+      });
+    } else if (def.kind === 'demon') {
+      const spr = this.add.sprite(bx, by, 'demonIdle', 0)
+        .setScale(def.scale || 2.2).setDepth(2);
+      spr.play('demon-idle');
+      this.enemies.push({
+        type: 'boss', bossKind: 'demon', bossId: def.id, spr,
+        hp, maxHp: hp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed, dmg, half,
+        phase: 'approach', phaseT: 0, moveCount: 0, summonT: CFG.demonBoss.summonCd,
+        lunge: new Phaser.Math.Vector2(0, 1),
+        baseScale: def.scale || 2.2,
       });
     } else {
       const spr = this.add.sprite(bx, by, 'boss', 0).setScale(def.scale || 1.6).setDepth(2);
@@ -1520,6 +1672,9 @@ export class Play extends Phaser.Scene {
   updateBoss(e, dt) {
     if (e.bossKind === 'sam') return this.updateSamurai(e, dt);
     if (e.bossKind === 'racoon') return this.updateRaccoon(e, dt);
+    if (e.bossKind === 'tengu') return this.updateTengu(e, dt);
+    if (e.bossKind === 'spirit') return this.updateSpirit(e, dt);
+    if (e.bossKind === 'demon') return this.updateDemon(e, dt);
     const s = e.spr, p = this.player;
     const B2 = CFG.boss2;
     e.phaseT -= dt;
@@ -1752,6 +1907,322 @@ export class Play extends Phaser.Scene {
     if (d < R.swipeReach) this.hurtPlayer(s.x, s.y, R.swipeDmg);
     const fx = this.add.circle(s.x, s.y, R.swipeReach, 0xffb066, 0.25).setDepth(2.2);
     this.tweens.add({ targets: fx, alpha: 0, scale: 1.35, duration: 220, onComplete: () => fx.destroy() });
+  }
+
+  /* 天狗：飞行悬浮，扇射/俯冲轮换；半血后扇面更宽、间隔更短 */
+  updateTengu(e, dt) {
+    const s = e.spr, p = this.player, T = CFG.tenguBoss;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    e.cdT -= dt;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    const sc = e.baseScale || 1.45;
+
+    if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * T.at) {
+      e.phase = 'roar'; e.phaseT = T.roarMs;
+      s.setTint(0xff8a7a);
+      this.sfx.alarm.play({ volume: 0.8 });
+      this.floatText(s.x, s.y - 40, '风起', '#ff8a7a');
+      if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
+      return;
+    }
+    if (e.phase === 'roar') {
+      s.setScale(sc + 0.12 * Math.sin(this.time.now / 40));
+      if (e.phaseT <= 0) {
+        e.phase2 = true; e.phase = 'hover'; e.phaseT = 500; e.cdT = 220;
+        e.speed *= T.speedMul; s.clearTint().setScale(sc);
+      }
+      return;
+    }
+    if (e.phase === 'fanWindup') {
+      s.setScale(sc + 0.06 * Math.sin(this.time.now / 45)).setTint(0x9fd8ff);
+      s.y += Math.sin(this.time.now / 80) * 0.4;
+      if (e.phaseT <= 0) {
+        s.clearTint().setScale(sc);
+        this.tenguFan(e);
+        e.phase = 'recover'; e.phaseT = 420; e.cdT = T.fanCd;
+      }
+      return;
+    }
+    if (e.phase === 'diveWindup') {
+      s.setScale(sc + 0.08 * Math.sin(this.time.now / 40)).setTint(0xffd479);
+      s.y += Math.sin(this.time.now / 70) * 0.5;
+      if (e.phaseT <= 0) {
+        s.clearTint().setScale(sc).play(e.prefix + '-atk');
+        e.phase = 'dive'; e.phaseT = T.diveTime;
+        e.diveFrom = { x: s.x, y: s.y };
+        e.diveAt = { x: p.x, y: p.y };
+        this.sfx.hurt.play({ rate: 0.6, volume: 0.4 });
+      }
+      return;
+    }
+    if (e.phase === 'dive') {
+      const pr = 1 - Math.max(0, e.phaseT) / T.diveTime;
+      s.x = e.diveFrom.x + (e.diveAt.x - e.diveFrom.x) * pr;
+      s.y = e.diveFrom.y + (e.diveAt.y - e.diveFrom.y) * pr;
+      if (e.phaseT <= 0) {
+        s.play(e.prefix + '-walk');
+        this.shake(90, 0.01);
+        playAct(this, 'slam', s.x, s.y);
+        e.phase = 'recover'; e.phaseT = 460; e.cdT = 700;
+      }
+      return;
+    }
+    if (e.phase === 'recover') {
+      if (e.phaseT <= 0) { e.phase = 'hover'; e.phaseT = 500; s.play(e.prefix + '-idle'); }
+      return;
+    }
+
+    // hover：保持中距，太近退、太远追，两侧小幅绕行
+    if (dist > T.keepMax) {
+      const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+      this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+      s.setFlipX(dirv.x < 0);
+    } else if (dist < T.keepMin) {
+      const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+      this.moveActor(s, -dirv.x * e.speed * (dt / 1000), -dirv.y * e.speed * (dt / 1000), e.half);
+      s.setFlipX(dirv.x < 0);
+    }
+    s.y += Math.sin(this.time.now / 100) * 0.35;
+    if (!s.anims.isPlaying || s.anims.currentAnim.key !== e.prefix + '-walk') s.play(e.prefix + '-walk');
+    if (e.phaseT <= 0 && e.cdT <= 0) {
+      if (dist < 150 || Math.random() < 0.55) {
+        e.phase = 'fanWindup'; e.phaseT = T.fanWindup * (e.phase2 ? 0.8 : 1);
+      } else {
+        e.phase = 'diveWindup'; e.phaseT = T.diveWindup * (e.phase2 ? 0.82 : 1);
+      }
+      this.sfx.hurt.play({ rate: 0.7, volume: 0.3 });
+    }
+  }
+
+  tenguFan(e) {
+    const T = CFG.tenguBoss, s = e.spr, p = this.player;
+    const base = Math.atan2(p.y - s.y, p.x - s.x);
+    const n = e.phase2 ? T.fanCount2 : T.fanCount;
+    const tint = e.prefix === 'rtengu' ? 0xffb08a : 0x9fd8ff;
+    for (let i = 0; i < n; i++) {
+      const a = base + (i - (n - 1) / 2) * T.fanSpread;
+      const spr = this.add.sprite(s.x, s.y, 'ball', 0)
+        .setScale(1.5).setTint(tint).setDepth(4).play('ball-fly');
+      this.shots.push({
+        spr, vx: Math.cos(a) * T.fanSpeed, vy: Math.sin(a) * T.fanSpeed,
+        life: 2600, dmg: T.fanDmg,
+      });
+    }
+    this.sfx.magic.play({ rate: 1.2, volume: 0.35 });
+  }
+
+  /* 魂灵：飘移保持中距 → 环形弹幕 → 淡出瞬移；半血弹数更多 */
+  updateSpirit(e, dt) {
+    const s = e.spr, p = this.player, T = CFG.spiritBoss;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    e.castT -= dt;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    const sc = e.baseScale || 2.2;
+
+    if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * T.at) {
+      e.phase = 'roar'; e.phaseT = 640;
+      s.setTint(0xff9ad8);
+      this.sfx.alarm.play({ volume: 0.8 });
+      this.floatText(s.x, s.y - 36, '怨念', '#ff9ad8');
+      if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
+      return;
+    }
+    if (e.phase === 'roar') {
+      s.setScale(sc + 0.1 * Math.sin(this.time.now / 45));
+      if (e.phaseT <= 0) {
+        e.phase2 = true; e.phase = 'hover'; e.castT = 700; s.clearTint().setScale(sc); s.setAlpha(0.9);
+      }
+      return;
+    }
+    if (e.phase === 'castWindup') {
+      s.setScale(sc + 0.07 * Math.sin(this.time.now / 38)).setTint(0xd8a0ff);
+      s.setAlpha(0.72 + 0.15 * Math.sin(this.time.now / 60));
+      if (e.phaseT <= 0) {
+        s.clearTint().setScale(sc).setAlpha(0.9);
+        this.spiritBurst(e);
+        e.phase = 'cast'; e.phaseT = 220;
+      }
+      return;
+    }
+    if (e.phase === 'cast') {
+      if (e.phaseT <= 0) {
+        e.phase = 'blinkOut'; e.phaseT = T.blinkMs;
+        e.invuln = true;
+        s.setAlpha(0.18);
+      }
+      return;
+    }
+    if (e.phase === 'blinkOut') {
+      if (e.phaseT <= 0) {
+        let nx = s.x, ny = s.y;
+        for (let tr = 0; tr < 12; tr++) {
+          const a = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const rr = Phaser.Math.Between(150, 220);
+          nx = Phaser.Math.Clamp(p.x + Math.cos(a) * rr, TILE * 3, RW - TILE * 3);
+          ny = Phaser.Math.Clamp(p.y + Math.sin(a) * rr, TILE * 3, RH - TILE * 3);
+          if (!this.isWall(nx, ny, e.half)) break;
+        }
+        s.setPosition(nx, ny);
+        e.invuln = false;
+        e.phase = 'hover'; e.phaseT = 300;
+        e.castT = T.castCd * (e.phase2 ? 0.8 : 1);
+        s.setAlpha(0.9);
+      }
+      return;
+    }
+
+    if (dist > T.keepMax) {
+      const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+      this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+      s.setFlipX(dirv.x < 0);
+    }
+    s.y += Math.sin(this.time.now / 110) * 0.45;
+    if (!s.anims.isPlaying) s.play('spirit-idle');
+    if (e.castT <= 0 && e.phaseT <= 0) {
+      e.phase = 'castWindup';
+      e.phaseT = T.castWindup * (e.phase2 ? 0.82 : 1);
+      this.sfx.magic.play({ rate: 0.8, volume: 0.3 });
+    }
+  }
+
+  spiritBurst(e) {
+    const T = CFG.spiritBoss, s = e.spr;
+    const n = e.phase2 ? T.burst2 : T.burst;
+    const base = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    for (let i = 0; i < n; i++) {
+      const a = base + (Math.PI * 2 / n) * i;
+      const spr = this.add.sprite(s.x, s.y, 'ball', 0)
+        .setScale(1.6).setTint(0xd8a0ff).setDepth(4).play('ball-fly');
+      this.shots.push({
+        spr, vx: Math.cos(a) * T.orbSpeed, vy: Math.sin(a) * T.orbSpeed,
+        life: 3000, dmg: T.orbDmg,
+      });
+    }
+    this.sfx.magic.play({ rate: 0.7, volume: 0.4 });
+    this.shake(60, 0.006);
+  }
+
+  /* 恶魔独眼：冲撞 → 震地 → 召唤鱼人；半血后蓄力更短 */
+  updateDemon(e, dt) {
+    const s = e.spr, p = this.player, T = CFG.demonBoss;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    e.summonT -= dt;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    const sc = e.baseScale || 2.2;
+
+    if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * T.at) {
+      e.phase = 'roar'; e.phaseT = 640;
+      s.setTint(0xff8a6a);
+      this.sfx.alarm.play({ volume: 0.85 });
+      this.floatText(s.x, s.y - 40, '狂怒', '#ff8a6a');
+      if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
+      return;
+    }
+    if (e.phase === 'roar') {
+      s.setScale(sc + 0.14 * Math.sin(this.time.now / 40));
+      if (e.phaseT <= 0) {
+        e.phase2 = true; e.phase = 'approach'; e.speed *= T.speedMul; e.summonT = T.summonCd;
+        s.clearTint().setScale(sc);
+      }
+      return;
+    }
+    if (e.phase === 'chargeWindup') {
+      s.setTint(0xffe08a);
+      s.setScale(sc + 0.06 * Math.sin(this.time.now / 42));
+      if (e.phaseT <= 0) {
+        s.clearTint().setScale(sc);
+        e.phase = 'charge'; e.phaseT = T.chargeTime;
+        this.shake(100, 0.01);
+      }
+      return;
+    }
+    if (e.phase === 'charge') {
+      const blockX = s.x, blockY = s.y;
+      this.moveActor(s, e.lunge.x * T.chargeSpeed * (dt / 1000), e.lunge.y * T.chargeSpeed * (dt / 1000), e.half);
+      const stopped = Math.abs(s.x - blockX) < 1 && Math.abs(s.y - blockY) < 1;
+      if (e.phaseT <= 0 || stopped) { e.phase = 'recover'; e.phaseT = 420; }
+      return;
+    }
+    if (e.phase === 'slamWindup') {
+      s.setTint(0xffb06a);
+      s.setScale(sc + 0.1 * Math.sin(this.time.now / 38));
+      if (!e.ring) {
+        e.ring = this.add.circle(p.x, p.y, T.slamRadius, 0xff5533, 0.2).setDepth(1);
+        e.ring.setStrokeStyle(2, 0xff8866, 0.9);
+      }
+      if (e.phaseT <= 0) {
+        s.clearTint().setScale(sc);
+        this.demonSlam(e);
+        e.phase = 'recover'; e.phaseT = 480;
+      }
+      return;
+    }
+    if (e.phase === 'summon') {
+      if (e.phaseT <= 0) {
+        for (let i = 0; i < T.summonCount; i++) {
+          const at = { x: s.x + (i ? 44 : -44), y: s.y + 18 };
+          if (this.isWall(at.x, at.y, 10)) { at.x = s.x; at.y = s.y + (i ? -38 : 38); }
+          this.spawnFoe('fish', 0, at);
+        }
+        playAct(this, 'roar', s.x, s.y - 4);
+        this.sfx.alarm.play({ rate: 1.1, volume: 0.4 });
+        e.phase = 'recover'; e.phaseT = 460;
+      }
+      return;
+    }
+    if (e.phase === 'recover') {
+      if (e.phaseT <= 0) e.phase = 'approach';
+      return;
+    }
+
+    if (dist > 70) {
+      const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+      this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+      s.setFlipX(dirv.x < 0);
+      if (!s.anims.isPlaying || s.anims.currentAnim.key !== 'demon-walk') s.play('demon-walk');
+    } else if (s.anims.currentAnim && s.anims.currentAnim.key === 'demon-walk') {
+      s.play('demon-idle');
+    }
+
+    if (e.summonT <= 0 && this.enemiesAlive() < 5 && dist < 300) {
+      e.summonT = T.summonCd;
+      e.phase = 'summon'; e.phaseT = 360;
+      this.floatText(s.x, s.y - 36, '召唤', '#ffd479');
+      return;
+    }
+    if (dist < 260) {
+      const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+      e.moveCount = (e.moveCount || 0) + 1;
+      if (e.moveCount % 3 === 0) {
+        e.phase = 'slamWindup';
+        e.phaseT = T.slamWindup * (e.phase2 ? T.windupMul : 1);
+      } else {
+        e.phase = 'chargeWindup';
+        e.phaseT = T.chargeWindup * (e.phase2 ? T.windupMul : 1);
+        e.lunge.copy(dirv);
+      }
+      this.sfx.hurt.play({ rate: 0.55, volume: 0.35 });
+    }
+  }
+
+  demonSlam(e) {
+    const T = CFG.demonBoss;
+    if (e.ring) { e.ring.destroy(); e.ring = null; }
+    this.shake(220, 0.018);
+    this.sfx.boom.play({ volume: 0.9 });
+    playAct(this, 'slam', e.spr.x, e.spr.y);
+    const ring = this.add.circle(e.spr.x, e.spr.y, T.slamRadius * 0.5, 0xffb06a, 0.25).setDepth(2.2);
+    this.tweens.add({ targets: ring, radius: T.slamRadius, alpha: 0, duration: 260, onComplete: () => ring.destroy() });
+    if (this.dead || this.won) return;
+    const d = Phaser.Math.Distance.Between(e.spr.x, e.spr.y, this.player.x, this.player.y);
+    if (d < T.slamRadius) {
+      this.hurtPlayer(e.spr.x, e.spr.y, T.slamDmg);
+      this.player.kb = new Phaser.Math.Vector2(this.player.x - e.spr.x, this.player.y - e.spr.y)
+        .normalize().scale(150);
+    }
   }
 
   updateSamurai(e, dt) {
@@ -1987,7 +2458,193 @@ export class Play extends Phaser.Scene {
     if (e.kind === 'mole') return this.updateMole(e, dt);
     if (e.kind === 'skull') return this.updateSkull(e, dt);
     if (e.kind === 'racoon') return this.updateRacoonFoe(e, dt);
-    return this.updateBeast(e, dt);          // beast / larva：追击（larva 更快）
+    if (e.kind === 'snake') return this.updateSnake(e, dt);
+    if (e.kind === 'lizard') return this.updateLizard(e, dt);
+    if (e.kind === 'mouse') return this.updateMouse(e, dt);
+    if (e.kind === 'fish') return this.updateFish(e, dt);
+    if (e.kind === 'octopus') return this.updateOctopus(e, dt);
+    if (e.kind === 'kappa') return this.updateKappa(e, dt);
+    if (e.kind === 'axolot') return this.updateAxolot(e, dt);
+    return this.updateBeast(e, dt);          // beast / larva / reptile / mollusc：追击
+  }
+
+  /* 蛇：左右摆动着逼近，贴脸咬人 */
+  updateSnake(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.snake;
+    if (this.dead || this.won) return;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    const side = new Phaser.Math.Vector2(-dirv.y, dirv.x);
+    const w = Math.sin(this.time.now / 1000 * C.weaveHz * Math.PI * 2) * C.weave;
+    const sp = e.speed * (dt / 1000);
+    this.moveActor(s, (dirv.x * e.speed + side.x * w) * (dt / 1000), (dirv.y * e.speed + side.y * w) * (dt / 1000), e.half);
+    s.setFlipX(dirv.x < 0);
+    if (!s.anims.isPlaying) this.faceAnim(e, dirv);
+  }
+
+  /* 蜥蜴：短蓄力后直线冲刺；冲刺结束会僵一下 */
+  updateLizard(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.lizard;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    if (e.phase === 'windup') {
+      const base = e.baseScale || 2;
+      s.setScale(base + 0.1 * Math.sin(this.time.now / 40)).setTint(0xffd479);
+      if (e.phaseT <= 0) {
+        e.phase = 'dash'; e.phaseT = C.dashTime;
+        s.clearTint().setScale(base);
+      }
+      return;
+    }
+    if (e.phase === 'dash') {
+      this.moveActor(s, e.dash.x * C.dashSpeed * (dt / 1000), e.dash.y * C.dashSpeed * (dt / 1000), e.half);
+      if (e.phaseT <= 0) { e.phase = 'walk'; e.cdT = C.dashCd; }
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+    if (dist < C.dashRange && e.cdT <= 0) {
+      e.phase = 'windup'; e.phaseT = C.windup;
+      e.dash = dirv.clone();
+      this.sfx.hurt.play({ rate: 0.65, volume: 0.25 });
+    }
+  }
+
+  /* 老鼠：高频小跳突进，靠走位而不是硬碰 */
+  updateMouse(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.mouse;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    if (e.phase === 'dash') {
+      this.moveActor(s, e.dash.x * C.dashSpeed * (dt / 1000), e.dash.y * C.dashSpeed * (dt / 1000), e.half);
+      if (e.phaseT <= 0) e.phase = 'walk';
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+    if (dist < C.dashRange && e.cdT <= 0) {
+      e.phase = 'dash'; e.phaseT = C.dashTime;
+      e.dash = dirv.clone();
+      e.cdT = C.dashCd;
+      const base = e.baseScale || 2;
+      s.setScale(base * 1.08);
+      this.time.delayedCall(C.dashTime, () => { if (s.active) s.setScale(base); });
+    }
+  }
+
+  /* 鱼人：在陆上也像在水里，短距直线冲刺 */
+  updateFish(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.fish;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    if (e.phase === 'windup') {
+      s.setTint(0x9fd8ff);
+      if (e.phaseT <= 0) { e.phase = 'dash'; e.phaseT = C.dashTime; s.clearTint(); }
+      return;
+    }
+    if (e.phase === 'dash') {
+      this.moveActor(s, e.dash.x * C.dashSpeed * (dt / 1000), e.dash.y * C.dashSpeed * (dt / 1000), e.half);
+      if (e.phaseT <= 0) { e.phase = 'walk'; e.cdT = C.dashCd; }
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+    if (dist < C.dashRange && e.cdT <= 0) {
+      e.phase = 'windup'; e.phaseT = C.windup;
+      e.dash = dirv.clone();
+    }
+  }
+
+  /* 章鱼：保持中距，喷墨减速 */
+  updateOctopus(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.octopus;
+    if (this.dead || this.won) return;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > C.range) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    if (dist < C.keepMin) {
+      this.moveActor(s, -dirv.x * e.speed * (dt / 1000), -dirv.y * e.speed * (dt / 1000), e.half);
+    } else if (dist > C.keepMax) {
+      this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+    }
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+    if (e.cdT <= 0) {
+      const spr = this.add.sprite(s.x, s.y, 'ball', 0)
+        .setScale(1.7).setTint(0x3a3a5a).setDepth(4).play('ball-fly');
+      this.shots.push({
+        spr, vx: dirv.x * C.shotSpeed, vy: dirv.y * C.shotSpeed,
+        life: 2600, dmg: C.shotDmg, slow: C.inkSlow, slowMs: C.inkSlowMs,
+      });
+      e.cdT = C.shotCd;
+      this.sfx.magic.play({ rate: 0.55, volume: 0.25 });
+    }
+  }
+
+  /* 河童：周期性缩壳护盾（破盾前不掉血），其余时间追人 */
+  updateKappa(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.kappa;
+    if (this.dead || this.won) return;
+    e.phaseT -= dt;
+    if (e.shield > 0) {
+      if (e.phaseT <= 0) { e.shield = 0; s.clearTint(); }
+      return;
+    }
+    if (e.cdT <= 0) {
+      e.shield = 1; e.phaseT = C.shieldMs; e.cdT = C.shieldCd;
+      s.setTint(0x9fd8ff);
+      this.floatText(s.x, s.y - 18, '缩壳', '#9fd8ff');
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    this.moveActor(s, dirv.x * e.speed * (dt / 1000), dirv.y * e.speed * (dt / 1000), e.half);
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+  }
+
+  /* 蝾螈：保持距离吐泡，并缓慢自愈；压血线要先打断回复 */
+  updateAxolot(e, dt) {
+    const s = e.spr, p = this.player, C = CFG.axolot;
+    if (this.dead || this.won) return;
+    e.healT -= dt;
+    if (e.healT <= 0 && e.hp < e.maxHp) {
+      e.hp = Math.min(e.maxHp, e.hp + C.heal);
+      e.healT = C.healCd;
+      this.floatText(s.x, s.y - 18, '+' + C.heal, '#9be27a');
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > C.range) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    if (dist < 90) {
+      this.moveActor(s, -dirv.x * e.speed * (dt / 1000), -dirv.y * e.speed * (dt / 1000), e.half);
+    }
+    s.setFlipX(dirv.x < 0);
+    this.faceAnim(e, dirv);
+    if (e.cdT <= 0) {
+      const spr = this.add.sprite(s.x, s.y, 'ball', 0)
+        .setScale(1.3).setTint(0x9fe8ff).setDepth(4).play('ball-fly');
+      this.shots.push({
+        spr, vx: dirv.x * C.shotSpeed, vy: dirv.y * C.shotSpeed,
+        life: 2400, dmg: C.shotDmg,
+      });
+      e.cdT = C.shotCd;
+      this.sfx.ui.play({ rate: 1.5, volume: 0.2 });
+    }
   }
 
   /* 蜘蛛：保持中距离，吐网（命中减速 40% / 1.5s），绕侧就能躲 */
@@ -2241,6 +2898,7 @@ export class Play extends Phaser.Scene {
       if (this.dead || this.won) continue;
       const d = Phaser.Math.Distance.Between(z.x, z.y, this.player.x, this.player.y);
       if (d > z.radius) continue;
+      if (z.kind === 'quicksand') continue;     // 流沙只减速/吸附，不结算伤害
       if (this.time.now < z.tickAt) continue;
       z.tickAt = this.time.now + z.tick;
       this.hurtPlayer(z.x, z.y, z.dmg);
@@ -2767,12 +3425,13 @@ export class Play extends Phaser.Scene {
       this.player.kb.scale(Math.pow(0.0025, dt / 1000));
       if (this.player.kb.lengthSq() < 1) this.player.kb = null;
     }
+    if (!this.dead && !this.won) this.applyEnvForces(dt);
 
     if (!this.dead && !this.won && d.lengthSq() > 0.01) {
       d.normalize();
       const slow = 1 - Math.max(0, this.atkAt + 160 - this.time.now) / 160 * 0.35;
       const webbed = this.time.now < this.slowUntil ? 0.6 : 1;   // 网住 -40%
-      const spd = this.moveSpeed() * slow * webbed * (dt / 1000);
+      const spd = this.moveSpeed() * slow * webbed * this.envSpeedMul() * (dt / 1000);
       this.moveActor(this.player, d.x * spd, d.y * spd, 10);
       const dir = Math.abs(d.x) > Math.abs(d.y) ? (d.x > 0 ? 'right' : 'left') : (d.y > 0 ? 'down' : 'up');
       if (dir !== this.facing) {
@@ -2812,14 +3471,22 @@ export class Play extends Phaser.Scene {
       }
       s.setDepth(2 + s.y / 1000);
 
-      // Boss 只有冲撞那一下能伤人，蓄力时贴上去不掉血
+      // Boss 只有明确的攻击窗口能伤人，蓄力时贴上去不掉血
       const canHurt = e.type === 'boss'
         ? (e.bossKind === 'racoon'
           ? (e.phase === 'swipeHit')
-          : (e.phase === 'lunge' || e.phase === 'charge' || e.phase === 'slashHit'))
+          : (e.bossKind === 'tengu'
+            ? (e.phase === 'dive')
+            : (e.bossKind === 'spirit'
+              ? (e.phase !== 'blinkOut' && e.phase !== 'blinkIn' && e.phase !== 'roar')
+              : (e.bossKind === 'demon'
+                ? (e.phase === 'charge')
+                : (e.phase === 'lunge' || e.phase === 'charge' || e.phase === 'slashHit')))))
         : !e.invuln;
       if (canHurt && !this.dead && !this.won) {
-        const hitR = e.type === 'boss' ? 34 : 24;
+        const hitR = e.type === 'boss'
+          ? (e.bossKind === 'tengu' || e.bossKind === 'spirit' || e.bossKind === 'demon' ? (e.half || 24) + 8 : 34)
+          : 24;
         if (Phaser.Math.Distance.Between(s.x, s.y, this.player.x, this.player.y) < hitR) {
           this.hurtPlayer(s.x, s.y, e.dmg);
         }

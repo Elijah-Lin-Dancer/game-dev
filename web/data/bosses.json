@@ -9,6 +9,14 @@
    "hp": 34, "dmg": 4, "speed": 58, "half": 22, "scale": 1.5},
   {"id": "samRed", "name": "赤武士", "kind": "sam", "prefix": "rsam", "sheet": "rsamIdle", "seen": "samuraiRed",
    "hp": 38, "dmg": 4, "speed": 60, "half": 22, "scale": 1.5},
+  {"id": "tenguBlue", "name": "蓝天狗", "kind": "tengu", "prefix": "tengu", "sheet": "tenguBlueWalk", "seen": "tenguBlue",
+   "hp": 42, "dmg": 3, "speed": 78, "half": 30, "scale": 1.45},
+  {"id": "tenguRed", "name": "赤天狗", "kind": "tengu", "prefix": "rtengu", "sheet": "tenguRedWalk", "seen": "tenguRed",
+   "hp": 46, "dmg": 3, "speed": 82, "half": 30, "scale": 1.45},
+  {"id": "spirit", "name": "魂灵", "kind": "spirit", "sheet": "spiritIdle", "seen": "spirit",
+   "hp": 46, "dmg": 2, "speed": 36, "half": 26, "scale": 2.2},
+  {"id": "demonCyclop", "name": "恶魔独眼", "kind": "demon", "sheet": "demonIdle", "seen": "demonCyclop",
+   "hp": 60, "dmg": 4, "speed": 48, "half": 32, "scale": 2.2},
   {"id": "weaver", "name": "织命者", "kind": "frog", "sheet": "boss", "seen": "weaver",
    "hp": 30, "dmg": 3, "speed": 56, "half": 24, "scale": 1.6}
  ]

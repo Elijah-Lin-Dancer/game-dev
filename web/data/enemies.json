@@ -11,6 +11,15 @@
   {"id": "mush", "name": "毒菇", "sheet": "mush", "kind": "zone"},
   {"id": "mole", "name": "鼹鼠", "sheet": "mole", "kind": "burrow"},
   {"id": "skull", "name": "骷髅", "sheet": "skull", "kind": "homing"},
-  {"id": "racoon", "name": "浣熊", "sheet": "racoon", "kind": "skirmish"}
+  {"id": "racoon", "name": "浣熊", "sheet": "racoon", "kind": "skirmish"},
+  {"id": "snake", "name": "蛇", "sheet": "snake", "kind": "weave"},
+  {"id": "reptile", "name": "爬虫", "sheet": "reptile", "kind": "brute"},
+  {"id": "lizard", "name": "蜥蜴", "sheet": "lizard", "kind": "dash"},
+  {"id": "mollusc", "name": "软体", "sheet": "mollusc", "kind": "slow"},
+  {"id": "mouse", "name": "老鼠", "sheet": "mouse", "kind": "skitter"},
+  {"id": "fish", "name": "鱼人", "sheet": "fish", "kind": "dash"},
+  {"id": "octopus", "name": "章鱼", "sheet": "octopus", "kind": "ink"},
+  {"id": "kappa", "name": "河童", "sheet": "kappa", "kind": "shield"},
+  {"id": "axolot", "name": "蝾螈", "sheet": "axolot", "kind": "heal"}
  ]
 }

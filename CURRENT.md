@@ -2,7 +2,9 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 10 一、二章内容完成（怪池 / Boss 池 / 机关房 / 旧堡皮肤 / 图鉴补位）。下一步按 `docs/MASTERPLAN.md` 做批 11：三、四章内容（沙海 / 沉水神殿素材与压力机制）。
+当前段：批 11 三、四章内容完成（沙海 / 沉水神殿皮肤、9 张新怪、4 只 Boss、流沙 / 水流压力、图鉴 20 怪 / 8 Boss）。下一步按 `docs/MASTERPLAN.md` 做批 12：五章与终章（熔岩素材、火雨/灼烧、终章三阶段、9 关 ×10 房）。
+
+已完成的批 11：`web/data/enemies.json` 扩到 20 怪、`web/data/bosses.json` 扩到 9 Boss；新增 snake / reptile / lizard / mollusc / mouse / fish / octopus / kappa / axolot 九张 16px 四向图与行为；三章 Boss 池 `tenguBlue/tenguRed`、四章 `spirit/demonCyclop`；`desert` 暖砂褐 + 沙尘 + 流沙（2 圈，圈内速度 0.62、向心 52px/s），`sunken` 深青蓝 + 冷雾 + 水沟（全房 0.85、2 条 ±34px/s 暗流）；`enterRoom` 统一清 `zones/currents/waterSlow`；图鉴 20 怪 / 8 Boss（修正 `samBlue/samRed` id，8/8 点亮）；验收 O-1~O-7 见 `docs/BATCH11-CHAPTER34.md`，构建 `dist/game.19c18ee6.js`，单文件 `web/game.html` 1776 KB。
 
 已完成的批 10：`web/data/enemies.json`（11 怪）、`web/data/bosses.json`（5 Boss，含巨浣熊/赤武士）、竹林 `beast/cyclope/eye/racoon` + `frog/racoon`、旧堡 `larva/skull/spider/mole/slime` + `samBlue/samRed`；旧堡 6 房模板（战斗×2/宝箱/精英/机关/Boss）、机关房石像与 E 拉门、巨浣熊跃扑/抓击/半血狂暴、赤武士 `rsam-*` 前缀复用、`fort` 暖褐石砖皮肤；蓝武士 96×48 帧尺寸修正；图鉴补浣熊/巨浣熊/赤武士/机关并点亮房型；验收 N-1~N-6 见 `docs/BATCH10-CHAPTER12.md`
 
@@ -36,8 +38,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 11 三、四章内容**：沙海 / 沉水神殿素材、4 只 Boss、流沙与水沟机制
-- 批 12、G0 开放世界雏形、批 13–17（顺位见 `docs/MASTERPLAN.md`）
+- **批 12 五章与终章**：熔岩素材、火雨/灼烧、终章三阶段、9 关 ×10 房（顺位见 `docs/MASTERPLAN.md`）
+- G0 开放世界雏形、批 13–17
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
 - 叙事层（NPC 对话/周目）与结算页对比历史最好

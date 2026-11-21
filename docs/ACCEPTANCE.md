@@ -196,3 +196,15 @@
 
 - 技术栈、内部渲染分辨率、像素风三项确认后，M4 才可写成可执行命令。
 - 玩法方向确定后，M2 的「图标」例外范围可能需要放宽到 UI 套件。
+
+## O. 三、四章内容（2026-11-21 追加，批 11）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| O-1 | 两章皮肤肉眼可分 | 同分辨率实机截图对比 | 通过；沙海暖砂褐 + 沙尘 vs 水殿深青蓝 + 冷雾/蓝光柱（`docs/screens/b11-1-desert.png`、`b11-2-water.png`） |
+| O-2 | 流沙/水沟压力生效 | `__dbg.pressure()` + 圈内速度乘区 + 位移采样 | 通过；沙漠 2 个流沙圈、圈内 `envSpeed=0.62`、向心吸附；水殿 `waterSlow=0.85`、2 条反向水流 `±34px/s` |
+| O-3 | 新怪 anchor 不飘 | 9 张新怪逐只生成、读帧尺寸/缩放、截图检查四向 | 通过；全部 64×64 / 4×4 / 16px 帧、scale 2，四向同一行高；Boss 单尺寸 82×82 / 50×50 |
+| O-4 | 四 Boss 按章/关从池中抽 | 三、四章第 1/2 关跳 Boss 房读 `bossId` | 通过；tenguBlue / tenguRed / spirit / demonCyclop |
+| O-5 | 两章怪池不串池 | 逐房收集 `__dbg.foes()` 与 `chapters.monsters` 比对 | 通过；沙漠只出 snake/reptile/lizard/mollusc/mouse；水殿只出 fish/octopus/kappa/mollusc/axolot |
+| O-6 | 旧区域跨房不残留 | 沙漠战斗房→Boss 房读 `zones`/`waterSlow` | 通过；`zones 2→0`、`waterSlow 0` |
+| O-7 | 单文件版数据完整、可走通 | `web/game.html?debug` 起三章，读三份数据与流沙 | 通过；`__chaptersData/__enemiesData/__bossesData` 均在，`zones=2`，`errs=[]` |
