@@ -37,6 +37,7 @@ const img = {
   statue: join(ASSET, 'Actor/Characters/Statue/SeparateAnim/Idle.png'),
   /* 批 1 武器：6 张图标 + 5 张手持（弓没有手持帧，用图标顶）+ 4 套斩击 + 3 种弹体 */
   wKatana: join(ASSET, 'Items/Weapons/Katana/Sprite.png'),
+  gem: join(ASSET, 'Backgrounds/Tilesets/TilesetDungeon.png'),
   wBigSword: join(ASSET, 'Items/Weapons/BigSword/Sprite.png'),
   wHammer: join(ASSET, 'Items/Weapons/Hammer/Sprite.png'),
   wBow: join(ASSET, 'Items/Weapons/Bow/Sprite.png'),
@@ -93,6 +94,7 @@ const FRAME = {
   cyclope: [16, 16], eye: [16, 16], larva: [16, 16], ball: [16, 16],
   upgPower: [16, 16], upgSpeed: [16, 16], upgAtk: [16, 16],
   villager: [16, 16], villager2: [16, 16], statue: [16, 16],
+  gem: [16, 16],
   wKatana: [6, 14], wBigSword: [7, 16], wHammer: [9, 16], wBow: [15, 7], wWand: [5, 18], wKunai: [7, 12],
   hKatana: [6, 10], hBigSword: [7, 12], hHammer: [9, 9], hWand: [5, 10], hKunai: [3, 12],
   slA: [32, 32], slB: [32, 32], slC: [32, 32], slD: [32, 32],

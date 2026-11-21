@@ -45,6 +45,7 @@ export class Play extends Phaser.Scene {
     this.hp = this.maxHp();
     this.kills = 0;
     this.coins = 0;
+    this.gems = 0;        // 本局宝石：Boss 1–3、通关 +5，结算时写进存档
     this.dead = false;
     this.won = false;
     this.iframe = 0;
@@ -79,6 +80,11 @@ export class Play extends Phaser.Scene {
     this.bolts = [];          // 玩家射出的弹（会伤害敌人）
     this.W = normalizeWeapons(window.__weaponsData);
     this.weapon = this.W.byId[this.char.weapon] || this.W.byId[this.W.global.startWeapon];
+    // 批 7：只有已解锁的武器进掉落池；职业起始武器永远保底，别让空池把掉落打崩
+    const unlockedW = this.meta.unlockedWeapons || [];
+    const keep = (w) => unlockedW.indexOf(w.id) >= 0 || w.id === this.char.weapon || w.id === this.W.global.startWeapon;
+    const pool = this.W.list.filter(keep);
+    this.W.list = pool.length ? pool : [this.weapon];
     // 天赋：本局三选一，重开清零；与 upg 分开算（flat 先、mul 后）
     this.T = normalizeTalents(window.__talentsData);
     this.talents = [];
@@ -151,6 +157,9 @@ export class Play extends Phaser.Scene {
         fxCount: () => this.children.list.filter((c) => c.depth >= 620 && c.depth < 900).length,
         slam: () => { const b = this.enemies.find((e) => e.type === 'boss'); if (b) this.slamImpact(b); },
         coins: (n) => { this.coins = n; },
+        gems: (n) => { if (typeof n === 'number') this.gems = n; return this.gems; },
+        weapons: () => this.W.list.map((w) => w.id),
+        seen: () => { const m = loadSave(); return m.seen || {}; },
         jump: (i) => {
           const rooms = [...this.dungeon.rooms.values()];
           const target = typeof i === 'string' ? [...this.dungeon.rooms.values()].find((r) => r.isBoss)
@@ -587,6 +596,7 @@ export class Play extends Phaser.Scene {
     const cfg = kind === 'beast' ? {
       hp: CFG.enemyHp, speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
     } : CFG[kind];
+    this.markSeen('enemies', kind);
     const spr = this.add.sprite(spot.x, spot.y, kind, 0).setScale(2).setDepth(2).setAlpha(0);
     spr.play(kind + '-down');
     this.tweens.add({ targets: spr, alpha: 1, duration: 240 });
@@ -627,6 +637,7 @@ export class Play extends Phaser.Scene {
     const kind = this.forceKind || (Math.random() < 0.5 ? 'frog' : 'sam');
     this.forceKind = null;
     this.bossKind = kind;
+    this.markSeen('bosses', kind === 'sam' ? 'samurai' : 'frog');
     const cyc = 1 + CFG.cycle.bossMul * (this.cycle - 1);
 
     if (kind === 'sam') {
@@ -1336,9 +1347,21 @@ export class Play extends Phaser.Scene {
   }
 
   /* 换武器：图标、手持贴图、HUD 一起换；旧武器由调用方决定要不要掉回地上 */
+  /* 图鉴点亮：只写一个键，不改别的；localStorage 每只怪一次，量很小 */
+  markSeen(kind, id) {
+    if (!id) return;
+    const m = loadSave();
+    const seen = m.seen || {};
+    const bucket = seen[kind] || {};
+    if (bucket[id]) return;
+    const next = Object.assign({}, seen, { [kind]: Object.assign({}, bucket, { [id]: 1 }) });
+    this.meta = patchSave({ seen: next });
+  }
+
   equipWeapon(id, silent) {
     const w = this.W.byId[id];
     if (!w) return;
+    this.markSeen('weapons', id);
     this.weapon = w;
     this.hand.setTexture(w.inhand || w.icon);
     if (this.weaponIcon) this.weaponIcon.setTexture(w.icon);
@@ -2056,6 +2079,9 @@ export class Play extends Phaser.Scene {
 
     if (isBoss) {
       if (e.ring) { e.ring.destroy(); e.ring = null; }
+      const got = Phaser.Math.Between(1, 3);
+      this.gems += got;
+      this.floatText(spot.x, spot.y - 34, '宝石 +' + got, '#9fe0ff');
       this.dropItem(spot.x, spot.y, 'coin');
       this.dropItem(spot.x + 20, spot.y, 'heart');
       this.dropItem(spot.x - 20, spot.y, 'upg', this.rollUpgrade());
@@ -2141,16 +2167,18 @@ export class Play extends Phaser.Scene {
     this.sfx.gameover.play();
     this.player.setAlpha(0.7);
     this.showOverlay('你倒了',
-      '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills + ' · 金币 ' + this.coins);
+      '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
+      + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems);
   }
 
   win() {
     if (this.won) return;
     this.won = true;
+    this.gems += 5;
     setMood('victory', { loop: false });
     this.commitRun(true);
     this.showOverlay('通关',
-      '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 剩 ' + this.hp + ' 血');
+      '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems + ' · 剩 ' + this.hp + ' 血');
   }
 
   showOverlay(title, sub) {
@@ -2180,6 +2208,7 @@ export class Play extends Phaser.Scene {
       bestRoom: depth,
       wins: m.wins + (cleared ? 1 : 0),
       cycle: m.cycle + (cleared ? 1 : 0),
+      gem: (m.gem || 0) + this.gems,
     });
     this.updateHud();
   }
@@ -2560,7 +2589,7 @@ export class Play extends Phaser.Scene {
     });
     this.info.setText(
       '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
-      + ' · 金币 ' + this.coins + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
+      + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
     );
 
     // 精英光环跟着走，怪物死了就藏起来（sprite 由清尸循环销毁）
@@ -2584,7 +2613,7 @@ export class Play extends Phaser.Scene {
     }
 
     window.__state = {
-      hp: this.hp, kills: this.kills, coins: this.coins, weapon: this.weapon.id,
+      hp: this.hp, kills: this.kills, coins: this.coins, gems: this.gems, weapon: this.weapon.id,
       room: this.roomKey, roomType: this.room.type || 'battle', keys: this.keyCount,
       slowUntil: Math.round(this.slowUntil || 0), zones: (this.zones || []).length, bossKind: this.bossKind || '',
       talents: this.talents.slice(), maxHp: this.maxHp(),

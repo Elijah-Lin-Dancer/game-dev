@@ -5,6 +5,7 @@ import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 
 const ORDER = ['ninja', 'mage', 'knight'];
+const LOCK_PRICE = { ninja: 0, mage: 30, knight: 40 };
 const CARD_W = 128;
 const CARD_H = 240;
 const GAP = 18;
@@ -44,7 +45,11 @@ export class Select extends Phaser.Scene {
   create() {
     this.chars = normalize(window.__charsData);
     const meta = loadSave();
-    this.idx = Math.max(0, ORDER.indexOf(meta.lastChar || 'ninja'));
+    this.unlocked = Array.isArray(meta.chars) && meta.chars.length ? meta.chars : ['ninja'];
+    this.gem = meta.gem || 0;
+    // 上次用的角色如果被锁（老档降级/换机器），就落回第一个已解锁的
+    const last = ORDER.indexOf(meta.lastChar || 'ninja');
+    this.idx = this.isOpen(last) ? Math.max(0, last) : this.firstOpen();
     this.cards = [];
 
     this.add.rectangle(0, 0, S.W, S.H, 0x1e2a1c).setOrigin(0);
@@ -58,7 +63,7 @@ export class Select extends Phaser.Scene {
     this.add.text(S.W / 2, 26, '选择角色', {
       fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 50, '← → 切换 · Enter / 空格出发 · 也可以直接点', {
+    this.add.text(S.W / 2, 50, '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
 
@@ -98,9 +103,16 @@ export class Select extends Phaser.Scene {
       fontFamily: FONT, fontSize: '12px', color: '#9fd8ff', lineSpacing: 2,
       wordWrap: { width: CARD_W - 16, useAdvancedWrap: true },
     });
+    let lockT = null;
+    if (!this.isOpen(i)) {
+      const price = LOCK_PRICE[c.id] || 30;
+      lockT = this.add.text(x + CARD_W / 2, y + 24, '未解锁 · ' + price + ' 宝石', {
+        fontFamily: FONT, fontSize: '12px', color: '#ffb0a0',
+      }).setOrigin(0.5, 0);
+    }
     box.on('pointerdown', () => { this.idx = i; this.mark(); this.confirm(); });
     box.on('pointerover', () => { this.idx = i; this.mark(); });
-    this.cards.push({ box, face, name, tag, stat, skill });
+    this.cards.push({ box, face, name, tag, stat, skill, lockT });
   }
 
   weaponName(id) {
@@ -112,10 +124,27 @@ export class Select extends Phaser.Scene {
   mark() {
     this.cards.forEach((k, i) => {
       const on = i === this.idx;
+      const open = this.isOpen(i);
       k.box.setFillStyle(on ? 0x3a4f2e : 0x2b3a26, 1);
-      k.box.setStrokeStyle(on ? 3 : 2, on ? 0xffe9b0 : 0x4a5f42);
-      k.face.setAlpha(on ? 1 : 0.55).setScale(on ? 1.85 : 1.7);
+      k.box.setStrokeStyle(on ? 3 : 2, !open ? 0x5a4a44 : (on ? 0xffe9b0 : 0x4a5f42));
+      k.face.setAlpha((!open ? 0.35 : (on ? 1 : 0.55))).setScale(on ? 1.85 : 1.7);
     });
+  }
+
+  isOpen(i) { return this.unlocked.indexOf(ORDER[i]) >= 0; }
+
+  firstOpen() {
+    const i = ORDER.findIndex((id) => this.unlocked.indexOf(id) >= 0);
+    return i < 0 ? 0 : i;
+  }
+
+  toast(msg) {
+    if (this.toastT) this.toastT.destroy();
+    this.toastT = this.add.text(S.W / 2, S.H - 44, msg, {
+      fontFamily: FONT, fontSize: '12px', color: '#ffb0a0', backgroundColor: '#000000aa',
+      padding: { x: 6, y: 3 },
+    }).setOrigin(0.5, 0).setDepth(900);
+    this.time.delayedCall(1600, () => { if (this.toastT) { this.toastT.destroy(); this.toastT = null; } });
   }
 
   move(d) {
@@ -130,7 +159,11 @@ export class Select extends Phaser.Scene {
 
   confirm() {
     const c = this.chars[this.idx];
-    patchSave({ lastChar: c.id, chars: ORDER.slice() });
+    if (!this.isOpen(this.idx)) {
+      this.toast(c.name + ' 还没解锁：去小屋花 ' + (LOCK_PRICE[c.id] || 30) + ' 宝石');
+      return;
+    }
+    patchSave({ lastChar: c.id });
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
     this.scene.start('play', { char: c.id });
   }

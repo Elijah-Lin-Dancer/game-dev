@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 4;
+const VERSION = 5;
 
 const defaults = () => ({
   v: VERSION,
@@ -16,7 +16,10 @@ const defaults = () => ({
   muted: false,
   roomsSeen: {},     // 各房型进过的次数（图鉴用，批 7 消费）
   lastChar: 'ninja', // 上次选的角色（批 5）
-  chars: ['ninja', 'mage', 'knight'], // 已解锁角色（默认三只全开）
+  chars: ['ninja'],  // 已解锁角色（批 7 起默认只有忍者，法师/骑士用宝石解锁）
+  gem: 0,            // 宝石（批 7）：Boss 掉 1–3、通关 +5，只用于解锁
+  unlockedWeapons: ['katana', 'bigsword', 'wand', 'kunai'], // 已解锁武器（bow/hammer 要买）
+  seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   updatedAt: 0,
 });
 
@@ -39,6 +42,25 @@ function sanitizeChars(v) {
   return list.length ? list : CHARS.slice();
 }
 
+/* 图鉴点亮表：只收"键 → 1"，键做长度与字符白名单，避免坏档塞进巨型键 */
+function sanitizeMarks(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  Object.keys(v).slice(0, 200).forEach((k) => {
+    if (/^[a-zA-Z0-9_-]{1,24}$/.test(k) && v[k]) out[k] = 1;
+  });
+  return out;
+}
+
+/* 武器解锁表：只允许入库里出现过的 id，且至少保留一把起始武器 */
+const WEAPONS = ['katana', 'bigsword', 'hammer', 'bow', 'wand', 'kunai'];
+function sanitizeWeapons(v) {
+  if (!Array.isArray(v)) return defaults().unlockedWeapons;
+  const list = WEAPONS.filter((id) => v.includes(id));
+  if (!list.includes('katana')) list.unshift('katana');
+  return list;
+}
+
 /* v1 → v2：v1 只有 coins/kills，缺的字段补齐即可，不需要丢弃 */
 function migrate(old) {
   const base = defaults();
@@ -52,6 +74,14 @@ function migrate(old) {
     roomsSeen: sanitizeSeen(old.roomsSeen),
     lastChar: ['ninja', 'mage', 'knight'].includes(old.lastChar) ? old.lastChar : 'ninja',
     chars: sanitizeChars(old.chars),
+    gem: num(old.gem),
+    unlockedWeapons: sanitizeWeapons(old.unlockedWeapons),
+    seen: {
+      enemies: sanitizeMarks(old.seen && old.seen.enemies),
+      weapons: sanitizeMarks(old.seen && old.seen.weapons),
+      bosses: sanitizeMarks(old.seen && old.seen.bosses),
+      rooms: sanitizeMarks(old.seen && old.seen.rooms),
+    },
     v: VERSION,
   };
 }

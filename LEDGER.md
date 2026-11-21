@@ -55,5 +55,7 @@
 
 | 31 | 2026-11-21 | 批 6 场景、光照与转场 | `paintFloorAndWalls()` 主题切换（Boss 房/后半程/二周目强制石砖）、石砖 `Interior` 322 + 草地 21 整屏平铺、16 个 `TilesetFloorDetail` 贴花、相机 `addVignette` `[0.62,0.2]/[0.72,0.12]`、墙角火把 ×2（ADD 呼吸）、石砖房 `Raylight` 光柱、`Snow.png` 灰尘粒子（lifespan 2.4–4.6s / 上限 14）、`enterRoom` 120ms `fadeIn` + 1100ms 房名横幅、删旧房名 `floatText`；`TilesetDungeon.png` 实测为道具图不铺地。验收 W-1~W-9 全过（开/关光照同为 23 fps、`errs=[]`） | `docs/BATCH6-SCENE.md`、`docs/ACCEPTANCE.md`、`docs/screens/b6-*.png` |
 
+| 32 | 2026-11-21 | 批 7 大厅、宝石与图鉴 | 新 Scene `hall.js`（武器/角色/图鉴三页签 + 宝石数）；宝石 Boss 掉 1–3、通关 +5、结算写档、HUD 与结算层显示；解锁弓 15 / 锤 20 / 法师 30 / 骑士 40；`W.list` 按 `unlockedWeapons` 过滤（职业起始武器保底）；`select.js` 锁卡与拦出发；存档 v5（`gem/unlockedWeapons/seen`，v4 迁移保留已解锁角色）；图鉴 10 怪 / 2 Boss / 6 武器 / 7 房型首次点亮；宝石图标取包内 `TilesetDungeon` frame 43，0 外部件 0 自绘。验收 X-1~X-8 全过（掉落池 4 把、80→65→35 扣费、`gem 55→61`、`errs=[]`） | `docs/BATCH7-HALL.md`、`docs/ACCEPTANCE.md`、`docs/screens/b7-*.png` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`
