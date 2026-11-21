@@ -27,11 +27,16 @@ const CFG = {
   mush: { hp: 10, speed: 8, dmg: 2, poisonCd: 2400, poisonRadius: 54, poisonLife: 3000, poisonTick: 600, poisonDmg: 1, poisonRange: 300 },
   mole: { hp: 9, speed: 38, dmg: 3, diveMs: 620, emergeMs: 260, diveRange: 260 },
   skull: { hp: 7, speed: 26, dmg: 2, shotCd: 2100, shotSpeed: 105, shotDmg: 2, turn: 0.6, range: 420 },
+  /* 批 10：小浣熊（快近战，偶尔侧跳） */
+  racoon: { hp: 8, speed: 66, dmg: 2, half: 10, hopCd: 1300, hopRange: 150, hopSpeed: 155 },
   /* 精英词缀：任意怪都能带一个 */
   elite: { hpMul: 1.8, affix: { enrage: { speed: 1.4, dmg: 1.5, hp: 1.2 }, swift: { speed: 1.1, windup: 0.7 }, split: {}, shield: {} } },
   /* 第二只 Boss：蓝武士（横斩 / 突进斩 / 召小怪） */
   bossB: { hp: 34, speed: 58, dmg: 4, at: 0.5, slashWindup: 420, slashDmg: 4, slashReach: 96, slashWidth: 120,
     chargeWindup: 480, chargeSpeed: 230, chargeTime: 300, chargeDmg: 5, summonCd: 2600, summonCount: 2 },
+  /* 批 10：巨浣熊（跃扑 + 抓击；半血后更急） */
+  racoonBoss: { pounceWindup: 440, pounceAir: 340, pounceRadius: 74, pounceDmg: 4,
+    swipeWindup: 300, swipeHit: 160, swipeReach: 64, swipeDmg: 3, at: 0.5, speedMul: 1.25 },
   cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },

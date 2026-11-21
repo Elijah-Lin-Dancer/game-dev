@@ -1,0 +1,16 @@
+{
+ "v": 1,
+ "list": [
+  {"id": "beast", "name": "野兽", "sheet": "beast", "kind": "melee"},
+  {"id": "cyclope", "name": "独眼", "sheet": "cyclope", "kind": "dash"},
+  {"id": "eye", "name": "眼球", "sheet": "eye", "kind": "ranged"},
+  {"id": "larva", "name": "幼虫", "sheet": "larva", "kind": "split"},
+  {"id": "slime", "name": "史莱姆", "sheet": "slime", "kind": "split"},
+  {"id": "spider", "name": "蜘蛛", "sheet": "spider", "kind": "web"},
+  {"id": "owl", "name": "夜枭", "sheet": "owl", "kind": "dive"},
+  {"id": "mush", "name": "毒菇", "sheet": "mush", "kind": "zone"},
+  {"id": "mole", "name": "鼹鼠", "sheet": "mole", "kind": "burrow"},
+  {"id": "skull", "name": "骷髅", "sheet": "skull", "kind": "homing"},
+  {"id": "racoon", "name": "浣熊", "sheet": "racoon", "kind": "skirmish"}
+ ]
+}

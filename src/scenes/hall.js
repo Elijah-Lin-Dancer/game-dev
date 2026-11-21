@@ -20,15 +20,18 @@ const CHAR_FACE = { ninja: 'faceNinja', mage: 'faceMage', knight: 'faceKnight' }
 const KIND_NAME = { melee: '近战', ranged: '远程', throw: '投掷' };
 const ROOM_NAME = {
   battle: '战场', elite: '精英', treasure: '宝箱', shop: '商店',
-  shrine: '石龛', rest: '篝火', boss: '首领',
+  shrine: '石龛', rest: '篝火', gate: '机关', boss: '首领',
 };
 /* 图鉴里要列的东西：怪用图集里的 kind 键（首帧当头像），Boss 用两只专用贴图 */
 const FOES = [
   ['beast', '野兽'], ['cyclope', '独眼'], ['eye', '眼球'], ['larva', '幼虫'],
   ['slime', '史莱姆'], ['spider', '蜘蛛'], ['owl', '夜枭'], ['mush', '毒菇'],
-  ['mole', '鼹鼠'], ['skull', '骷髅'],
+  ['mole', '鼹鼠'], ['skull', '骷髅'], ['racoon', '浣熊'],
 ];
-const BOSSES = [['frog', '青蛙大王', 'boss'], ['samurai', '蓝武士', 'bossB']];
+const BOSSES = [
+  ['frog', '青蛙大王', 'boss', 1.4], ['racoon', '巨浣熊', 'racoonIdle', 1.0],
+  ['samurai', '蓝武士', 'samIdle', 0.5], ['samuraiRed', '赤武士', 'rsamIdle', 0.5],
+];
 
 export class Hall extends Phaser.Scene {
   constructor() { super('hall'); }
@@ -211,7 +214,7 @@ export class Hall extends Phaser.Scene {
         const got = !!marks[key][it[0]];
         this.keep(this.add.rectangle(cx, cy, cell - 4, cell - 4, 0x141a16, 0.9)
           .setOrigin(0).setStrokeStyle(1, got ? 0x4a5f42 : 0x2a3229));
-        if (got && it[2]) this.keep(this.add.image(cx + 20, cy + 13, it[2], 0).setScale(iconScale || 1.6));
+        if (got && it[2]) this.keep(this.add.image(cx + 20, cy + 13, it[2], 0).setScale(it[3] || iconScale || 1.6));
         else if (got) this.keep(this.add.image(cx + 20, cy + 13, it[0], 4).setScale(1.2));
         this.keep(this.add.text(cx + 20, cy + 26, got ? it[1] : '???', {
           fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',

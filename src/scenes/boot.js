@@ -36,6 +36,8 @@ export class Boot extends Phaser.Scene {
     window.__talentsData = A.talentsData;
     window.__charsData = A.charsData;
     window.__chaptersData = A.chaptersData;
+    window.__enemiesData = A.enemiesData;
+    window.__bossesData = A.bossesData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
@@ -44,7 +46,7 @@ export class Boot extends Phaser.Scene {
         frames: [0, 4, 8, 12].map((row) => ({ key: 'walk', frame: row + col })),
         frameRate: 9, repeat: -1,
       });
-      ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull'].forEach((k) => {
+      ['beast', 'cyclope', 'eye', 'larva', 'slime', 'spider', 'owl', 'mush', 'mole', 'skull', 'racoon'].forEach((k) => {
         this.anims.create({
           key: k + '-' + dir,
           frames: [0, 4, 8, 12].map((row) => ({ key: k, frame: row + col })),
@@ -108,7 +110,7 @@ export class Boot extends Phaser.Scene {
       frameRate: 7, repeat: -1,
     });
     this.anims.create({
-      key: 'sam-walk', frames: this.anims.generateFrameNumbers('samWalk', { start: 0, end: 11 }),
+      key: 'sam-walk', frames: this.anims.generateFrameNumbers('samWalk', { start: 0, end: 5 }),
       frameRate: 11, repeat: -1,
     });
     ['L', 'R'].forEach((d) => {
@@ -120,6 +122,44 @@ export class Boot extends Phaser.Scene {
         key: 'sam-chg' + d, frames: this.anims.generateFrameNumbers('samChg' + d, { start: 0, end: 2 }),
         frameRate: 12, repeat: 0,
       });
+    });
+    // 批 10：赤武士沿用武士状态机，换一套贴图与动画前缀
+    ['rsam'].forEach((q) => {
+      this.anims.create({
+        key: q + '-idle', frames: this.anims.generateFrameNumbers(q + 'Idle', { start: 0, end: 5 }),
+        frameRate: 7, repeat: -1,
+      });
+      this.anims.create({
+        key: q + '-walk', frames: this.anims.generateFrameNumbers(q + 'Walk', { start: 0, end: 5 }),
+        frameRate: 11, repeat: -1,
+      });
+      ['L', 'R'].forEach((d) => {
+        this.anims.create({
+          key: q + '-atk' + d, frames: this.anims.generateFrameNumbers(q + 'Atk' + d, { start: 0, end: 3 }),
+          frameRate: 18, repeat: 0,
+        });
+        this.anims.create({
+          key: q + '-chg' + d, frames: this.anims.generateFrameNumbers(q + 'Chg' + d, { start: 0, end: 2 }),
+          frameRate: 12, repeat: 0,
+        });
+      });
+    });
+    // 批 10：巨浣熊（待机 / 抓击 / 跃扑 / 蓄力）
+    this.anims.create({
+      key: 'racoon-idle', frames: this.anims.generateFrameNumbers('racoonIdle', { start: 0, end: 5 }),
+      frameRate: 8, repeat: -1,
+    });
+    this.anims.create({
+      key: 'racoon-atk', frames: this.anims.generateFrameNumbers('racoonAtk', { start: 0, end: 3 }),
+      frameRate: 16, repeat: 0,
+    });
+    this.anims.create({
+      key: 'racoon-jump', frames: this.anims.generateFrameNumbers('racoonJump', { start: 0, end: 4 }),
+      frameRate: 10, repeat: 0,
+    });
+    this.anims.create({
+      key: 'racoon-chg', frames: this.anims.generateFrameNumbers('racoonChg', { start: 0, end: 1 }),
+      frameRate: 8, repeat: 0,
     });
     this.anims.create({
       key: 'fireball-play',

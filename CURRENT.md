@@ -2,7 +2,9 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 9 章节骨架完成（世界地图 / 六章 36 关主线 / 星级 / 存档 v6）。下一步按 `docs/MASTERPLAN.md` 做批 10：一、二章内容（新怪、Boss、沙海前皮肤、机关门压力）。
+当前段：批 10 一、二章内容完成（怪池 / Boss 池 / 机关房 / 旧堡皮肤 / 图鉴补位）。下一步按 `docs/MASTERPLAN.md` 做批 11：三、四章内容（沙海 / 沉水神殿素材与压力机制）。
+
+已完成的批 10：`web/data/enemies.json`（11 怪）、`web/data/bosses.json`（5 Boss，含巨浣熊/赤武士）、竹林 `beast/cyclope/eye/racoon` + `frog/racoon`、旧堡 `larva/skull/spider/mole/slime` + `samBlue/samRed`；旧堡 6 房模板（战斗×2/宝箱/精英/机关/Boss）、机关房石像与 E 拉门、巨浣熊跃扑/抓击/半血狂暴、赤武士 `rsam-*` 前缀复用、`fort` 暖褐石砖皮肤；蓝武士 96×48 帧尺寸修正；图鉴补浣熊/巨浣熊/赤武士/机关并点亮房型；验收 N-1~N-6 见 `docs/BATCH10-CHAPTER12.md`
 
 已完成的批 9：`web/data/chapters.json`（六章 49 关数据表，主线 36 关 + 支线/隐藏/条件 13 关）、`src/systems/stages.js`（关卡规格/解锁/星级/进度）、`dungeon.js` 重写为按房数生成蛇形章节地牢、存档 v6（`stars`，v5 迁移不丢字段）、`src/scenes/map.js` 世界地图、`play.js` 关卡包装（房数/难度/星级结算/回地图）、流程 `Boot→Title→Hall→Map→Select→Play`；验收 Z-1~Z-10 见 `docs/BATCH9-STAGE.md`
 
@@ -34,8 +36,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 10 一、二章内容**：新怪/新 Boss 接入、旧堡机关门、章节皮肤前两套
-- 批 11–12、G0 开放世界雏形、批 13–17（顺位见 `docs/MASTERPLAN.md`）
+- **批 11 三、四章内容**：沙海 / 沉水神殿素材、4 只 Boss、流沙与水沟机制
+- 批 12、G0 开放世界雏形、批 13–17（顺位见 `docs/MASTERPLAN.md`）
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
 - 叙事层（NPC 对话/周目）与结算页对比历史最好

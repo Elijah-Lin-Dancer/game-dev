@@ -42,7 +42,7 @@
   {
    "id": "fort",
    "name": "旧堡",
-   "theme": "dungeon",
+   "theme": "fort",
    "stages": 6,
    "rooms": [
     6,
@@ -73,7 +73,7 @@
     "battle",
     "treasure",
     "elite",
-    "shrine",
+    "gate",
     "boss"
    ]
   },

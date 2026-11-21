@@ -69,6 +69,18 @@ const img = {
   samAtkR: join(ASSET, 'Actor/Boss/GiantBlueSamurai/AttackRight.png'),
   samChgL: join(ASSET, 'Actor/Boss/GiantBlueSamurai/ChargeLeft.png'),
   samChgR: join(ASSET, 'Actor/Boss/GiantBlueSamurai/ChargeRight.png'),
+  /* 批 10：竹林 Boss 巨浣熊 + 赤武士 + 小浣熊 */
+  racoon: join(ASSET, 'Actor/Monsters/Racoon/SpriteSheet.png'),
+  racoonIdle: join(ASSET, 'Actor/Boss/GiantRacoon/Idle.png'),
+  racoonAtk: join(ASSET, 'Actor/Boss/GiantRacoon/Attack.png'),
+  racoonJump: join(ASSET, 'Actor/Boss/GiantRacoon/Jump.png'),
+  racoonChg: join(ASSET, 'Actor/Boss/GiantRacoon/charge.png'),
+  rsamIdle: join(ASSET, 'Actor/Boss/GiantRedSamurai/Idle.png'),
+  rsamWalk: join(ASSET, 'Actor/Boss/GiantRedSamurai/Walk.png'),
+  rsamAtkL: join(ASSET, 'Actor/Boss/GiantRedSamurai/AttackLeft.png'),
+  rsamAtkR: join(ASSET, 'Actor/Boss/GiantRedSamurai/AttackRight.png'),
+  rsamChgL: join(ASSET, 'Actor/Boss/GiantRedSamurai/ChargeLeft.png'),
+  rsamChgR: join(ASSET, 'Actor/Boss/GiantRedSamurai/ChargeRight.png'),
   chest: join(ASSET, 'Items/Treasure/BigTreasureChest.png'),
   key: join(ASSET, 'Items/Treasure/GoldKey.png'),
   aura: join(ASSET, 'FX/Magic/Circle/SpriteSheetOrange.png'),
@@ -101,8 +113,12 @@ const FRAME = {
   arrow: [13, 5], kunaiProj: [14, 5], fireball: [16, 16],
   chest: [16, 14], key: [12, 8], aura: [32, 32], campfire: [16, 16],
   slime: [16, 16], spider: [16, 16], owl: [16, 16], mush: [16, 16], mole: [16, 16], skull: [16, 16],
-  samIdle: [48, 48], samWalk: [48, 48], samAtkL: [96, 96], samAtkR: [96, 96],
+  samIdle: [96, 48], samWalk: [96, 48], samAtkL: [96, 96], samAtkR: [96, 96],
   samChgL: [96, 96], samChgR: [96, 96],
+  racoon: [16, 16],
+  racoonIdle: [60, 60], racoonAtk: [60, 60], racoonJump: [60, 60], racoonChg: [60, 60],
+  rsamIdle: [96, 48], rsamWalk: [96, 48], rsamAtkL: [96, 96], rsamAtkR: [96, 96],
+  rsamChgL: [96, 96], rsamChgR: [96, 96],
   walkMage: [16, 16], idleMage: [16, 16], walkKnight: [16, 16], idleKnight: [16, 16],
   faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
@@ -169,6 +185,8 @@ const WEAPONS = JSON.parse(readFileSync(join(ROOT, 'web/data/weapons.json'), 'ut
 const TALENTS = JSON.parse(readFileSync(join(ROOT, 'web/data/talents.json'), 'utf8'));
 const CHARS = JSON.parse(readFileSync(join(ROOT, 'web/data/chars.json'), 'utf8'));
 const CHAPTERS = JSON.parse(readFileSync(join(ROOT, 'web/data/chapters.json'), 'utf8'));
+const ENEMIES = JSON.parse(readFileSync(join(ROOT, 'web/data/enemies.json'), 'utf8'));
+const BOSSES = JSON.parse(readFileSync(join(ROOT, 'web/data/bosses.json'), 'utf8'));
 
 function assetsJs(packUrl, dataUrl) {
   const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
@@ -176,7 +194,7 @@ function assetsJs(packUrl, dataUrl) {
     weaponsUrl: dataUrl.replace('balance', 'weapons'), weaponsData: WEAPONS,
     talentsUrl: dataUrl.replace('balance', 'talents'), talentsData: TALENTS,
     charsUrl: dataUrl.replace('balance', 'chars'), charsData: CHARS,
-    chaptersData: CHAPTERS };
+    chaptersData: CHAPTERS, enemiesData: ENEMIES, bossesData: BOSSES };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -244,6 +262,7 @@ if (single) {
     balanceUrl: './data/balance.json', gameData: BALANCE, weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
     talentsUrl: './data/talents.json', talentsData: TALENTS,
     charsUrl: './data/chars.json', charsData: CHARS, chaptersData: CHAPTERS,
+    enemiesData: ENEMIES, bossesData: BOSSES,
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3',
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };

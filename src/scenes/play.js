@@ -12,11 +12,17 @@ import { stageSpec, starsOf, starRating } from '../systems/stages.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
-  shop: 0x7fd8ff, shrine: 0x9fd8d0, rest: 0xff9a5a, boss: 0xff6b5a,
+  shop: 0x7fd8ff, shrine: 0x9fd8d0, rest: 0xff9a5a, gate: 0xc9a45a, boss: 0xff6b5a,
 };
 const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
 const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
-const TYPE_NAME = { battle: '战斗', elite: '精英', treasure: '宝箱', shop: '行脚商', shrine: '石龛', rest: '篝火', boss: '首领' };
+const TYPE_NAME = { battle: '战斗', elite: '精英', treasure: '宝箱', shop: '行脚商', shrine: '石龛', rest: '篝火', gate: '机关', boss: '首领' };
+
+/* 批 10：怪物与 Boss 的名称/贴图/前缀全部读 web/data/*.json，代码只留行为 */
+const ENEMY_META = () => ((window.__enemiesData && window.__enemiesData.list) || []);
+const BOSS_META = () => ((window.__bossesData && window.__bossesData.list) || []);
+const bossMeta = (id) => BOSS_META().find((b) => b.id === id) || null;
+const bossMetaByKind = (kind) => BOSS_META().find((b) => b.id === kind || b.kind === kind) || null;
 
 export class Play extends Phaser.Scene {
   constructor() { super('play'); }
@@ -116,6 +122,8 @@ export class Play extends Phaser.Scene {
 
     this.dungeon = makeDungeon(this.spec ? { rooms: this.spec.rooms, template: this.spec.template } : null);
     this.roomTotal = this.dungeon.path.length;
+    this.bossKind = '';
+    this.bossId = '';
     this.enterRoom(this.dungeon.start, null);
 
     this.buildHud();
@@ -148,7 +156,7 @@ export class Play extends Phaser.Scene {
         reset: () => resetSave(),
         bal: () => (window.__balance || null),
         spawn: (kind, x, y) => this.spawnFoe(kind, 0, { x, y }).kind,
-        wipe: () => { this.enemies.forEach((e) => e.spr && e.spr.destroy()); this.enemies = []; },
+        wipe: () => { this.enemies.forEach((e) => { if (e.ring) e.ring.destroy(); if (e.spr) e.spr.destroy(); }); this.enemies = []; },
         bosshp: (v) => { const b = this.enemies.find((e) => e.type === 'boss'); if (b) b.hp = v; },
         shots: () => this.shots.length,
         foes: () => this.enemies.map((e) => ({ k: e.kind || e.type, hp: e.hp, max: e.maxHp, el: !!e.elite, x: Math.round(e.spr.x), y: Math.round(e.spr.y), s: Math.round(e.speed), ph: e.phase, inv: !!e.invuln, sh: e.shield || 0, af: e.affix || '', d: e.dmg, wm: e.windupMul || 1 })),
@@ -201,6 +209,9 @@ export class Play extends Phaser.Scene {
           return { i: r.idx, x, y, t: r.type, seen: !!r.built };
         }),
         roomType: () => this.room.type || 'battle',
+        gate: () => ({ type: this.room.type, open: !!this.room.gateOpen, cleared: !!this.room.cleared,
+          props: (this.props || []).filter((p) => p.kind === 'gate').length }),
+        pull: () => { const p = (this.props || []).find((x) => x.kind === 'gate'); if (p) this.pullGate(p); return p ? 'ok' : 'none'; },
         // 批 3：层间天赋
         talents: () => ({ ids: this.talents.slice(), mods: Object.assign({}, this.mods),
           maxHp: this.maxHp(), dmg: this.dmg(), cd: Math.round(this.atkCd()), spd: Math.round(this.moveSpeed()) }),
@@ -316,6 +327,7 @@ export class Play extends Phaser.Scene {
 
     this.entry = fromDir ? OPPOSITE[fromDir] : null;
     this.paintFloorAndWalls(room);
+    if (this.markSeen) this.markSeen('rooms', t);
     this.spawnRoomEnemies(room);
     this.spawnRoomProps(room);
     (room.dropState || []).forEach((d) => this.dropItem(d.x, d.y, d.kind, d.up, d.id));
@@ -406,22 +418,30 @@ export class Play extends Phaser.Scene {
     // 主题：前半程草地、后半程石砖；Boss 房与二周目起强制石砖
     // 章节模式：主题按章给（沙漠/水/熔岩的专属图集在批 11 接，先统一回落石砖）
     const theme = this.spec
-      ? (this.chapterTheme === 'field' ? 'field' : 'dungeon')
+      ? (this.chapterTheme === 'field' ? 'field' : (this.chapterTheme === 'fort' ? 'fort' : 'dungeon'))
       : ((room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field');
     this.theme = theme;
-    const floorKey = theme === 'dungeon' ? 'floorDungeon' : 'field';
-    // 石砖房用 Interior 花砖（322）作底，整屏统一但配合裂纹/碎石贴花与暗角读作旧地砖
-    const floorFrame = theme === 'dungeon' ? 322 : 21;
+    const stone = theme !== 'field';
+    const floorKey = stone ? 'floorDungeon' : 'field';
+    // 石砖房用 Interior 花砖（322）作底；旧堡再压一层暖色，和后期地宫分开
+    const floorFrame = stone ? 322 : 21;
     const floor = this.add.tileSprite(0, 0, RW, RH, floorKey, floorFrame).setOrigin(0);
     wrap.add(floor);
+    if (theme === 'fort') {
+      // 旧堡：石砖底压一层暖光（加法混合只提亮地面，不盖住墙和角色）
+      floor.setTint(0xffcbb0);
+      const warm = this.add.rectangle(0, 0, RW, RH, 0xff9a50, 0.22).setOrigin(0)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(0.15);
+      wrap.add(warm);
+    }
 
     // 地板贴花：石砖用裂纹/碎石/头骨，草地用草簇（全部取自 TilesetFloorDetail，半透明压在地面）
-    const decals = theme === 'dungeon' ? [0, 1, 6, 8, 9, 12, 15] : [32, 35, 39, 44, 46, 47];
+    const decals = theme === 'field' ? [32, 35, 39, 44, 46, 47] : (theme === 'fort' ? [0, 1, 6, 8, 12] : [0, 1, 6, 8, 9, 12, 15]);
     for (let i = 0; i < 16; i++) {
       const dx = Phaser.Math.Between(TILE * 3, RW - TILE * 3);
       const dy = Phaser.Math.Between(TILE * 3, RH - TILE * 3);
       wrap.add(this.add.image(dx, dy, 'floorDetail', decals[i % decals.length])
-        .setAlpha(theme === 'dungeon' ? 0.55 : 0.4).setDepth(0.4));
+        .setAlpha(theme === 'field' ? 0.4 : 0.55).setDepth(0.4));
     }
 
     if (room.isBoss) wrap.add(this.add.rectangle(0, 0, RW, RH, 0x223322, 0.25).setOrigin(0));
@@ -439,7 +459,7 @@ export class Play extends Phaser.Scene {
       x * TILE + TILE / 2, y * TILE + TILE / 2, TILE, TILE, color
     ).setStrokeStyle(2, 0x0b120a, 0.45));
 
-    const WALL_TONE = theme === 'dungeon' ? 0x2a2426 : 0x2b3a20;
+    const WALL_TONE = theme === 'field' ? 0x2b3a20 : (theme === 'fort' ? 0x3a2822 : 0x2a2426);
     const wallAt = (x, y) => {
       wallRect(wrap, x, y, WALL_TONE);
       this.walls.add(x + ',' + y);
@@ -491,7 +511,7 @@ export class Play extends Phaser.Scene {
     /* 伪光照：镜头暗角（玩家恒在镜头中心，天然跟随）+ 墙角火把 + 石砖房光柱 + 灰尘粒子 */
     if (this._vig) { this._vig.destroy(); this._vig = null; }
     // 暗度上限 0.3（ROADMAP 要求 ≤0.35）；中心半径 0.55≈180px，怪与预警圈都在亮区
-    this._vigCfg = theme === 'dungeon' ? [0.62, 0.2] : [0.72, 0.12];
+    this._vigCfg = theme === 'field' ? [0.72, 0.12] : (theme === 'fort' ? [0.66, 0.16] : [0.62, 0.2]);
     if (this.cameras.main.postFX) {
       this._vig = this.cameras.main.postFX.addVignette(0.5, 0.5, this._vigCfg[0], this._vigCfg[1], 0x000000);
     }
@@ -503,7 +523,7 @@ export class Play extends Phaser.Scene {
       const [tx, ty] = corners[i === 0 ? 0 : 3];
       const torch = this.add.image(tx, ty, 'aura', 0)
         .setScale(2.6).setAlpha(0.32).setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(theme === 'dungeon' ? 0xff9a4a : 0xffc27a);
+        .setTint(theme === 'field' ? 0xffc27a : (theme === 'fort' ? 0xff8a5a : 0xff9a4a));
       fx.add(torch);
       this.tweens.add({ targets: torch, alpha: 0.18, scale: 3.2, duration: 520 + i * 90, yoyo: true, repeat: -1 });
     }
@@ -524,7 +544,7 @@ export class Play extends Phaser.Scene {
       scale: { min: 0.35, max: 0.8 },
       alpha: { start: 0.28, end: 0 },
       quantity: 1, frequency: 520, maxAliveParticles: 14,
-      tint: theme === 'dungeon' ? 0xd8c8a8 : 0xf2ecc8,
+      tint: theme === 'field' ? 0xf2ecc8 : (theme === 'fort' ? 0xe8c4a8 : 0xd8c8a8),
       blendMode: 'ADD',
     }).setDepth(614);
 
@@ -534,7 +554,8 @@ export class Play extends Phaser.Scene {
     const alive = this.enemiesAlive();
     Object.entries(this.doorLocks).forEach(([dir, lock]) => {
       if (!lock) return;
-      const open = this.room.cleared || alive === 0;
+      const gateShut = this.room.type === 'gate' && !this.room.gateOpen;
+      const open = this.room.cleared || (alive === 0 && !gateShut);
       lock.setVisible(!open);
       (lock.cells || []).forEach(([x, y]) => {
         if (open) this.walls.delete(x + ',' + y);
@@ -564,6 +585,11 @@ export class Play extends Phaser.Scene {
     if (t === 'treasure') {
       // 宝箱有 2 个守卫：想开箱子先清场（清完宝箱本体仍锁着，等钥匙）
       for (let i = 0; i < 2; i++) this.spawnFoe(this.pickKind(room.idx), 150);
+      return;
+    }
+    if (t === 'gate') {
+      // 机关房：3 个守卫 + 一尊机关石像；石像不拉，门不开
+      for (let i = 0; i < 3; i++) this.spawnFoe(this.pickKind(room.idx), 170);
       return;
     }
     const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
@@ -638,12 +664,25 @@ export class Play extends Phaser.Scene {
     };
     if (kind === 'owl') { e.phase = 'hover'; e.phaseT = cfg.hoverMs; }
     if (kind === 'mush') { e.phase = 'walk'; e.cdT = cfg.poisonCd; }
+    if (kind === 'racoon') { e.hop = new Phaser.Math.Vector2(); e.cdT = cfg.hopCd; }
     this.enemies.push(e);
     return e;
   }
 
   /* 越往里走越可能遇到"带脾气"的怪：房间序号决定权重，保证前两间是纯近战教学 */
   pickKind(idx) {
+    // 章节模式：只从本章怪池里抽；首间优先近战，别一进门就吃弹幕
+    if (this.spec) {
+      const pool = ((this.spec.chapter && this.spec.chapter.monsters) || [])
+        .filter((k) => k === 'beast' || CFG[k]);
+      if (pool.length) {
+        if (idx <= 0) {
+          const easy = ['beast', 'larva', 'slime', 'racoon', 'spider', 'mole'].find((k) => pool.includes(k));
+          return easy || pool[0];
+        }
+        return pool[Phaser.Math.Between(0, pool.length - 1)];
+      }
+    }
     if (idx <= 0) return 'beast';
     const pool = ['beast', 'beast'];
     if (idx >= 1) pool.push('cyclope', 'slime');
@@ -654,13 +693,15 @@ export class Play extends Phaser.Scene {
     return pool[Phaser.Math.Between(0, pool.length - 1)];
   }
 
-  /* Boss 选择：老模式随机青蛙/武士；章节模式按 bossPool 轮换，未实现的先回落 */
+  /* Boss 选择：返回 bosses.json 的 id；老模式仍是青蛙/蓝武士随机 */
   pickBossKind() {
-    if (this.forceKind) return this.forceKind;
-    if (!this.spec) return Math.random() < 0.5 ? 'frog' : 'sam';
-    const MAP = { frog: 'frog', samBlue: 'sam', samRed: 'sam' };
-    const pool = (this.spec.bossPool || []).map((id) => MAP[id]).filter(Boolean);
-    if (!pool.length) return this.chapterTheme === 'field' ? 'frog' : 'sam';
+    if (this.forceKind) {
+      const f = bossMetaByKind(this.forceKind);
+      return f ? f.id : 'frog';
+    }
+    if (!this.spec) return Math.random() < 0.5 ? 'frog' : 'samBlue';
+    const pool = (this.spec.bossPool || []).filter((id) => bossMeta(id));
+    if (!pool.length) return this.chapterTheme === 'field' ? 'frog' : 'samBlue';
     return pool[(this.spec.index - 1) % pool.length];
   }
 
@@ -669,35 +710,51 @@ export class Play extends Phaser.Scene {
     const p = this.player;
     const bx = RW / 2;
     const by = p.y < RH / 2 ? RH * 0.72 : RH * 0.28;
-    // 章节模式按章节 Boss 池轮换；池里暂未接线的 Boss（浣熊/天狗等）回落到本章已实现的那只
-    const kind = this.pickBossKind();
+    const id = this.pickBossKind();
+    const def = bossMeta(id) || bossMeta('frog');
     this.forceKind = null;
-    this.bossKind = kind;
-    this.markSeen('bosses', kind === 'sam' ? 'samurai' : 'frog');
+    this.bossId = def.id;
+    this.bossKind = def.kind;
+    this.markSeen('bosses', def.seen || def.id);
     const cyc = 1 + CFG.cycle.bossMul * (this.cycle - 1);
+    const hp = Math.round((def.hp || CFG.bossHp) * cyc * this.diff.hp * this.stageMul);
+    const dmg = (def.dmg || CFG.bossDmg) * (1 + (this.stageMul - 1) * 0.3);
+    const speed = def.speed || CFG.bossSpeed;
+    const half = def.half || 24;
 
-    if (kind === 'sam') {
+    if (def.kind === 'sam') {
       const B = CFG.bossB;
-      const hp = Math.round(B.hp * cyc * this.diff.hp * this.stageMul);
-      const spr = this.add.sprite(bx, by, 'samIdle', 0).setScale(1.5).setDepth(2);
-      spr.play('sam-idle');
+      const prefix = def.prefix || 'sam';
+      const spr = this.add.sprite(bx, by, prefix + 'Idle', 0).setScale(def.scale || 1.5).setDepth(2);
+      spr.play(prefix + '-idle');
       this.enemies.push({
-        type: 'boss', bossKind: 'sam', spr,
+        type: 'boss', bossKind: 'sam', bossId: def.id, prefix, spr,
         hp, maxHp: hp,
         kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-        speed: B.speed, dmg: B.dmg * (1 + (this.stageMul - 1) * 0.3), half: 22,
+        speed, dmg, half,
         phase: 'approach', phaseT: 0, moveCount: 0, sumT: B.summonCd,
         slashDir: new Phaser.Math.Vector2(0, 1),
       });
-    } else {
-      const spr = this.add.sprite(bx, by, 'boss', 0).setScale(1.6).setDepth(2);
-      spr.play('boss-idle');
-      const hp = Math.round(CFG.bossHp * cyc * this.diff.hp * this.stageMul);
+    } else if (def.kind === 'racoon') {
+      const R = CFG.racoonBoss;
+      const spr = this.add.sprite(bx, by, 'racoonIdle', 0).setScale(def.scale || 1.15).setDepth(2);
+      spr.play('racoon-idle');
       this.enemies.push({
-        type: 'boss', bossKind: 'frog', spr,
+        type: 'boss', bossKind: 'racoon', bossId: def.id, spr,
         hp, maxHp: hp,
         kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-        speed: CFG.bossSpeed, dmg: CFG.bossDmg * (1 + (this.stageMul - 1) * 0.3), half: 24,
+        speed, dmg, half,
+        phase: 'approach', phaseT: 0, moveCount: 0,
+        lunge: new Phaser.Math.Vector2(0, 1),
+      });
+    } else {
+      const spr = this.add.sprite(bx, by, 'boss', 0).setScale(def.scale || 1.6).setDepth(2);
+      spr.play('boss-idle');
+      this.enemies.push({
+        type: 'boss', bossKind: 'frog', bossId: def.id, spr,
+        hp, maxHp: hp,
+        kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
+        speed, dmg, half,
         phase: 'approach', phaseT: 0, lunge: new Phaser.Math.Vector2(),
       });
     }
@@ -772,6 +829,14 @@ export class Play extends Phaser.Scene {
       return;
     }
 
+    if (t === 'gate') {
+      const spot = this.findFreeSpot(170);
+      const p = put('gate', 'gate', spot.x, spot.y, 'statue', true);
+      p.spr.setScale(2.6).setTint(0xffd479);
+      this.tweens.add({ targets: p.spr, alpha: 0.72, duration: 720, yoyo: true, repeat: -1 });
+      return;
+    }
+
     if (t === 'rest') {
       const spot = this.findFreeSpot(120);
       const p = put('rest', 'rest', spot.x, spot.y, 'campfire', true);
@@ -800,12 +865,14 @@ export class Play extends Phaser.Scene {
       chest: ui.chestHint || 'E 开箱',
       rest: ui.restHint || 'E 烤火',
       shelf: ui.shopHint || 'E 看货',
+      gate: 'E 拉机关',
       event: ui.eventHint || 'E 查看',
     };
     let label = HINT[p.kind] || ui.eventHint || 'E 查看';
     // 用过的一次性物件：提示换成"已用"状态，别继续骗玩家按 E
     if (p.used && p.kind === 'chest') label = ui.chestUsedHint || 'E 空箱子';
     if (p.used && p.kind === 'rest') label = ui.restUsedHint || '火快灭了';
+    if (p.used && p.kind === 'gate') label = '机关已启';
     this.promptT.setText(label).setPosition(p.spr.x, p.spr.y - 40).setVisible(true);
   }
 
@@ -823,6 +890,7 @@ export class Play extends Phaser.Scene {
     if (this.dead || this.won || this.talking || this.panelOpen) return;
     const p = this.nearestProp(56);
     if (!p) return;
+    if (p.kind === 'gate') { this.pullGate(p); return; }
     if (p.kind === 'npc') {
       const npc = (this.story.npc || {})[p.type] || { name: '陌生人', lines: ['……'] };
       const seen = this.meta && this.meta.kills > 0;
@@ -1027,6 +1095,23 @@ export class Play extends Phaser.Scene {
     }
     options.push({ label: (this.story.ui || {}).leave || '离开', act: () => {} });
     this.showPanel(R.name || '篝火', R.text || '火还在烧，坐一会儿再走。', options, p);
+  }
+
+  pullGate(p) {
+    if (p.used) {
+      this.floatText(p.spr.x, p.spr.y - 26, '机关已经开过了', '#ffffffaa');
+      return;
+    }
+    p.used = true;
+    this.room.gateOpen = true;
+    p.spr.setTint(0x8f8a82);
+    this.floatText(p.spr.x, p.spr.y - 28, '机关已启', '#ffd479');
+    this.sfx.bonus.play({ volume: 0.9 });
+    this.shake(110, 0.008);
+    if (this.enemiesAlive() === 0) this.room.cleared = true;
+    this.refreshDoorLocks();
+    this.drawMinimap();
+    this.updateHud();
   }
 
   heal(n) {
@@ -1434,6 +1519,7 @@ export class Play extends Phaser.Scene {
      二阶段（半血后）：吼一嗓 → 移动更快、蓄力更短，并且每三次出手改砸地（带地面预警圈） */
   updateBoss(e, dt) {
     if (e.bossKind === 'sam') return this.updateSamurai(e, dt);
+    if (e.bossKind === 'racoon') return this.updateRaccoon(e, dt);
     const s = e.spr, p = this.player;
     const B2 = CFG.boss2;
     e.phaseT -= dt;
@@ -1539,9 +1625,139 @@ export class Play extends Phaser.Scene {
   }
 
   /* 蓝武士：横斩（前方扇形/矩形）→ 突进斩 → 召唤 2 小怪，三招轮换 */
+  /* 巨浣熊：近身抓击 / 中距离跃扑；半血后更急 */
+  updateRaccoon(e, dt) {
+    const s = e.spr, p = this.player;
+    const R = CFG.racoonBoss;
+    e.phaseT -= dt;
+
+    if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * R.at) {
+      e.phase = 'roar';
+      e.phaseT = 600;
+      s.setTint(0xff8a6a);
+      this.sfx.alarm.play({ volume: 0.8 });
+      this.floatText(s.x, s.y - 30, '狂暴', '#ff8a7a');
+      if (this.bossBar) this.bossBar.setFillStyle(0xffb03a, 1);
+      return;
+    }
+    if (e.phase === 'roar') {
+      s.setScale(1.15 + 0.12 * Math.sin(this.time.now / 40));
+      if (e.phaseT <= 0) {
+        e.phase2 = true;
+        e.phase = 'approach';
+        e.speed *= R.speedMul;
+        s.clearTint().setScale(1.15);
+      }
+      return;
+    }
+
+    if (e.phase === 'pounceWindup') {
+      const pulse = 1.15 + 0.08 * Math.sin(this.time.now / 45);
+      s.setScale(pulse).setTint(0xff8a5a);
+      if (!e.ring) {
+        e.ring = this.add.circle(p.x, p.y, R.pounceRadius, 0xff5533, 0.18).setDepth(1);
+        e.ring.setStrokeStyle(2, 0xff8866, 0.85);
+      }
+      if (e.phaseT <= 0) {
+        e.phase = 'pounceAir';
+        e.phaseT = R.pounceAir;
+        e.jumpFrom = { x: s.x, y: s.y };
+        e.landAt = { x: e.ring ? e.ring.x : s.x, y: e.ring ? e.ring.y : s.y };
+        s.clearTint().setScale(1.15).play('racoon-jump');
+        this.sfx.hurt.play({ rate: 0.5, volume: 0.4 });
+      }
+      return;
+    }
+    if (e.phase === 'pounceAir') {
+      const pr = 1 - Math.max(0, e.phaseT) / R.pounceAir;
+      s.x = e.jumpFrom.x + (e.landAt.x - e.jumpFrom.x) * pr;
+      s.y = e.jumpFrom.y + (e.landAt.y - e.jumpFrom.y) * pr - Math.sin(Math.PI * pr) * 54;
+      if (e.phaseT <= 0) {
+        s.setPosition(e.landAt.x, e.landAt.y);
+        s.stop().play('racoon-idle');
+        this.racoonImpact(e);
+        e.phase = 'recover';
+        e.phaseT = 460;
+      }
+      return;
+    }
+    if (e.phase === 'swipeWindup') {
+      s.setTint(0xffd479);
+      if (e.phaseT <= 0) {
+        e.phase = 'swipeHit';
+        e.phaseT = R.swipeHit;
+        s.clearTint().play('racoon-atk');
+        this.racoonSwipe(e);
+      }
+      return;
+    }
+    if (e.phase === 'swipeHit') {
+      if (e.phaseT <= 0) { e.phase = 'recover'; e.phaseT = 380; s.play('racoon-idle'); }
+      return;
+    }
+    if (e.phase === 'recover') {
+      if (e.phaseT <= 0) e.phase = 'approach';
+      return;
+    }
+
+    if (this.dead || this.won) return;
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    if (dist > 96) {
+      const sp = e.speed * (dt / 1000);
+      this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+      if (!s.anims.isPlaying) s.play('racoon-idle');
+    }
+    s.setFlipX(dirv.x < 0);
+
+    if (dist < 320) {
+      e.moveCount = (e.moveCount || 0) + 1;
+      e.lunge.copy(dirv);
+      if (dist > R.swipeReach + 8) {
+        e.phase = 'pounceWindup';
+        e.phaseT = R.pounceWindup * (e.phase2 ? 0.8 : 1);
+      } else if (e.moveCount % 2 === 0) {
+        e.phase = 'pounceWindup';
+        e.phaseT = R.pounceWindup * (e.phase2 ? 0.8 : 1);
+      } else {
+        e.phase = 'swipeWindup';
+        e.phaseT = R.swipeWindup * (e.phase2 ? 0.8 : 1);
+      }
+      this.sfx.hurt.play({ rate: 0.6, volume: 0.3 });
+    }
+  }
+
+  racoonImpact(e) {
+    const R = CFG.racoonBoss;
+    if (e.ring) { e.ring.destroy(); e.ring = null; }
+    this.shake(180, 0.014);
+    this.sfx.boom.play({ volume: 0.85 });
+    playAct(this, 'slam', e.spr.x, e.spr.y);
+    if (this.dead || this.won) return;
+    const d = Phaser.Math.Distance.Between(e.spr.x, e.spr.y, this.player.x, this.player.y);
+    if (d < R.pounceRadius) {
+      this.hurtPlayer(e.spr.x, e.spr.y, R.pounceDmg);
+      this.player.kb = new Phaser.Math.Vector2(this.player.x - e.spr.x, this.player.y - e.spr.y)
+        .normalize().scale(160);
+    }
+  }
+
+  racoonSwipe(e) {
+    const R = CFG.racoonBoss;
+    const s = e.spr, p = this.player;
+    this.sfx.sword.play({ rate: 0.9, volume: 0.6 });
+    this.shake(70, 0.006);
+    const d = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (d < R.swipeReach) this.hurtPlayer(s.x, s.y, R.swipeDmg);
+    const fx = this.add.circle(s.x, s.y, R.swipeReach, 0xffb066, 0.25).setDepth(2.2);
+    this.tweens.add({ targets: fx, alpha: 0, scale: 1.35, duration: 220, onComplete: () => fx.destroy() });
+  }
+
   updateSamurai(e, dt) {
     const s = e.spr, p = this.player;
     const B = CFG.bossB;
+    const Q = e.prefix || 'sam';
     e.phaseT -= dt;
     e.sumT = (e.sumT || 0) - dt;
 
@@ -1627,9 +1843,9 @@ export class Play extends Phaser.Scene {
     if (dist > 90) {
       const sp = e.speed * (dt / 1000);
       this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
-      if (!s.anims.isPlaying || s.anims.currentAnim.key !== 'sam-walk') s.play('sam-walk');
-    } else if (s.anims.currentAnim && s.anims.currentAnim.key === 'sam-walk') {
-      s.play('sam-idle');
+      if (!s.anims.isPlaying || s.anims.currentAnim.key !== Q + '-walk') s.play(Q + '-walk');
+    } else if (s.anims.currentAnim && s.anims.currentAnim.key === Q + '-walk') {
+      s.play(Q + '-idle');
     }
     s.setFlipX(dirv.x < 0);
 
@@ -1657,13 +1873,14 @@ export class Play extends Phaser.Scene {
   samuraiSlash(e) {
     const s = e.spr, p = this.player;
     const B = CFG.bossB;
+    const Q = e.prefix || 'sam';
     const d = e.slashDir;
     const cx = s.x + d.x * (B.slashReach / 2);
     const cy = s.y + d.y * (B.slashReach / 2);
     // 攻击帧本身带身体（96×96），和本体同尺寸同中心叠加，避免出现"两个武士"
-    const overlay = this.add.sprite(s.x, s.y, d.x < 0 ? 'samAtkL' : 'samAtkR', 0)
+    const overlay = this.add.sprite(s.x, s.y, d.x < 0 ? Q + 'AtkL' : Q + 'AtkR', 0)
       .setOrigin(0.5, 0.5).setScale(1.5).setDepth(2.2);
-    overlay.play(d.x < 0 ? 'sam-atkL' : 'sam-atkR');
+    overlay.play(d.x < 0 ? Q + '-atkL' : Q + '-atkR');
     this.time.delayedCall(320, () => overlay.destroy());
     this.shake(80, 0.007);
     this.sfx.sword.play({ rate: 0.8, volume: 0.6 });
@@ -1724,6 +1941,39 @@ export class Play extends Phaser.Scene {
     else if (!s.anims.isPlaying) s.play(e.kind + '-' + dir);
   }
 
+  /* 小浣熊：追人，近了先缩一下再侧跳扑过来 */
+  updateRacoonFoe(e, dt) {
+    const s = e.spr, p = this.player;
+    const C = CFG.racoon;
+    if (this.dead || this.won) return;
+    if (e.phase === 'hop') {
+      e.phaseT -= dt;
+      const sp = C.hopSpeed * (dt / 1000);
+      this.moveActor(s, e.hop.x * sp, e.hop.y * sp, e.half);
+      if (e.phaseT <= 0) { e.phase = 'walk'; s.setScale(e.baseScale || 2); }
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(s.x, s.y, p.x, p.y);
+    if (dist > CFG.chaseRange) return;
+    const dirv = new Phaser.Math.Vector2(p.x - s.x, p.y - s.y).normalize();
+    if (dist < C.hopRange && e.cdT <= 0) {
+      e.cdT = C.hopCd;
+      e.phase = 'hop';
+      e.phaseT = 180;
+      e.hop.copy(dirv);
+      e.baseScale = e.baseScale || s.scaleX;
+      s.setScale(e.baseScale * 1.15);
+      this.floatText(s.x, s.y - 18, '!', '#ffd479');
+      return;
+    }
+    const sp = e.speed * (dt / 1000);
+    this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
+    const dir = Math.abs(dirv.x) > Math.abs(dirv.y)
+      ? (dirv.x > 0 ? 'right' : 'left') : (dirv.y > 0 ? 'down' : 'up');
+    if (dir !== e.dir) { e.dir = dir; s.play('racoon-' + dir); }
+    else if (!s.anims.isPlaying) s.play('racoon-' + dir);
+  }
+
   /* ---------- 小怪行为：四种脾气 ---------- */
   updateFoe(e, dt) {
     e.cdT -= dt;
@@ -1736,6 +1986,7 @@ export class Play extends Phaser.Scene {
     if (e.kind === 'mush') return this.updateMush(e, dt);
     if (e.kind === 'mole') return this.updateMole(e, dt);
     if (e.kind === 'skull') return this.updateSkull(e, dt);
+    if (e.kind === 'racoon') return this.updateRacoonFoe(e, dt);
     return this.updateBeast(e, dt);          // beast / larva：追击（larva 更快）
   }
 
@@ -2048,6 +2299,7 @@ export class Play extends Phaser.Scene {
 
   killEnemy(e) {
     e.hp = 0;
+    if (e.ring) { e.ring.destroy(); e.ring = null; }
     this.kills += 1;
     if (this.mods.healOnKill) {
       this.hp = Math.min(this.maxHp(), this.hp + this.mods.healOnKill);
@@ -2073,6 +2325,7 @@ export class Play extends Phaser.Scene {
         const at = { x: spot.x + off, y: spot.y };
         if (this.isWall(at.x, at.y, 10)) { at.x = spot.x; at.y = spot.y + off; }
         const mini = this.spawnFoe('larva', 0, at);
+        if (!mini) continue;
         mini.mini = true;
         mini.hp = mini.maxHp = L.miniHp;
         mini.speed = L.miniSpeed;
@@ -2227,6 +2480,7 @@ export class Play extends Phaser.Scene {
   }
 
   hurtPlayer(fromX, fromY, dmg) {
+    if (window.__GOD) return;   // 验收/截图用：只在手动设置全局时生效
     if (this.dead || this.won) return;
     if (this.time.now < this.skillInvulnUntil) return;   // 疾影冲刺的落地无敌
     // 冷却按时钟算，不按帧累积：掉帧时也不会被连击打穿
@@ -2560,7 +2814,9 @@ export class Play extends Phaser.Scene {
 
       // Boss 只有冲撞那一下能伤人，蓄力时贴上去不掉血
       const canHurt = e.type === 'boss'
-        ? (e.phase === 'lunge' || e.phase === 'charge' || e.phase === 'slashHit')
+        ? (e.bossKind === 'racoon'
+          ? (e.phase === 'swipeHit')
+          : (e.phase === 'lunge' || e.phase === 'charge' || e.phase === 'slashHit'))
         : !e.invuln;
       if (canHurt && !this.dead && !this.won) {
         const hitR = e.type === 'boss' ? 34 : 24;
@@ -2649,7 +2905,8 @@ export class Play extends Phaser.Scene {
     }
 
     // 清房判定 → 开门
-    if (!this.room.cleared && this.enemiesAlive() === 0 && !this.room.isBoss) {
+    const gateShut = this.room.type === 'gate' && !this.room.gateOpen;
+    if (!this.room.cleared && this.enemiesAlive() === 0 && !this.room.isBoss && !gateShut) {
       this.room.cleared = true;
       if (Math.random() < CFG.upgrades.dropChance) {
         this.dropItem(this.player.x + 26, this.player.y - 10, 'upg', this.rollUpgrade());
@@ -2736,7 +2993,8 @@ export class Play extends Phaser.Scene {
     window.__state = {
       hp: this.hp, kills: this.kills, coins: this.coins, gems: this.gems, weapon: this.weapon.id,
       room: this.roomKey, roomType: this.room.type || 'battle', keys: this.keyCount,
-      slowUntil: Math.round(this.slowUntil || 0), zones: (this.zones || []).length, bossKind: this.bossKind || '',
+      slowUntil: Math.round(this.slowUntil || 0), zones: (this.zones || []).length,
+      bossKind: this.bossKind || '', bossId: this.bossId || '',
       talents: this.talents.slice(), maxHp: this.maxHp(),
       roomIdx: this.room.idx + 1, total: this.roomTotal,
       stageKey: this.spec ? this.spec.key : '', stageName: this.spec ? (this.spec.chapterName + ' ' + this.spec.index) : '',

@@ -63,5 +63,7 @@
 
 | 37 | 2026-11-21 | 批 9 章节骨架 | `web/data/chapters.json` v1（六章主线 36 关 108★ 259 房 + 支线6/隐藏3/条件4 门槛奖励，单关房数 5/6/7/8/10、难度 1.00→1.80、章内 +5%）；`src/systems/stages.js`（规格/解锁/星级/进度/满星上限）；`dungeon.js` 重写 `makeDungeon({rooms,template})` 蛇形路线 + 末房 Boss；存档 v6 加 `stars`（白名单键、0–3、v5 迁移全保留）；新 `src/scenes/map.js`（六章页签、关卡卡、章面板、支线/隐藏/条件数量）；`play.js` 关卡包装（按章房数/难度、Boss 乘区、三星结算取最高、回地图定位）；流程 `Boot→Title→Hall→Map→Select→Play`，`boot` 补 `__chaptersData` 透传。修复 map Enter 崩溃（缺全局数据）。验收 Z-1~Z-10 全过（一章 5 房、熔岩 10 房、终章 1 房、`lava:1=3`、v5→v6 字段保留、单文件可走、`errs=[]`） | `docs/BATCH9-STAGE.md`、`docs/screens/b9-*.png`、`web/data/chapters.json` |
 
+| 38 | 2026-11-21 | 批 10 一、二章内容 | 两章怪物池/Boss 池/房型模板全部落地：竹林 beast/cyclope/eye/racoon → frog/racoon；旧堡 larva/skull/spider/mole/slime → samBlue/samRed；旧堡模板改为战斗×2+宝箱+精英+机关+Boss。新增 `enemies.json`（11 怪）、`bosses.json`（5 Boss，含巨浣熊/赤武士）；巨浣熊跃扑+抓击+半血狂暴，赤武士复用武士行为换 `rsam-*` 前缀；机关房 3 守卫+石像，清怪后必须按 E 拉机关才开门；`fort` 皮肤暖褐石砖+加法暖光，与草地可分；修正蓝武士 96×48 帧尺寸（原 48×48 只播半身）；图鉴补浣熊/巨浣熊/赤武士/机关并让房型首次进入点亮。验收 N-1~N-6 全过（四 Boss id、旧堡 6 房模板、门锁 true→false、单文件 `errs=[]`） | `docs/BATCH10-CHAPTER12.md`、`docs/ACCEPTANCE.md`、`docs/screens/b10-*.png`、`web/data/enemies.json`、`web/data/bosses.json` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`
