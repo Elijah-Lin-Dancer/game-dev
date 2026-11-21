@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 5;
+const VERSION = 6;
 
 const defaults = () => ({
   v: VERSION,
@@ -20,6 +20,8 @@ const defaults = () => ({
   gem: 0,            // 宝石（批 7）：Boss 掉 1–3、通关 +5，只用于解锁
   unlockedWeapons: ['katana', 'bigsword', 'wand', 'kunai'], // 已解锁武器（bow/hammer 要买）
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
+  // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
+  stars: {},
   updatedAt: 0,
 });
 
@@ -61,6 +63,18 @@ function sanitizeWeapons(v) {
   return list;
 }
 
+/* 星级表：键必须匹配 "章:关"，值夹到 0–3；坏键直接丢掉，避免存档被垃圾键撑大 */
+function sanitizeStars(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  Object.keys(v).slice(0, 200).forEach((k) => {
+    if (!/^[a-z][a-z0-9_-]{0,20}:\d{1,2}$/i.test(k)) return;
+    const n = Math.max(0, Math.min(3, Math.round(num(v[k], 0))));
+    if (n > 0) out[k] = n;
+  });
+  return out;
+}
+
 /* v1 → v2：v1 只有 coins/kills，缺的字段补齐即可，不需要丢弃 */
 function migrate(old) {
   const base = defaults();
@@ -75,6 +89,7 @@ function migrate(old) {
     lastChar: ['ninja', 'mage', 'knight'].includes(old.lastChar) ? old.lastChar : 'ninja',
     chars: sanitizeChars(old.chars),
     gem: num(old.gem),
+    stars: sanitizeStars(old.stars),
     unlockedWeapons: sanitizeWeapons(old.unlockedWeapons),
     seen: {
       enemies: sanitizeMarks(old.seen && old.seen.enemies),
@@ -110,6 +125,7 @@ export function patchSave(patch) {
   next.cycle = Math.max(1, num(next.cycle, 1));
   next.roomsSeen = sanitizeSeen(next.roomsSeen);
   next.chars = sanitizeChars(next.chars);
+  next.stars = sanitizeStars(next.stars);
   if (!CHARS.includes(next.lastChar)) next.lastChar = 'ninja';
   return writeSave(next);
 }

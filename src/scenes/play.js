@@ -8,6 +8,7 @@ import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
 import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions, difficultyMods } from '../systems/options.js';
+import { stageSpec, starsOf, starRating } from '../systems/stages.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -38,6 +39,12 @@ export class Play extends Phaser.Scene {
     this.skillInvulnUntil = 0;
     this.guardAura = null;
     this.story = window.__storyData || {};
+    // 批 9：章节关卡。没有 stage 参数时退回老的"随机一局"（?char= 调试仍走这条）
+    this.stageData = (data && data.stage) || null;
+    this.spec = this.stageData ? stageSpec(this.stageData.chapter, this.stageData.index) : null;
+    this.stageMul = this.spec ? this.spec.diff : 1;
+    this.usedRest = false;
+    this.chapterTheme = this.spec ? this.spec.chapter.theme : null;
     this.cycle = this.meta.cycle;
     this.talking = false;
     this.panelOpen = false;
@@ -107,7 +114,7 @@ export class Play extends Phaser.Scene {
     this.walls = new Set();
     this.roomWrap = null;
 
-    this.dungeon = makeDungeon();
+    this.dungeon = makeDungeon(this.spec ? { rooms: this.spec.rooms, template: this.spec.template } : null);
     this.roomTotal = this.dungeon.path.length;
     this.enterRoom(this.dungeon.start, null);
 
@@ -121,11 +128,21 @@ export class Play extends Phaser.Scene {
         clear: () => this.enemies.filter((e) => e.hp > 0).forEach((e) => this.killEnemy(e)),
         hp: (v) => { this.hp = v; },
         exit: (dir) => this.tryExit(dir, true),
+        next: () => {
+          for (const dir of ['r', 'l', 'd', 'u']) {
+            const key = this.room.doors[dir];
+            if (!key) continue;
+            const r = this.dungeon.rooms.get(key);
+            if (r && r.idx > this.room.idx) { this.tryExit(dir, true); return dir; }
+          }
+          return false;
+        },
         tp: (x, y) => this.player.setPosition(x, y),
         music: () => musicState(),
         playMood: (m, once) => { setMood(m, { loop: !once }); return musicState(); },
         sfxTest: (n) => { const a = this.sfx[n]; if (!a) return 'missing:' + n; a.play(); return 'ok:' + n; },
         save: () => loadSave(),
+        plan: () => Array.from(this.dungeon.rooms.values()).sort((a, b) => a.idx - b.idx).map((r) => r.idx + ':' + r.type),
         die: () => this.gameOver(),
         win: () => this.win(),
         reset: () => resetSave(),
@@ -387,7 +404,10 @@ export class Play extends Phaser.Scene {
   paintFloorAndWalls(room) {
     const wrap = this.roomWrap;
     // 主题：前半程草地、后半程石砖；Boss 房与二周目起强制石砖
-    const theme = (room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field';
+    // 章节模式：主题按章给（沙漠/水/熔岩的专属图集在批 11 接，先统一回落石砖）
+    const theme = this.spec
+      ? (this.chapterTheme === 'field' ? 'field' : 'dungeon')
+      : ((room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field');
     this.theme = theme;
     const floorKey = theme === 'dungeon' ? 'floorDungeon' : 'field';
     // 石砖房用 Interior 花砖（322）作底，整屏统一但配合裂纹/碎石贴花与暗角读作旧地砖
@@ -606,12 +626,12 @@ export class Play extends Phaser.Scene {
     const spr = this.add.sprite(spot.x, spot.y, kind, 0).setScale(2).setDepth(2).setAlpha(0);
     spr.play(kind + '-down');
     this.tweens.add({ targets: spr, alpha: 1, duration: 240 });
-    const mul = 1 + CFG.cycle.hpMul * (this.cycle - 1);
+    const mul = (1 + CFG.cycle.hpMul * (this.cycle - 1)) * (this.stageMul || 1);
     const hp = Math.max(1, Math.round(cfg.hp * mul * this.diff.hp));
     const e = {
       type: 'foe', kind, spr, hp, maxHp: hp,
       kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-      speed: cfg.speed, dmg: cfg.dmg, half: cfg.half || 12,
+      speed: cfg.speed, dmg: cfg.dmg * (1 + (this.stageMul - 1) * 0.4), half: cfg.half || 12,
       stuckT: 0, slideT: 0, slide: new Phaser.Math.Vector2(),
       phase: 'walk', phaseT: 0, cdT: 0, mini: false,
       shield: 0, invuln: false, affix: '', windupMul: 1,
@@ -634,13 +654,23 @@ export class Play extends Phaser.Scene {
     return pool[Phaser.Math.Between(0, pool.length - 1)];
   }
 
+  /* Boss 选择：老模式随机青蛙/武士；章节模式按 bossPool 轮换，未实现的先回落 */
+  pickBossKind() {
+    if (this.forceKind) return this.forceKind;
+    if (!this.spec) return Math.random() < 0.5 ? 'frog' : 'sam';
+    const MAP = { frog: 'frog', samBlue: 'sam', samRed: 'sam' };
+    const pool = (this.spec.bossPool || []).map((id) => MAP[id]).filter(Boolean);
+    if (!pool.length) return this.chapterTheme === 'field' ? 'frog' : 'sam';
+    return pool[(this.spec.index - 1) % pool.length];
+  }
+
   spawnBoss() {
     // 生成在对侧，别压在玩家进门的位置上
     const p = this.player;
     const bx = RW / 2;
     const by = p.y < RH / 2 ? RH * 0.72 : RH * 0.28;
-    // 两只 Boss 随机二选一：青蛙 / 蓝武士
-    const kind = this.forceKind || (Math.random() < 0.5 ? 'frog' : 'sam');
+    // 章节模式按章节 Boss 池轮换；池里暂未接线的 Boss（浣熊/天狗等）回落到本章已实现的那只
+    const kind = this.pickBossKind();
     this.forceKind = null;
     this.bossKind = kind;
     this.markSeen('bosses', kind === 'sam' ? 'samurai' : 'frog');
@@ -648,26 +678,26 @@ export class Play extends Phaser.Scene {
 
     if (kind === 'sam') {
       const B = CFG.bossB;
-      const hp = Math.round(B.hp * cyc * this.diff.hp);
+      const hp = Math.round(B.hp * cyc * this.diff.hp * this.stageMul);
       const spr = this.add.sprite(bx, by, 'samIdle', 0).setScale(1.5).setDepth(2);
       spr.play('sam-idle');
       this.enemies.push({
         type: 'boss', bossKind: 'sam', spr,
         hp, maxHp: hp,
         kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-        speed: B.speed, dmg: B.dmg, half: 22,
+        speed: B.speed, dmg: B.dmg * (1 + (this.stageMul - 1) * 0.3), half: 22,
         phase: 'approach', phaseT: 0, moveCount: 0, sumT: B.summonCd,
         slashDir: new Phaser.Math.Vector2(0, 1),
       });
     } else {
       const spr = this.add.sprite(bx, by, 'boss', 0).setScale(1.6).setDepth(2);
       spr.play('boss-idle');
-      const hp = Math.round(CFG.bossHp * cyc * this.diff.hp);
+      const hp = Math.round(CFG.bossHp * cyc * this.diff.hp * this.stageMul);
       this.enemies.push({
         type: 'boss', bossKind: 'frog', spr,
         hp, maxHp: hp,
         kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
-        speed: CFG.bossSpeed, dmg: CFG.bossDmg, half: 24,
+        speed: CFG.bossSpeed, dmg: CFG.bossDmg * (1 + (this.stageMul - 1) * 0.3), half: 24,
         phase: 'approach', phaseT: 0, lunge: new Phaser.Math.Vector2(),
       });
     }
@@ -989,6 +1019,7 @@ export class Play extends Phaser.Scene {
         label: `${R.pay || '付 2 金币'} · 回 ${CFG.healAmount + 2} 血`,
         act: () => this.buy(2, () => {
           p.used = true;
+          this.usedRest = true;
           p.spr.setTint(0x8f8a82);
           this.heal(CFG.healAmount + 2);
         }),
@@ -2221,29 +2252,52 @@ export class Play extends Phaser.Scene {
     this.sfx.gameover.play();
     this.player.setAlpha(0.7);
     this.showOverlay('你倒了',
-      '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
-      + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems);
+      this.roomLabel() + ' · 击杀 ' + this.kills
+      + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems,
+      this.spec ? '点击 / Enter 回地图' : '点击或按 R 重开',
+      this.spec ? { chapterId: this.spec.chapterId, stage: this.spec.index } : null);
   }
 
   win() {
     if (this.won) return;
     this.won = true;
-    this.gems += 5;
     setMood('victory', { loop: false });
+    if (this.spec) {
+      // 章节关：结算星级（通关 / 剩血 ≥70% / 未用休整房），取历史最高
+      const got = starRating({ hp: this.hp, maxHp: this.maxHp(), usedRest: this.usedRest });
+      const prev = starsOf(this.meta, this.spec.chapterId, this.spec.index);
+      const stars = Math.max(prev, got);
+      const map = Object.assign({}, this.meta.stars || {});
+      map[this.spec.key] = stars;
+      this.meta = patchSave({ stars: map });
+      this.gems += 2;
+      this.commitRun(false);
+      const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+      this.starMarks = marks;
+      this.showOverlay(
+        this.spec.chapterName + ' ' + this.spec.index + ' 关 通关',
+        marks + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems,
+        '点击 / Enter 回地图',
+        { chapterId: this.spec.chapterId, stage: this.spec.index },
+      );
+      return;
+    }
+    this.gems += 5;
     this.commitRun(true);
     this.showOverlay('通关',
       '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems + ' · 剩 ' + this.hp + ' 血');
   }
 
-  showOverlay(title, sub) {
+  showOverlay(title, sub, hint, back) {
     this.dim(true);
+    this.overlayBack = back || null;
     const t1 = this.add.text(S.W / 2, S.H / 2 - 18, title, {
       fontFamily: FONT, fontSize: '24px', color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
     const t2 = this.add.text(S.W / 2, S.H / 2 + 12, sub, {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
-    const t3 = this.add.text(S.W / 2, S.H / 2 + 34, '点击或按 R 重开', {
+    const t3 = this.add.text(S.W / 2, S.H / 2 + 34, hint || '点击或按 R 重开', {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
     this.overlay = [t1, t2, t3];
@@ -2259,8 +2313,9 @@ export class Play extends Phaser.Scene {
       coins: m.coins + this.coins,
       kills: m.kills + this.kills,
       bestRoom: depth,
-      wins: m.wins + (cleared ? 1 : 0),
-      cycle: m.cycle + (cleared ? 1 : 0),
+      // 章节关不涨周目：只有终章通关（或无章节的老模式）才 +1
+      wins: m.wins + (cleared && (!this.spec || this.spec.chapterId === 'final') ? 1 : 0),
+      cycle: m.cycle + (cleared && (!this.spec || this.spec.chapterId === 'final') ? 1 : 0),
       gem: (m.gem || 0) + this.gems,
     });
     this.updateHud();
@@ -2289,6 +2344,14 @@ export class Play extends Phaser.Scene {
   }
 
   /* ---------- HUD 与输入 ---------- */
+  /* 章节模式显示"章 关-房"，老模式显示"第 x/y 间"；两者都短到不挤出 640 宽 */
+  roomLabel() {
+    if (this.spec) {
+      return this.spec.chapterName + ' ' + this.spec.index + ' · 房 ' + (this.room.idx + 1) + '/' + this.roomTotal;
+    }
+    return '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间';
+  }
+
   buildHud() {
     this.rebuildHearts();
     this.info = this.add.text(8, 34, '', {
@@ -2363,7 +2426,10 @@ export class Play extends Phaser.Scene {
     this.input.keyboard.on('keydown-Q', () => this.castSkill());
     this.input.keyboard.on('keydown-J', () => this.attack());
     this.input.keyboard.on('keydown-K', () => this.attack());
-    this.input.keyboard.on('keydown-R', () => { if (this.dead || this.won) this.restart(); });
+    this.input.keyboard.on('keydown-R', () => { if ((this.dead || this.won) && !this.spec) this.restart(); });
+    this.input.keyboard.on('keydown-ENTER', () => {
+      if (this.spec && (this.dead || this.won)) this.scene.start('map', this.overlayBack);
+    });
     this.input.keyboard.on('keydown-M', () => {
       const m = toggleMute();
       this.meta = patchSave({ muted: m });
@@ -2381,7 +2447,7 @@ export class Play extends Phaser.Scene {
     this.input.on('pointerdown', (p) => {
       if (this.talking) { this.dlgAdvance(); return; }
       if (this.panelOpen) return;
-      if (this.dead || this.won) { this.restart(); return; }
+      if (this.dead || this.won) { if (this.spec) this.scene.start('map', this.overlayBack); else this.restart(); return; }
       this.press = { x: p.x, y: p.y, t: this.time.now };
       this.stick = { active: true, ox: p.x, oy: p.y, dx: 0, dy: 0 };
     });
@@ -2643,7 +2709,7 @@ export class Play extends Phaser.Scene {
       h.setVisible(this.maxHp() - i * 4 > 0);
     });
     this.info.setText(
-      '第 ' + (this.room.idx + 1) + '/' + this.roomTotal + ' 间 · 击杀 ' + this.kills
+      this.roomLabel() + ' · 击杀 ' + this.kills
       + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
     );
 
@@ -2673,6 +2739,8 @@ export class Play extends Phaser.Scene {
       slowUntil: Math.round(this.slowUntil || 0), zones: (this.zones || []).length, bossKind: this.bossKind || '',
       talents: this.talents.slice(), maxHp: this.maxHp(),
       roomIdx: this.room.idx + 1, total: this.roomTotal,
+      stageKey: this.spec ? this.spec.key : '', stageName: this.spec ? (this.spec.chapterName + ' ' + this.spec.index) : '',
+      stageRooms: this.spec ? this.spec.rooms : 0, stageDiff: +this.stageMul.toFixed(2), usedRest: !!this.usedRest,
       cleared: this.room.cleared, isBoss: this.room.isBoss,
       doors: Object.keys(this.room.doors), entry: this.entry,
       enemies: this.enemiesAlive(), drops: this.drops.length,

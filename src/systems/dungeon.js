@@ -1,6 +1,60 @@
-/* 地牢拓扑：3×3 网格随机游走，起点 (0,0)、终点 (2,2) 为 Boss 房 */
+/* 地牢拓扑
+ * 1) 老模式（?char= 直进 / 无章节）：3×3 随机游走，一局 3–6 间。
+ * 2) 章节模式（批 9）：按章节给的房数与模板生成一条"蛇形"路线，房型由 chapters.json 指定。
+ *    不按模板时仍走随机权重（批 2 的规则），两套互不影响。
+ */
 import { OPPOSITE } from '../core/config.js';
-function makeDungeon() {
+
+/* 蛇形路线：G×G 网格按行折返，取前 n 格。四条边随机翻转，起点/终点因此不固定 */
+function snakePath(n, G) {
+  const cells = [];
+  for (let y = 0; y < G; y += 1) {
+    const xs = [];
+    for (let x = 0; x < G; x += 1) xs.push(x);
+    if (y % 2 === 1) xs.reverse();
+    xs.forEach((x) => cells.push([x, y]));
+  }
+  const flipX = Math.random() < 0.5;
+  const flipY = Math.random() < 0.5;
+  const path = cells.slice(0, n).map(([x, y]) => [flipX ? G - 1 - x : x, flipY ? G - 1 - y : y]);
+  return path;
+}
+
+function buildRooms(path, isBossAt) {
+  const rooms = new Map();
+  path.forEach(([x, y], i) => rooms.set(x + ',' + y, {
+    x, y, idx: i, doors: {}, cleared: false, built: false,
+    isBoss: isBossAt(x, y, i),
+  }));
+  for (let i = 1; i < path.length; i += 1) {
+    const a = rooms.get(path[i - 1].join(','));
+    const b = rooms.get(path[i].join(','));
+    const dx = b.x - a.x; const dy = b.y - a.y;
+    const dir = dx === 1 ? 'r' : dx === -1 ? 'l' : dy === 1 ? 'd' : 'u';
+    a.doors[dir] = b.x + ',' + b.y;
+    b.doors[OPPOSITE[dir]] = a.x + ',' + a.y;
+  }
+  return rooms;
+}
+
+/* ---------- 章节模式 ---------- */
+function makeStagedDungeon(opts) {
+  const want = Math.max(1, Math.round(opts.rooms || 5));
+  const G = Math.max(2, Math.ceil(Math.sqrt(want + 1)));
+  const path = snakePath(want, G);
+  const rooms = buildRooms(path, (x, y, i) => i === path.length - 1);
+  const tpl = Array.isArray(opts.template) ? opts.template : [];
+  path.forEach((key, i) => {
+    const room = rooms.get(key.join(','));
+    const t = String(tpl[i] || (i === path.length - 1 ? 'boss' : 'battle'));
+    room.type = (i === path.length - 1) ? 'boss' : (t === 'boss' ? 'battle' : t);
+  });
+  if (path.length > 1) rooms.get(path[0].join(',')).type = 'battle';
+  return { rooms, path, start: path[0].join(','), mode: 'stage' };
+}
+
+function makeDungeon(opts) {
+  if (opts && opts.rooms) return makeStagedDungeon(opts);
   const G = 3, goal = [2, 2];
   let cur = [0, 0];
   const path = [[0, 0]];
@@ -22,22 +76,9 @@ function makeDungeon() {
     path.push(cur.slice());
   }
 
-  // 相邻房间之间开门
-  const rooms = new Map();
-  path.forEach(([x, y], i) => rooms.set(x + ',' + y, {
-    x, y, idx: i, doors: {}, cleared: false, built: false,
-    isBoss: (x === goal[0] && y === goal[1]),
-  }));
-  for (let i = 1; i < path.length; i++) {
-    const a = rooms.get(path[i - 1].join(','));
-    const b = rooms.get(path[i].join(','));
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const dir = dx === 1 ? 'r' : dx === -1 ? 'l' : dy === 1 ? 'd' : 'u';
-    a.doors[dir] = b.x + ',' + b.y;
-    b.doors[OPPOSITE[dir]] = a.x + ',' + a.y;
-  }
+  const rooms = buildRooms(path, (x, y) => x === goal[0] && y === goal[1]);
   assignTypes(rooms, path);
-  return { rooms, path, start: path[0].join(',') };
+  return { rooms, path, start: path[0].join(','), mode: 'free' };
 }
 
 /* ---------- 房间类型（批 2） ----------
@@ -76,9 +117,8 @@ function assignTypes(rooms, path) {
     const pick = mid.length ? mid[Math.floor(Math.random() * mid.length)] : null;
     if (pick) rooms.get(pick).type = Math.random() < 0.5 ? 'rest' : 'shrine';
   }
-  // 精英房若被塞到与商店相邻的同一侧没必要；这里只保证不连续出现两个"非战斗"，
   // 避免一局走三步全是房不打架
-  for (let i = 1; i < mid.length; i++) {
+  for (let i = 1; i < mid.length; i += 1) {
     const a = rooms.get(mid[i - 1]), b = rooms.get(mid[i]);
     if (NON_COMBAT.indexOf(a.type) >= 0 && NON_COMBAT.indexOf(b.type) >= 0) b.type = 'battle';
   }

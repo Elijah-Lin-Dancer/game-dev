@@ -38,6 +38,7 @@ export class Boot extends Phaser.Scene {
     window.__weaponsData = this.cache.json.get('__weapons') || A.weaponsData;
     window.__talentsData = this.cache.json.get('__talents') || A.talentsData;
     window.__charsData = this.cache.json.get('__chars') || A.charsData;
+    window.__chaptersData = A.chaptersData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: ext ? 'json' : 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {

@@ -5,6 +5,7 @@ import { Play } from './scenes/play.js';
 import { Select } from './scenes/select.js';
 import { Hall } from './scenes/hall.js';
 import { Title } from './scenes/title.js';
+import { MapScene } from './scenes/map.js';
 import { resetSave } from './systems/save.js';
 
 // 像素字体按 12px 设计；用带引号的族名，避免被当成通用族名解析
@@ -38,8 +39,10 @@ window.addEventListener('load', () => {
       roundPixels: true,
       scale: { mode: Phaser.Scale.NONE, width: S.W, height: S.H },
       audio: { disableWebAudio: true },
-      scene: [Boot, Title, Hall, Select, Play],
+      scene: [Boot, Title, Hall, MapScene, Select, Play],
     });
+
+    window.__game = game;
 
     function present() {
       const g = game.scale;

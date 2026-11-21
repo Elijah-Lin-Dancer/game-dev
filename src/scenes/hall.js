@@ -77,7 +77,7 @@ export class Hall extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发', {
+    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发（选关）', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
   }
@@ -99,7 +99,7 @@ export class Hall extends Phaser.Scene {
 
   start() {
     try { this.sound.play('ui', { volume: 0.4 }); } catch (e) {}
-    this.scene.start('select');
+    this.scene.start('map');
   }
 
   /* ---------- 内容区 ---------- */

@@ -42,7 +42,8 @@ function normalize(list) {
 export class Select extends Phaser.Scene {
   constructor() { super('select'); }
 
-  create() {
+  create(data) {
+    this.stage = (data && data.stage) || null;
     this.chars = normalize(window.__charsData);
     const meta = loadSave();
     this.unlocked = Array.isArray(meta.chars) && meta.chars.length ? meta.chars : ['ninja'];
@@ -63,7 +64,9 @@ export class Select extends Phaser.Scene {
     this.add.text(S.W / 2, 26, '选择角色', {
       fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 50, '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
+    this.add.text(S.W / 2, 50, this.stage
+      ? ('准备进入：' + (this.stage.chapterName || this.stage.chapter) + ' · 第 ' + this.stage.index + ' 关')
+      : '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
 
@@ -165,6 +168,6 @@ export class Select extends Phaser.Scene {
     }
     patchSave({ lastChar: c.id });
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
-    this.scene.start('play', { char: c.id });
+    this.scene.start('play', { char: c.id, stage: this.stage });
   }
 }

@@ -2,11 +2,14 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 8 外壳完成（标题 / 设置 / 暂停 / 难度）。路线已改为"大作化"，下一步按 `docs/MASTERPLAN.md` 阶段 A 做章节数据 + 世界地图 + 关卡包装（批 9）。
+当前段：批 9 章节骨架完成（世界地图 / 六章 36 关主线 / 星级 / 存档 v6）。下一步按 `docs/MASTERPLAN.md` 做批 10：一、二章内容（新怪、Boss、沙海前皮肤、机关门压力）。
+
+已完成的批 9：`web/data/chapters.json`（六章 49 关数据表，主线 36 关 + 支线/隐藏/条件 13 关）、`src/systems/stages.js`（关卡规格/解锁/星级/进度）、`dungeon.js` 重写为按房数生成蛇形章节地牢、存档 v6（`stars`，v5 迁移不丢字段）、`src/scenes/map.js` 世界地图、`play.js` 关卡包装（房数/难度/星级结算/回地图）、流程 `Boot→Title→Hall→Map→Select→Play`；验收 Z-1~Z-10 见 `docs/BATCH9-STAGE.md`
 
 已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
+- 批 9 章节骨架：六章 36 关主线（5/6/7/8/9+终章，单关房数 5/6/7/8/10）、108★、259 房；地图六章页签 + 关卡卡 + 章面板；星级三判据（通关/剩血≥70%/未用休整房）写 `na.save.stars` 并取最高；存档 v6；单文件版可走通（`docs/BATCH9-STAGE.md`）
 - 批 7 大厅、宝石与图鉴：`src/scenes/hall.js` 三页签、宝石 Boss 1–3 + 通关 5、解锁（弓15/锤20/法师30/骑士40）、掉落池按解锁过滤、存档 v5（`gem/unlockedWeapons/seen`）、图鉴四类首次点亮、流程 `Boot→Hall→Select→Play`；验收 X-1~X-8 全过（`docs/BATCH7-HALL.md`）
 - 批 6 场景、光照与转场：`paintFloorAndWalls()` 按 `isBoss/idx≥中段/cycle≥2` 切 `dungeon|field`，石砖 `Interior` frame 322 + 草地 frame 21、16 个 `TilesetFloorDetail` 贴花、相机 `addVignette`（`[0.62,0.2]/[0.72,0.12]`）、墙角火把 ×2、石砖房 `Raylight` 光柱、`Snow.png` 灰尘粒子（上限 14）、`fadeIn(120)` + `roomBanner()`；调试口 `theme/light/dustCount/hearts`；验收 W-1~W-9 全过（`docs/BATCH6-SCENE.md`）
 - 批 5 多角色与主动技能：`web/data/chars.json` 3 只、`src/systems/chars.js` 归一化、`src/scenes/select.js` 选人界面、`play.js` 按皮肤切动画与 `castSkill()`（疾影冲刺/烈焰贯穿/壁垒，CD 8s）、存档 v4 记 `lastChar/chars`；验收 V-1~V-8 全过（`docs/BATCH5-CHARS.md`）
@@ -31,8 +34,8 @@
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **批 6 表现力与反馈升级**（`docs/ROADMAP.md §8`）
-- 批 7–8（顺位见 ROADMAP §3）
+- **批 10 一、二章内容**：新怪/新 Boss 接入、旧堡机关门、章节皮肤前两套
+- 批 11–12、G0 开放世界雏形、批 13–17（顺位见 `docs/MASTERPLAN.md`）
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
 - 叙事层（NPC 对话/周目）与结算页对比历史最好

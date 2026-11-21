@@ -61,5 +61,7 @@
 | 35 | 2026-11-21 | 规划改版：五章 41 关 + 开放世界雏形 | `MASTERPLAN.md` 升 v3：五章关数 4/5/6/7/8 + 终章（31 关主线）、难度 1.00→1.80、5 支线 / 2 隐藏 / 3 条件关（共 41 关 123★）、每章一个压力机制、7 节点叙事与 3 NPC 弧光、批 9–16 与 G0 排期；`OPENWORLD.md` 升 v2：屏幕网格 + 0.45s 边缘滑屏（不切黑场）、地表/台地/洞穴三层、五群系与五种气候（含轻机制）、G0 只做 3 屏验证四件事；ADR 0016 记录上述取舍 | `docs/MASTERPLAN.md`、`docs/OPENWORLD.md`、`docs/decisions/0016-escalating-chapters-and-world-proto.md` |
 | 36 | 2026-11-21 | 规模定稿：六章 49 关 + 表结构落地 | `MASTERPLAN.md` 升 v4：主线 36 关（5/6/7/8/9+终章）、单关房数 5/6/7/8/10、章内 +0.05/关、支线 6 / 隐藏 3 / 条件 4、共 49 关 147★、328 房；`web/data/chapters.json` v1（六章、怪池/Boss 池/压力机制/门槛全量）；ADR 0017 记录规模取舍 | `docs/MASTERPLAN.md`、`web/data/chapters.json`、`docs/decisions/0017-49-stage-scale.md` |
 
+| 37 | 2026-11-21 | 批 9 章节骨架 | `web/data/chapters.json` v1（六章主线 36 关 108★ 259 房 + 支线6/隐藏3/条件4 门槛奖励，单关房数 5/6/7/8/10、难度 1.00→1.80、章内 +5%）；`src/systems/stages.js`（规格/解锁/星级/进度/满星上限）；`dungeon.js` 重写 `makeDungeon({rooms,template})` 蛇形路线 + 末房 Boss；存档 v6 加 `stars`（白名单键、0–3、v5 迁移全保留）；新 `src/scenes/map.js`（六章页签、关卡卡、章面板、支线/隐藏/条件数量）；`play.js` 关卡包装（按章房数/难度、Boss 乘区、三星结算取最高、回地图定位）；流程 `Boot→Title→Hall→Map→Select→Play`，`boot` 补 `__chaptersData` 透传。修复 map Enter 崩溃（缺全局数据）。验收 Z-1~Z-10 全过（一章 5 房、熔岩 10 房、终章 1 房、`lava:1=3`、v5→v6 字段保留、单文件可走、`errs=[]`） | `docs/BATCH9-STAGE.md`、`docs/screens/b9-*.png`、`web/data/chapters.json` |
+
 待核项：
 - GB Studio Community Assets 的 MIT 标注仅见镜像页，未见仓库内 LICENSE 原文 → 标 `[待核]`
