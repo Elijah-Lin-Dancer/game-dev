@@ -2,7 +2,9 @@
 
 目标：以 Ninja Adventure 为主美术，做一款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：批 7 跨局进程完成（大厅三页签 + 宝石货币 + 解锁 + 图鉴）。下一步批 8 工程化收尾：PWA / Capacitor / 图集拆分 / 冒烟脚本 / 性能预算。
+当前段：批 8 外壳完成（标题 / 设置 / 暂停 / 难度）。路线已改为"大作化"，下一步按 `docs/MASTERPLAN.md` 阶段 A 做章节数据 + 世界地图 + 关卡包装（批 9）。
+
+已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
 - 批 7 大厅、宝石与图鉴：`src/scenes/hall.js` 三页签、宝石 Boss 1–3 + 通关 5、解锁（弓15/锤20/法师30/骑士40）、掉落池按解锁过滤、存档 v5（`gem/unlockedWeapons/seen`）、图鉴四类首次点亮、流程 `Boot→Hall→Select→Play`；验收 X-1~X-8 全过（`docs/BATCH7-HALL.md`）

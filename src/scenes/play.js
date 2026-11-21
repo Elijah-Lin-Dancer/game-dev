@@ -7,6 +7,7 @@ import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js'
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
 import { normalizeChars, pickChar } from '../systems/chars.js';
+import { loadOptions, difficultyMods } from '../systems/options.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -21,7 +22,10 @@ export class Play extends Phaser.Scene {
 
   create(data) {
     this.meta = loadSave();
-    setMuted(this.meta.muted);
+    this.options = loadOptions();
+    this.diff = difficultyMods(this.options);
+    this.paused = false;
+    setMuted(this.meta.muted || this.options.muted);
     this.meta = patchSave({ runs: this.meta.runs + 1 });
     // 批 5：角色决定起始血量/伤害/移速/武器/技能；数值来自 chars.json
     this.chars = normalizeChars(window.__charsData);
@@ -60,6 +64,8 @@ export class Play extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#2f3b2a');
     this.cameras.main.setBounds(0, 0, RW, RH);
     this.cameras.main.setRoundPixels(true);
+    window.__playScene = this;
+
 
     // 音效实例表：键必须与 build.mjs 的 sfx 表一致，少一个就会在调用点静默失败
     this.sfx = {};
@@ -601,7 +607,7 @@ export class Play extends Phaser.Scene {
     spr.play(kind + '-down');
     this.tweens.add({ targets: spr, alpha: 1, duration: 240 });
     const mul = 1 + CFG.cycle.hpMul * (this.cycle - 1);
-    const hp = Math.max(1, Math.round(cfg.hp * mul));
+    const hp = Math.max(1, Math.round(cfg.hp * mul * this.diff.hp));
     const e = {
       type: 'foe', kind, spr, hp, maxHp: hp,
       kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
@@ -642,7 +648,7 @@ export class Play extends Phaser.Scene {
 
     if (kind === 'sam') {
       const B = CFG.bossB;
-      const hp = Math.round(B.hp * cyc);
+      const hp = Math.round(B.hp * cyc * this.diff.hp);
       const spr = this.add.sprite(bx, by, 'samIdle', 0).setScale(1.5).setDepth(2);
       spr.play('sam-idle');
       this.enemies.push({
@@ -656,7 +662,7 @@ export class Play extends Phaser.Scene {
     } else {
       const spr = this.add.sprite(bx, by, 'boss', 0).setScale(1.6).setDepth(2);
       spr.play('boss-idle');
-      const hp = Math.round(CFG.bossHp * cyc);
+      const hp = Math.round(CFG.bossHp * cyc * this.diff.hp);
       this.enemies.push({
         type: 'boss', bossKind: 'frog', spr,
         hp, maxHp: hp,
@@ -1122,7 +1128,7 @@ export class Play extends Phaser.Scene {
     this.hp -= 5;
     this.gainUpg(this.rollUpgrade());
     this.gainUpg(this.rollUpgrade());
-    this.cameras.main.shake(160, 0.012);
+    this.shake(160, 0.012);
   }
 
   /* ---------- 战斗 ---------- */
@@ -1131,7 +1137,7 @@ export class Play extends Phaser.Scene {
    * 三系差异全部来自 web/data/weapons.json，这一段不写死任何一把武器。 */
   /* ---------- 批 5：角色主动技能（统一 8s 冷却，走 castSkill 入口） ---------- */
   castSkill() {
-    if (this.talking || this.panelOpen || this.dead || this.won) return;
+    if (this.paused || this.talking || this.panelOpen || this.dead || this.won) return;
     const K = this.char.skill;
     if (this.time.now - this.skillAt < K.cd) {
       const left = Math.ceil((K.cd - (this.time.now - this.skillAt)) / 1000);
@@ -1173,7 +1179,7 @@ export class Play extends Phaser.Scene {
       life: K.life, dmg: K.dmg, pierce: K.pierce, knock: 90, hits: [],
       blast: K.blast, blastDmg: K.blastDmg,
     });
-    this.cameras.main.shake(60, 0.004);
+    this.shake(60, 0.004);
     this.sfx.magic.play({ rate: 0.8, volume: 0.6 });
   }
 
@@ -1194,13 +1200,13 @@ export class Play extends Phaser.Scene {
       d.normalize().scale(K.push * 2);
       e.kb.copy(d);
     });
-    this.cameras.main.shake(80, 0.006);
+    this.shake(80, 0.006);
     this.floatText(this.player.x, this.player.y - 34, '壁垒', '#ffe08a');
     this.sfx.bonus.play({ rate: 0.6, volume: 0.5 });
   }
 
   attack() {
-    if (this.talking || this.panelOpen) return;
+    if (this.paused || this.talking || this.panelOpen) return;
     if (this.dead || this.won) return;
     if (this.time.now - this.atkAt < this.wcd()) return;
     this.atkAt = this.time.now;
@@ -1263,8 +1269,8 @@ export class Play extends Phaser.Scene {
       this.sfx.hit.play({ rate: Phaser.Math.FloatBetween(0.9, 1.12) });
       playAct(this, 'hit', cx, cy, { target: firstHit.spr });
       // 重武器额外补一档震屏：锤子砸下来要能"听见"
-      if (w.hitHeavy >= 2) this.cameras.main.shake(CFG.feel.shakeHeavyMs, CFG.feel.shakeHeavyMag);
-      else if (w.hitHeavy) this.cameras.main.shake(CFG.feel.shakeHitMs, CFG.feel.shakeHitMag);
+      if (w.hitHeavy >= 2) this.shake(CFG.feel.shakeHeavyMs, CFG.feel.shakeHeavyMag);
+      else if (w.hitHeavy) this.shake(CFG.feel.shakeHitMs, CFG.feel.shakeHitMag);
     }
   }
 
@@ -1431,7 +1437,7 @@ export class Play extends Phaser.Scene {
         e.phase = 'lunge';
         e.phaseT = CFG.bossLungeTime;
         s.clearTint().setScale(1.7);
-        this.cameras.main.shake(90, 0.008);
+        this.shake(90, 0.008);
       }
       return;
     }
@@ -1555,7 +1561,7 @@ export class Play extends Phaser.Scene {
         e.phase = 'charge';
         e.phaseT = B.chargeTime;
         s.clearTint();
-        this.cameras.main.shake(90, 0.008);
+        this.shake(90, 0.008);
       }
       return;
     }
@@ -1628,7 +1634,7 @@ export class Play extends Phaser.Scene {
       .setOrigin(0.5, 0.5).setScale(1.5).setDepth(2.2);
     overlay.play(d.x < 0 ? 'sam-atkL' : 'sam-atkR');
     this.time.delayedCall(320, () => overlay.destroy());
-    this.cameras.main.shake(80, 0.007);
+    this.shake(80, 0.007);
     this.sfx.sword.play({ rate: 0.8, volume: 0.6 });
     const hw = Math.abs(d.x) > Math.abs(d.y) ? B.slashWidth / 2 : 22;
     const hh = Math.abs(d.x) > Math.abs(d.y) ? 22 : B.slashWidth / 2;
@@ -1832,7 +1838,7 @@ export class Play extends Phaser.Scene {
         e.invuln = false;
         s.setAlpha(1).clearTint();
         playAct(this, 'slam', s.x, s.y);
-        this.cameras.main.shake(70, 0.006);
+        this.shake(70, 0.006);
         this.floatText(s.x, s.y - 26, '冒头', '#ffd479');
       }
       return;
@@ -1877,7 +1883,7 @@ export class Play extends Phaser.Scene {
       if (e.phaseT <= 0) {
         e.phase = 'dash'; e.phaseT = C.dashTime;
         s.clearTint().setScale(2);
-        this.cameras.main.shake(70, 0.004);
+        this.shake(70, 0.004);
       }
       return;
     }
@@ -2141,13 +2147,61 @@ export class Play extends Phaser.Scene {
     });
   }
 
+  /* 遮罩：白图 1×1 拉满再染成近黑，比 Graphics 形状在本场景管线里稳 */
+  dim(on) {
+    if (on) {
+      if (!this.dimShade) {
+        this.dimShade = this.add.image(0, 0, '__WHITE').setOrigin(0).setScrollFactor(0)
+          .setDisplaySize(S.W, S.H).setTint(0x0a0d12).setAlpha(0.86).setDepth(890);
+      }
+      return;
+    }
+    if (this.dimShade) { this.dimShade.destroy(); this.dimShade = null; }
+  }
+
+  /* 暂停：批 8 外壳。ESC 打开，物理与 AI 全部停在 update 第一行，不额外 pause 场景 */
+  togglePause() {
+    if (this.dead || this.won || this.talking) return;
+    this.paused = !this.paused;
+    if (!this.paused) {
+      if (this.pausePanel) { this.pausePanel.forEach((o) => o.destroy()); this.pausePanel = null; }
+      this.dim(false);
+      return;
+    }
+    this.dim(true);
+    const t = this.add.text(S.W / 2, S.H / 2 - 34, '暂停', {
+      fontFamily: FONT, fontSize: '24px', color: '#ffe9b0',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921);
+    const a = this.add.text(S.W / 2, S.H / 2 + 6, 'ESC / Enter 继续游戏', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921);
+    const b = this.add.text(S.W / 2, S.H / 2 + 28, 'H 回到小屋（本局作废）', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffb0a0',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.backToHall());
+    this.pausePanel = [t, a, b];
+    this.input.keyboard.once('keydown-ENTER', () => { if (this.paused) this.togglePause(); });
+    this.input.keyboard.once('keydown-H', () => { if (this.paused) this.backToHall(); });
+  }
+
+  backToHall() {
+    this.paused = false;
+    this.scene.start('hall');
+  }
+
+  /* 震屏开关：设置里关掉后一处都不抖，数值本身不变 */
+  shake(ms, mag) {
+    if (this.options && this.options.shake === false) return;
+    this.cameras.main.shake(ms, mag);
+  }
+
   hurtPlayer(fromX, fromY, dmg) {
     if (this.dead || this.won) return;
     if (this.time.now < this.skillInvulnUntil) return;   // 疾影冲刺的落地无敌
     // 冷却按时钟算，不按帧累积：掉帧时也不会被连击打穿
     if (this.time.now - this.lastHurtAt < CFG.iFrame) return;
     this.lastHurtAt = this.time.now;
-    let taken = Math.max(1, Math.round(dmg * this.mods.takenMul));
+    let taken = Math.max(1, Math.round(dmg * this.mods.takenMul * this.diff.dmg));
     if (this.time.now < this.guardUntil) taken = Math.max(1, Math.round(taken * this.char.skill.takenMul));
     this.hp = Math.max(0, this.hp - taken);
     this.iframe = CFG.iFrame;
@@ -2182,8 +2236,7 @@ export class Play extends Phaser.Scene {
   }
 
   showOverlay(title, sub) {
-    const shade = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.55)
-      .setOrigin(0).setScrollFactor(0).setDepth(900);
+    this.dim(true);
     const t1 = this.add.text(S.W / 2, S.H / 2 - 18, title, {
       fontFamily: FONT, fontSize: '24px', color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
@@ -2193,7 +2246,7 @@ export class Play extends Phaser.Scene {
     const t3 = this.add.text(S.W / 2, S.H / 2 + 34, '点击或按 R 重开', {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
-    this.overlay = [shade, t1, t2, t3];
+    this.overlay = [t1, t2, t3];
   }
 
   /* 一局结束才写盘：金币与击杀累加，最深取大值，通关次数单独计 */
@@ -2294,6 +2347,7 @@ export class Play extends Phaser.Scene {
   }
 
   bindInput() {
+    this.input.keyboard.on('keydown-ESC', () => this.togglePause());
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D');
     this.input.keyboard.on('keydown-SPACE', () => {
@@ -2365,6 +2419,7 @@ export class Play extends Phaser.Scene {
 
   /* ---------- 主循环 ---------- */
   update(_t, dtRaw) {
+    if (this.paused) return;
     // 卡帧保护：浏览器切后台/追帧时 delta 会飙到几百毫秒，不夹住会把无敌帧一帧烧完
     const dt = Math.min(dtRaw, 50);
     const d = new Phaser.Math.Vector2(0, 0);

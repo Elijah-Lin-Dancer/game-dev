@@ -145,6 +145,6 @@ export class Boot extends Phaser.Scene {
     });
     const m = /(?:\?|&)char=([a-z]+)/.exec(location.search);
     if (m && ['ninja', 'mage', 'knight'].includes(m[1])) this.scene.start('play', { char: m[1] });
-    else this.scene.start('hall');
+    else this.scene.start('title');
   }
 }
