@@ -60,6 +60,11 @@ const UI = {
     disabled: 0.52,
     locked: 0.72,
   },
+  hud: {
+    bg: '#0a0f12dd',
+    bgSoft: '#0a0f1299',
+    bgClear: '#0a0f1266',
+  },
   typeColor(type) {
     return { side: UI.color.side, hidden: UI.color.hidden, conditional: UI.color.conditional }[type] || UI.color.neutral;
   },

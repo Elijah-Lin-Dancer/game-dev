@@ -1,5 +1,5 @@
 /* 主场景：移动 / 战斗 / 房间 / 门 / 掉落 / Boss / HUD */
-import { CFG, FONT, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
+import { CFG, DIRS, ANGLE, VEC, OPPOSITE, TILE, COLS, ROWS, RW, RH, S } from '../core/config.js';
 import { playAct, hitStop as fxHitStop, resumeStop } from '../systems/fx.js';
 import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
@@ -10,6 +10,8 @@ import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions } from '../systems/options.js';
 import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
 import { stageSpec, specialSpec, starsOf, starRating } from '../systems/stages.js';
+import { UI } from '../systems/ui/tokens.js';
+import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -25,6 +27,28 @@ const FIST_WEAPON = {
   dmgMul: 0.5, cd: 320, reach: 24, box: [26, 24], knock: 70,
   fx: 'slA', fxScale: 1.8, hitHeavy: 0, sfx: 'sword',
 };
+
+/* HUD / 覆盖层统一走组件层；滚动锁定与深度在这里收口。 */
+function hudText(scene, x, y, text, role = 'body', opts = {}) {
+  const { depth = 800, background = UI.hud.bg, padding = { x: 6, y: 4 }, ...style } = opts;
+  const t = makeText(scene, x, y, text, role, {
+    ...style,
+    ...(background ? { backgroundColor: background, padding } : {}),
+  });
+  return t.setScrollFactor(0).setDepth(depth);
+}
+
+function screenPanel(scene, opts) {
+  const p = makePanel(scene, opts);
+  p.container.setScrollFactor(0);
+  return p;
+}
+
+function destroyPanelRow(row) {
+  if (!row) return;
+  if (row.card) { row.card.container.destroy(); row.card.hit.destroy(); return; }
+  row.destroy();
+}
 
 /* 批 10：怪物与 Boss 的名称/贴图/前缀全部读 web/data/*.json，代码只留行为 */
 const ENEMY_META = () => ((window.__enemiesData && window.__enemiesData.list) || []);
@@ -426,10 +450,10 @@ export class Play extends Phaser.Scene {
   /* 房名横幅：屏幕中央淡入淡出，不挡 HUD */
   roomBanner(name, boss) {
     if (!name) return;
-    const txt = this.add.text(S.W / 2, S.H * 0.3, name, {
-      fontFamily: FONT, fontSize: '16px', color: boss ? '#ff8a7a' : '#ffe9b0',
-      backgroundColor: '#00000066', padding: { x: 10, y: 6 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(830).setAlpha(0);
+    const txt = hudText(this, S.W / 2, S.H * 0.3, name, 'h1', {
+      color: boss ? UI.text.danger : UI.text.heading,
+      origin: [0.5, 0], background: UI.hud.bgClear, padding: { x: 10, y: 6 }, depth: 830,
+    }).setAlpha(0);
     this.tweens.add({ targets: txt, alpha: 1, y: S.H * 0.3 - 6, duration: 260, ease: 'Quad.easeOut' });
     this.time.delayedCall(1100, () => {
       this.tweens.add({ targets: txt, alpha: 0, duration: 300, onComplete: () => txt.destroy() });
@@ -1241,21 +1265,21 @@ export class Play extends Phaser.Scene {
     if (this.promptT) this.promptT.setVisible(false);
     if (this.hint) this.hint.setVisible(false);
     const W = S.W, H = S.H;
-    const bg = this.add.rectangle(10, H - 84, W - 20, 64, 0x000000, 0.72)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(860);
-    bg.setStrokeStyle(1, 0xffffff, 0.25);
-    const nameT = this.add.text(20, H - 80, name || '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffd479',
-    }).setScrollFactor(0).setDepth(861);
-    const body = this.add.text(20, H - 62, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
+    const panel = screenPanel(this, {
+      x: 10, y: H - 84, w: W - 20, h: 64, variant: 'base', depth: 860,
+    });
+    const nameT = hudText(this, 20, H - 80, name || '', 'body', {
+      color: UI.text.gold, background: null, depth: 861,
+    });
+    const body = hudText(this, 20, H - 62, '', 'body', {
+      color: UI.text.primary, background: null, depth: 861,
       wordWrap: { width: W - 40 },
-    }).setScrollFactor(0).setDepth(861);
-    const hint = this.add.text(W - 20, H - 26, 'E / 空格 继续', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(861);
+    });
+    const hint = hudText(this, W - 20, H - 26, 'E / 空格 继续', 'body', {
+      color: UI.text.muted, origin: [1, 0], background: null, depth: 861,
+    });
 
-    this.dlg = { lines, i: 0, char: 0, name, onDone, ui: [bg, nameT, body, hint], timer: null };
+    this.dlg = { lines, i: 0, char: 0, name, onDone, ui: [panel.container, nameT, body, hint], timer: null };
     this.dlgLine();
   }
 
@@ -1311,26 +1335,38 @@ export class Play extends Phaser.Scene {
     this.panelOpen = true;
     this.sfx.ui.play({ rate: 1.0, volume: 0.8 });
 
-    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.4)
+    const dim = this.add.rectangle(0, 0, W, H, UI.color.overlay, UI.alpha.disabled)
       .setOrigin(0).setScrollFactor(0).setDepth(864);
-    const bg = this.add.rectangle(W / 2, H / 2, bw, bh, 0x0d1017, 0.95)
-      .setScrollFactor(0).setDepth(870).setStrokeStyle(1, 0xffffff, 0.22);
-    const ttl = this.add.text(W / 2, top + 14, title, {
-      fontFamily: FONT, fontSize: '24px', color: '#ffd479',
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
-    const body = this.add.text(W / 2, top + 46, text, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
+    const bg = screenPanel(this, {
+      x: W / 2 - bw / 2, y: top, w: bw, h: bh, variant: 'base', depth: 870,
+    });
+    const ttl = hudText(this, W / 2, top + 14, title, 'h1', {
+      color: UI.text.heading, origin: [0.5, 0], background: null, depth: 871,
+    });
+    const body = hudText(this, W / 2, top + 46, text, 'body', {
+      color: UI.text.body, origin: [0.5, 0], background: null, depth: 871,
       wordWrap: { width: bw - 40 }, align: 'center',
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(871);
+    });
 
-    const rows = options.map((o, i) => this.add.text(W / 2, top + 92 + i * 24, `${i + 1}. ${o.label}`, {
-      fontFamily: FONT, fontSize: '12px', color: o.dim ? '#ffffff77' : '#ffffff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(871).setInteractive({ useHandCursor: true }));
+    const rows = options.map((o, i) => {
+      const card = makeCard(this, {
+        x: W / 2 - (bw - 48) / 2, y: top + 88 + i * 28, w: bw - 48, h: 26,
+        accent: o.dim ? UI.color.lineMuted : UI.color.gold,
+        state: o.dim ? 'locked' : 'default', depth: 872,
+        onClick: () => this.choose(i),
+      });
+      card.container.setScrollFactor(0);
+      card.hit.setScrollFactor(0);
+      const label = makeText(this, 12, 7, `${i + 1}. ${o.label}`, 'body', {
+        color: o.dim ? UI.text.disabled : UI.text.primary,
+      });
+      card.add(label);
+      return { card, label };
+    });
 
-    this.panel = { dim, bg, title: ttl, text: body, rows, options, prop, hotkeys: [] };
+    this.panel = { dim, bg: bg.container, title: ttl, text: body, rows, options, prop, hotkeys: [] };
     rows.forEach((row, i) => {
-      row.on('pointerdown', () => this.choose(i));
-      const key = ['ONE', 'TWO', 'THREE', 'FOUR'][i];
+      const key = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'][i];
       if (key) this.panel.hotkeys.push(this.input.keyboard.on('keydown-' + key, () => this.choose(i)));
     });
   }
@@ -1467,41 +1503,46 @@ export class Play extends Phaser.Scene {
     this.panelOpen = true;
     this.sfx.ui.play({ rate: 1.0, volume: 0.8 });
 
-    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.55)
+    const dim = this.add.rectangle(0, 0, W, H, UI.color.overlay, UI.alpha.disabled)
       .setOrigin(0).setScrollFactor(0).setDepth(864);
-    const bg = this.add.rectangle(W / 2, H / 2, total + 40, ch + 96, 0x0d1017, 0.96)
-      .setScrollFactor(0).setDepth(870).setStrokeStyle(1, 0xffffff, 0.22);
-    const title = this.add.text(W / 2, H / 2 - (ch + 96) / 2 + 12, '天赋 · 选一张带到底', {
-      fontFamily: FONT, fontSize: '24px', color: '#ffd479',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(871);
-
-    const ui = [dim, bg, title];
-    const options = [];
-    cards.forEach((t, i) => {
-      const cx = left + i * (cw + gap) + cw / 2;
-      const stroke = parseInt(t.color.slice(1), 16);
-      const rect = this.add.rectangle(cx, cy, cw, ch, 0x141a12, 0.95)
-        .setScrollFactor(0).setDepth(872).setStrokeStyle(2, stroke, 0.95)
-        .setInteractive({ useHandCursor: true });
-      rect.on('pointerdown', () => this.pickTalent(i));
-      const name = this.add.text(cx, cy - ch / 2 + 10, t.name, {
-        fontFamily: FONT, fontSize: '14px', color: t.color,
-      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873);
-      const rar = this.add.text(cx, cy - ch / 2 + 30, RARITY_NAME[t.rarity] || '', {
-        fontFamily: FONT, fontSize: '12px', color: t.color,
-      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873).setAlpha(0.8);
-      const desc = this.add.text(cx, cy - ch / 2 + 48, t.desc, {
-        fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
-        wordWrap: { width: cw - 14 }, align: 'center',
-      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(873);
-      const num = this.add.text(cx, cy + ch / 2 - 18, String(i + 1), {
-        fontFamily: FONT, fontSize: '12px', color: '#ffffff88',
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(873);
-      ui.push(rect, name, rar, desc, num);
-      options.push({ label: t.name, act: () => this.pickTalent(i) });
+    const panel = screenPanel(this, {
+      x: left - 20, y: H / 2 - (ch + 96) / 2, w: total + 40, h: ch + 96,
+      variant: 'base', depth: 870,
+    });
+    const title = hudText(this, W / 2, H / 2 - (ch + 96) / 2 + 12, '天赋 · 选一张带到底', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0], background: null, depth: 871,
     });
 
-    this.panel = { dim, bg, title, rows: ui, options, cards, hotkeys: [] };
+    const options = [];
+    const rows = cards.map((t, i) => {
+      const cx = left + i * (cw + gap) + cw / 2;
+      const stroke = parseInt(t.color.slice(1), 16);
+      const card = makeCard(this, {
+        x: cx - cw / 2, y: cy - ch / 2, w: cw, h: ch,
+        accent: stroke, state: 'default', depth: 872,
+        onClick: () => this.pickTalent(i),
+      });
+      card.container.setScrollFactor(0);
+      card.hit.setScrollFactor(0);
+      const name = makeText(this, cw / 2, 10, t.name, 'body', {
+        color: t.color, origin: [0.5, 0],
+      });
+      const rar = makeText(this, cw / 2, 28, RARITY_NAME[t.rarity] || '', 'body', {
+        color: t.color, origin: [0.5, 0],
+      }).setAlpha(0.8);
+      const desc = makeText(this, cw / 2, 46, t.desc, 'body', {
+        color: UI.text.body, origin: [0.5, 0],
+        wordWrap: { width: cw - 14 }, align: 'center',
+      });
+      const num = makeText(this, cw / 2, ch - 20, String(i + 1), 'body', {
+        color: UI.text.muted, origin: [0.5, 0],
+      });
+      card.add(name, rar, desc, num);
+      options.push({ label: t.name, act: () => this.pickTalent(i) });
+      return { card, name, rar, desc, num };
+    });
+
+    this.panel = { dim, bg: panel.container, title, rows, options, cards, hotkeys: [] };
     ['ONE', 'TWO', 'THREE'].forEach((k, i) => {
       if (cards[i]) this.panel.hotkeys.push(this.input.keyboard.on('keydown-' + k, () => this.pickTalent(i)));
     });
@@ -1536,7 +1577,7 @@ export class Play extends Phaser.Scene {
   closePanel() {
     if (!this.panel) { this.panelOpen = false; return; }
     const pnl = this.panel;
-    pnl.rows.forEach((r) => r.destroy());
+    pnl.rows.forEach((r) => destroyPanelRow(r));
     ['dim', 'bg', 'title', 'text'].forEach((k) => pnl[k] && pnl[k].destroy());
     (pnl.hotkeys || []).forEach((h) => h && h.remove && h.remove());
     if (pnl.cards) this.talentOpen = false;
@@ -3837,10 +3878,11 @@ export class Play extends Phaser.Scene {
 
   /* 伤害数字一样的飘字，拾取/击杀反馈用 */
   floatText(x, y, text, color) {
-    const t = this.add.text(x, y, text, {
-      fontFamily: FONT, fontSize: '12px', color: color || '#ffffff',
-      backgroundColor: '#000000aa', padding: { x: 4, y: 2 },
-    }).setOrigin(0.5).setDepth(640);
+    const t = makeText(this, x, y, text, 'body', {
+      color: color || UI.text.primary,
+      backgroundColor: UI.hud.bgSoft, padding: { x: 4, y: 2 },
+      origin: [0.5, 0],
+    }).setDepth(640);
     this.tweens.add({
       targets: t, y: y - 18, alpha: 0, duration: 820, ease: 'Quad.easeOut',
       onComplete: () => t.destroy(),
@@ -3864,22 +3906,44 @@ export class Play extends Phaser.Scene {
     if (this.dead || this.won || this.talking) return;
     this.paused = !this.paused;
     if (!this.paused) {
-      if (this.pausePanel) { this.pausePanel.forEach((o) => o.destroy()); this.pausePanel = null; }
+      if (this.pausePanel) {
+        this.pausePanel.container.destroy();
+        this.pausePanel.title.destroy();
+        this.pausePanel.rows.forEach((r) => destroyPanelRow(r));
+        this.pausePanel.hint.destroy();
+        this.pausePanel = null;
+      }
       this.dim(false);
       return;
     }
     this.dim(true);
-    const t = this.add.text(S.W / 2, S.H / 2 - 34, '暂停', {
-      fontFamily: FONT, fontSize: '24px', color: '#ffe9b0',
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921);
-    const a = this.add.text(S.W / 2, S.H / 2 + 6, 'ESC / Enter 继续游戏', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921);
-    const b = this.add.text(S.W / 2, S.H / 2 + 28, 'H 回到小屋（本局作废）', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffb0a0',
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(921).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.backToHall());
-    this.pausePanel = [t, a, b];
+    const pw = 320, ph = 176;
+    const panel = screenPanel(this, {
+      x: (S.W - pw) / 2, y: (S.H - ph) / 2, w: pw, h: ph, variant: 'base', depth: 920,
+    });
+    const title = hudText(this, S.W / 2, (S.H - ph) / 2 + 12, '暂停', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0], background: null, depth: 921,
+    });
+    const rowData = [
+      { label: '继续游戏', accent: UI.color.gold, onClick: () => this.togglePause() },
+      { label: '回到小屋（本局作废）', accent: UI.color.danger, onClick: () => this.backToHall() },
+    ];
+    const rows = rowData.map((r, i) => {
+      const card = makeCard(this, {
+        x: (S.W - 280) / 2, y: (S.H - ph) / 2 + 48 + i * 38, w: 280, h: 32,
+        accent: r.accent, state: 'default', depth: 921.5,
+        onClick: r.onClick,
+      });
+      card.container.setScrollFactor(0);
+      card.hit.setScrollFactor(0);
+      const label = makeText(this, 14, 9, r.label, 'body', { color: UI.text.primary });
+      card.add(label);
+      return { card, label };
+    });
+    const hint = hudText(this, S.W / 2, (S.H - ph) / 2 + 144, 'ESC / Enter 继续 · H 回小屋', 'caption', {
+      color: UI.text.muted, origin: [0.5, 0], background: null, depth: 921,
+    });
+    this.pausePanel = { container: panel.container, title, rows, hint };
     this.input.keyboard.once('keydown-ENTER', () => { if (this.paused) this.togglePause(); });
     this.input.keyboard.once('keydown-H', () => { if (this.paused) this.backToHall(); });
   }
@@ -3921,7 +3985,7 @@ export class Play extends Phaser.Scene {
     const left = Math.max(0, Math.ceil(this.timeLeft));
     const m = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
     this.timerText.setText('剩余 ' + m + ':' + ss);
-    this.timerText.setColor(left <= 30 ? '#ff9a8a' : '#ffe9b0');
+    this.timerText.setColor(left <= 30 ? UI.text.danger : UI.text.heading);
   }
 
   tickTimer() {
@@ -4068,16 +4132,21 @@ export class Play extends Phaser.Scene {
   showOverlay(title, sub, hint, back) {
     this.dim(true);
     this.overlayBack = back || null;
-    const t1 = this.add.text(S.W / 2, S.H / 2 - 18, title, {
-      fontFamily: FONT, fontSize: '24px', color: '#ffffff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
-    const t2 = this.add.text(S.W / 2, S.H / 2 + 12, sub, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
-    const t3 = this.add.text(S.W / 2, S.H / 2 + 34, hint || '点击或按 R 重开', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffbb',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(901);
-    this.overlay = [t1, t2, t3];
+    const ow = 460, oh = 150;
+    const panel = screenPanel(this, {
+      x: (S.W - ow) / 2, y: (S.H - oh) / 2, w: ow, h: oh, variant: 'base', depth: 900,
+    });
+    const t1 = hudText(this, S.W / 2, S.H / 2 - 45, title, 'h1', {
+      color: UI.text.heading, origin: [0.5, 0], background: null, depth: 901,
+    });
+    const t2 = hudText(this, S.W / 2, S.H / 2 - 2, sub, 'body', {
+      color: UI.text.body, origin: [0.5, 0], background: null, depth: 901,
+      wordWrap: { width: ow - 40 }, align: 'center',
+    });
+    const t3 = hudText(this, S.W / 2, S.H / 2 + 30, hint || '点击或按 R 重开', 'body', {
+      color: UI.text.muted, origin: [0.5, 0], background: null, depth: 901,
+    });
+    this.overlay = [panel.container, t1, t2, t3];
   }
 
   /* 一局结束才写盘：金币与击杀累加，最深取大值，通关次数单独计 */
@@ -4134,42 +4203,38 @@ export class Play extends Phaser.Scene {
 
   buildHud() {
     this.rebuildHearts();
-    this.info = this.add.text(8, 34, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
-      backgroundColor: '#00000099', padding: { x: 6, y: 4 },
-    }).setScrollFactor(0).setDepth(800);
-    this.hint = this.add.text(10, S.H - 22, 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffee',
-      backgroundColor: '#00000055', padding: { x: 5, y: 3 },
-    }).setScrollFactor(0).setDepth(800);
-    this.skillText = this.add.text(10, S.H - 46, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#9fd8ff',
-      backgroundColor: '#00000077', padding: { x: 5, y: 3 },
-    }).setScrollFactor(0).setDepth(800);
-    this.upgText = this.add.text(S.W - 10, 36, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffd479cc',
-      backgroundColor: '#00000044', padding: { x: 4, y: 2 },
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
-    this.metaText = this.add.text(S.W - 10, 12, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
-      backgroundColor: '#00000055', padding: { x: 5, y: 3 },
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
-    this.timerText = this.timeLimit ? this.add.text(S.W - 10, 54, '', {
-      fontFamily: FONT, fontSize: '14px', color: '#ffe9b0',
-      backgroundColor: '#000000cc', padding: { x: 6, y: 3 },
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(801) : null;
+    this.info = hudText(this, 8, 34, '', 'body', {
+      color: UI.text.primary, background: UI.hud.bg, padding: { x: 6, y: 4 }, depth: 800,
+    });
+    this.hint = hudText(this, 10, S.H - 22, 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音', 'body', {
+      color: UI.text.body, background: UI.hud.bgClear, padding: { x: 5, y: 3 }, depth: 800,
+    });
+    this.skillText = hudText(this, 10, S.H - 46, '', 'body', {
+      color: UI.text.info, background: UI.hud.bgSoft, padding: { x: 5, y: 3 }, depth: 800,
+    });
+    this.upgText = hudText(this, S.W - 10, 36, '', 'body', {
+      color: UI.text.gold, origin: [1, 0], background: UI.hud.bgClear,
+      padding: { x: 4, y: 2 }, depth: 800,
+    });
+    this.metaText = hudText(this, S.W - 10, 12, '', 'body', {
+      color: UI.text.muted, origin: [1, 0], background: UI.hud.bgSoft,
+      padding: { x: 5, y: 3 }, depth: 800,
+    });
+    this.timerText = this.timeLimit ? hudText(this, S.W - 10, 54, '', 'body', {
+      color: UI.text.heading, origin: [1, 0], background: UI.hud.bg,
+      padding: { x: 6, y: 3 }, depth: 801,
+    }) : null;
     // 武器行：图标 2× 保证在 16px 图标上也认得出形状，底色加深以免压在墙上糊掉
     this.weaponIcon = this.add.image(20, 78, this.weapon.icon)
       .setScrollFactor(0).setDepth(800).setScale(2);
     if (this.fistMode) this.weaponIcon.setVisible(false);
-    this.weaponName = this.add.text(32, 70, this.weapon.name, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
-      backgroundColor: '#000000cc', padding: { x: 6, y: 3 },
-    }).setScrollFactor(0).setDepth(800);
-    this.promptT = this.add.text(0, 0, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
-      backgroundColor: '#00000088', padding: { x: 4, y: 2 },
-    }).setOrigin(0.5, 1).setDepth(850).setVisible(false);
+    this.weaponName = hudText(this, 32, 70, this.weapon.name, 'body', {
+      color: UI.text.primary, background: UI.hud.bg, padding: { x: 6, y: 3 }, depth: 800,
+    });
+    this.promptT = hudText(this, 0, 0, '', 'body', {
+      color: UI.text.heading, origin: [0.5, 1], background: UI.hud.bgSoft,
+      padding: { x: 4, y: 2 }, depth: 850,
+    }).setVisible(false);
     this.fitHint();
     this.scale.on('resize', (gs) => {
       this.hint.setPosition(10, gs.height - 20);
@@ -4195,7 +4260,15 @@ export class Play extends Phaser.Scene {
   }
 
   bindInput() {
-    this.input.keyboard.on('keydown-ESC', () => this.togglePause());
+    this.input.keyboard.on('keydown-ESC', () => {
+      // 事件 / 商店 / 篝火面板先关面板，避免暂停叠在面板上；天赋必须选一张，不响应 ESC
+      if (this.panelOpen) {
+        if (this.panel && this.panel.cards) return;
+        this.closePanel();
+        return;
+      }
+      this.togglePause();
+    });
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D');
     this.input.keyboard.on('keydown-SPACE', () => {
@@ -4494,7 +4567,7 @@ export class Play extends Phaser.Scene {
       const left = Math.max(0, K.cd - (this.time.now - this.skillAt));
       const cdTxt = left > 0 ? ' ' + Math.ceil(left / 1000) + 's' : '';
       this.skillText.setText('Q ' + K.name + cdTxt);
-      this.skillText.setColor(left > 0 ? '#8fa0a8' : '#9fd8ff');
+      this.skillText.setColor(left > 0 ? UI.text.muted : UI.text.info);
     }
     if (this.guardAura) {
       this.guardAura.setVisible(this.time.now < this.guardUntil);
