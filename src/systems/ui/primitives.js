@@ -144,25 +144,43 @@ export function makeCard(scene, {
 }
 
 export function makeButton(scene, {
-  x, y, w, h, label, state = 'normal', depth = 0, onClick,
+  x, y, w, h, label, state = 'normal', variant = 'solid', depth = 0, onClick,
 }) {
   const container = scene.add.container(x, y).setDepth(depth);
-  const [left, right, top, bottom] = UI.nineslice.button;
-  const keys = {
-    normal: UI.atlas.buttonNormal,
-    hover: UI.atlas.buttonHover,
-    pressed: UI.atlas.buttonPressed,
-    disabled: UI.atlas.buttonDisabled,
-  };
   const backgrounds = {};
-  Object.entries(keys).forEach(([name, key]) => {
-    const bg = scene.textures.exists(key)
-      ? scene.add.nineslice(0, 0, key, 0, w, h, left, right, top, bottom).setOrigin(0)
-      : scene.add.rectangle(0, 0, w, h, name === 'disabled' ? UI.color.lineMuted : UI.color.gold, 1).setOrigin(0);
-    bg.setVisible(name === 'normal');
-    backgrounds[name] = bg;
-    container.add(bg);
-  });
+  if (variant === 'ghost') {
+    // 次级操作：暗底 + 细描边，不和暖橙主按钮抢注意力
+    const skins = {
+      normal: [UI.color.panelRaised, 0.9, UI.color.line, UI.text.info],
+      hover: [UI.color.panelRaised, 0.98, UI.color.info, UI.text.info],
+      pressed: [UI.color.panel, 1, UI.color.selected, UI.text.heading],
+      disabled: [UI.color.panelLocked, 0.8, UI.color.lineMuted, UI.text.disabled],
+    };
+    Object.entries(skins).forEach(([name, [fill, alpha, line, color]]) => {
+      const bg = scene.add.rectangle(0, 0, w, h, fill, alpha).setOrigin(0)
+        .setStrokeStyle(1, line);
+      bg.setVisible(name === 'normal');
+      bg._textColor = color;
+      backgrounds[name] = bg;
+      container.add(bg);
+    });
+  } else {
+    const [left, right, top, bottom] = UI.nineslice.button;
+    const keys = {
+      normal: UI.atlas.buttonNormal,
+      hover: UI.atlas.buttonHover,
+      pressed: UI.atlas.buttonPressed,
+      disabled: UI.atlas.buttonDisabled,
+    };
+    Object.entries(keys).forEach(([name, key]) => {
+      const bg = scene.textures.exists(key)
+        ? scene.add.nineslice(0, 0, key, 0, w, h, left, right, top, bottom).setOrigin(0)
+        : scene.add.rectangle(0, 0, w, h, name === 'disabled' ? UI.color.lineMuted : UI.color.gold, 1).setOrigin(0);
+      bg.setVisible(name === 'normal');
+      backgrounds[name] = bg;
+      container.add(bg);
+    });
+  }
   const text = makeText(scene, w / 2, h / 2, label, 'body', {
     color: UI.text.onAccent,
     origin: [0.5, 0.5],
@@ -176,7 +194,12 @@ export function makeButton(scene, {
 
   function apply(visual) {
     Object.entries(backgrounds).forEach(([name, bg]) => bg.setVisible(name === visual));
-    text.setColor(visual === 'disabled' ? UI.text.disabled : UI.text.onAccent);
+    if (variant === 'ghost') {
+      const active = backgrounds[visual] || backgrounds.normal;
+      text.setColor(active._textColor || UI.text.info);
+    } else {
+      text.setColor(visual === 'disabled' ? UI.text.disabled : UI.text.onAccent);
+    }
   }
 
   const api = {

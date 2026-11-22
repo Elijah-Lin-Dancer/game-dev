@@ -12,6 +12,8 @@
 import { FONT, S, TILE } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
+import { UI } from '../systems/ui/tokens.js';
+import { makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
 
 const TABS = ['武器', '角色', '图鉴'];
 const RARITY = {
@@ -78,28 +80,28 @@ export class Hall extends Phaser.Scene {
 
   buildHeader() {
     this.add.text(12, 9, '← 返回', {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+      fontFamily: FONT, fontSize: '12px', color: UI.text.muted,
     }).setOrigin(0, 0).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.back());
     this.add.text(92, 9, '归途小屋', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
+      fontFamily: FONT, fontSize: '12px', color: UI.text.heading,
     }).setOrigin(0, 0);
     this.gemIcon = this.add.image(S.W - 96, 17, 'gem', 43).setScale(1.4);
     this.gemText = this.add.text(S.W - 82, 9, '0', {
-      fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
+      fontFamily: FONT, fontSize: '12px', color: UI.text.info,
     }).setOrigin(0, 0);
   }
 
   buildTabs() {
     this.tabs = TABS.map((name, i) => this.add.text(S.W / 2 - 120 + i * 120, 44, name, {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+      fontFamily: FONT, fontSize: '12px', color: UI.text.muted,
     }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => { this.tab = i; this.render(); }));
   }
 
   buildFoot() {
     this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发 · ESC 返回', {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
+      fontFamily: FONT, fontSize: '12px', color: UI.text.foot,
     }).setOrigin(0.5, 0);
   }
 
@@ -155,54 +157,63 @@ export class Hall extends Phaser.Scene {
     const unlocked = this.meta.unlockedWeapons || [];
     const CW = this.colW(3, 8);
     const CH = 112;
-    const rowH = 124;
+    const rowH = CH + 12;
     list.slice(0, 6).forEach((w, i) => {
       const x = 12 + (i % 3) * (CW + 8);
       const y = 72 + Math.floor(i / 3) * rowH;
       const on = unlocked.indexOf(w.id) >= 0;
       const r = rarityOf(w);
-      const box = this.keep(this.add.rectangle(x, y, CW, CH, on ? 0x1f2a20 : 0x1b211d, 0.92)
-        .setOrigin(0).setStrokeStyle(on ? 2 : 1, on ? r.color : 0x39423a));
-      this.keep(this.add.rectangle(x, y, 3, CH, r.color, 0.95).setOrigin(0));
-      this.keep(this.add.image(x + 30, y + 34, w.icon || 'wKatana', 0).setScale(1.5));
-      this.keep(this.add.text(x + 52, y + 8, w.name, {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#ffffff' : '#a8b0a4',
+      const card = makeCard(this, {
+        x, y, w: CW, h: CH, accent: r.color, state: on ? 'default' : 'locked',
+        onClick: () => {},
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      card.add(this.add.image(28, 34, w.icon || 'wKatana', 0).setScale(1.4));
+      card.add(makeText(this, 52, 8, w.name, 'h2', {
+        color: on ? UI.text.heading : UI.text.nameLocked,
       }));
-      this.keep(this.add.text(x + CW - 10, y + 8, r.name, {
-        fontFamily: FONT, fontSize: '12px', color: r.hex,
-      }).setOrigin(1, 0));
-      this.keep(this.add.text(x + 52, y + 26, KIND_NAME[w.kind] || w.kind, {
-        fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+      card.add(makeText(this, CW - 10, 8, r.name, 'body', {
+        color: on ? r.hex : UI.text.locked, origin: [1, 0],
       }));
-      this.keep(this.add.text(x + 10, y + 50,
-        '伤×' + Number(w.dmgMul || 1).toFixed(1) + '  ' + Math.round(w.cd || 0) + 'ms'
-        + (w.reach ? '  射程 ' + w.reach : ''),
-        { fontFamily: FONT, fontSize: '12px', color: on ? '#d8e8d0' : '#9a9f98' }));
-      this.keep(this.add.text(x + 10, y + 66,
-        w.kind === 'melee' ? ('击退 ' + Math.round(w.knock || 0))
-          : ('弹速 ' + Math.round(w.projSpeed || 0) + '  穿透 ' + (w.pierce ? w.pierce : '—')),
-        { fontFamily: FONT, fontSize: '12px', color: on ? '#a9bcae' : '#7f847d' }));
-      const tail = this.keep(this.add.text(x + 10, y + 88, on ? '已解锁 · 进掉落池' : '未解锁', {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#9fe0ff' : '#ffb0a0',
+      card.add(makeText(this, 52, 25, KIND_NAME[w.kind] || w.kind, 'muted', {
+        color: on ? UI.text.muted : UI.text.locked,
       }));
-      if (!on) {
+      card.add(makeText(this, 10, 50,
+        '伤×' + Number(w.dmgMul || 1).toFixed(1) + '  ' + Math.round(w.cd || 0) + 'ms',
+        'body', { color: on ? UI.text.primary : UI.text.body }));
+      const detail = w.kind === 'melee'
+        ? ('射程 ' + Math.round(w.reach || 0) + ' · 击退 ' + Math.round(w.knock || 0))
+        : ('弹速 ' + Math.round(w.projSpeed || 0) + ' · 穿透 ' + (w.pierce ? w.pierce : '—'));
+      card.add(makeText(this, 10, 66, detail, 'body', {
+        color: on ? UI.text.body : UI.text.body,
+      }));
+      const tail = makeText(this, 10, 88, on ? '已解锁 · 进掉落池' : '未解锁', 'body', {
+        color: on ? UI.text.info : UI.text.danger,
+      });
+      card.add(tail);
+      let buy = null;
+      if (on) {
+        card.add(makeText(this, CW - 10, 88, '权重 ' + Number(w.poolWeight || 1).toFixed(1), 'muted', {
+          color: UI.text.muted, origin: [1, 0],
+        }));
+      } else {
         const price = priceOf(w);
         if (price > 0) {
-          const btn = this.keep(this.add.text(x + CW - 10, y + 88, '解锁 ' + price + ' 宝石', {
-            fontFamily: FONT, fontSize: '12px', color: this.meta.gem >= price ? '#9fe0ff' : '#8a7a70',
-          }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
-          btn.on('pointerdown', () => this.buy('weapon', w.id, price));
+          buy = makeButton(this, {
+            x: x + CW - 108, y: y + 84, w: 98, h: 20,
+            label: '解锁 ' + price + ' 宝石', variant: 'ghost', depth: 2,
+            onClick: () => this.buy('weapon', w.id, price),
+          });
+          this.keep(buy.container);
+          this.keep(buy.hit);
         } else {
-          this.keep(this.add.text(x + CW - 10, y + 88, '初始武器', {
-            fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
-          }).setOrigin(1, 0));
+          card.add(makeText(this, CW - 10, 88, '初始武器', 'muted', {
+            color: UI.text.muted, origin: [1, 0],
+          }));
         }
-      } else {
-        this.keep(this.add.text(x + CW - 10, y + 88, '权重 ' + Number(w.poolWeight || 1).toFixed(1), {
-          fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
-        }).setOrigin(1, 0));
       }
-      this.rows.push({ box, on, name: w.name, tail });
+      this.rows.push({ card, on, name: w.name, tail, buy });
     });
   }
 
@@ -211,52 +222,64 @@ export class Hall extends Phaser.Scene {
     const list = charList();
     const unlocked = this.meta.chars || ['ninja'];
     const CW = this.colW(3, 8);
+    const CH = 242;
     list.forEach((data, i) => {
       const x = 12 + i * (CW + 8);
       const y = 72;
       const on = unlocked.indexOf(data.id) >= 0;
       const r = rarityOf(data);
-      const box = this.keep(this.add.rectangle(x, y, CW, 240, on ? 0x1f2a20 : 0x1b211d, 0.92)
-        .setOrigin(0).setStrokeStyle(on ? 2 : 1, on ? r.color : 0x39423a));
-      this.keep(this.add.rectangle(x, y, CW, 3, r.color, 0.95).setOrigin(0));
-      this.keep(this.add.image(x + CW / 2, y + 58, data.face || 'faceNinja', 0).setScale(1.5).setAlpha(on ? 1 : 0.45));
-      this.keep(this.add.text(x + 10, y + 8, data.name || data.id, {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#ffffff' : '#a8b0a4',
+      const card = makeCard(this, {
+        x, y, w: CW, h: CH, accent: r.color, state: on ? 'default' : 'locked',
+        onClick: () => {},
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      card.add(makeText(this, 10, 8, data.name || data.id, 'h2', {
+        color: on ? UI.text.heading : UI.text.nameLocked,
       }));
-      this.keep(this.add.text(x + CW - 10, y + 8, r.name, {
-        fontFamily: FONT, fontSize: '12px', color: r.hex,
-      }).setOrigin(1, 0));
-      this.keep(this.add.text(x + 10, y + 92, data.tag || '—', {
-        fontFamily: FONT, fontSize: '12px', color: '#ffd479',
+      card.add(makeText(this, CW - 10, 8, r.name, 'body', {
+        color: on ? r.hex : UI.text.locked, origin: [1, 0],
       }));
-      const desc = this.keep(this.add.text(x + 10, y + 110,
+      card.add(this.add.image(CW / 2, 58, data.face || 'faceNinja', 0)
+        .setScale(1.35).setAlpha(on ? 1 : 0.45));
+      card.add(makeText(this, 10, 90, data.tag || '—', 'body', {
+        color: on ? UI.text.gold : UI.text.locked,
+      }));
+      card.add(makeText(this, 10, 108,
         'HP ' + (data.hp || 20) + '  攻 ' + (data.dmg || 3) + '  速 ' + (data.speed || 96)
-        + '\n初始 ' + (this.weaponName(data.weapon) || data.weapon || '—'), {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#d8e8d0' : '#c8b0a0',
-        lineSpacing: 4, wordWrap: { width: CW - 20, useAdvancedWrap: true },
-      }));
-      const skill = this.keep(this.add.text(x + 10, y + 150, '【' + (data.skill && data.skill.name || '技能') + '】', {
-        fontFamily: FONT, fontSize: '12px', color: '#9fd8ff',
-      }));
-      const skillDesc = this.keep(this.add.text(x + 10, y + 166, (data.skill && data.skill.desc) || '', {
-        fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+        + '\n初始 ' + (this.weaponName(data.weapon) || data.weapon || '—'),
+        'body', {
+          color: on ? UI.text.primary : UI.text.body,
+          lineSpacing: 3, wordWrap: { width: CW - 20, useAdvancedWrap: true },
+        }));
+      const skill = makeText(this, 10, 146, '【' + (data.skill && data.skill.name || '技能') + '】', 'body', {
+        color: on ? UI.text.info : UI.text.muted,
+      });
+      card.add(skill);
+      const skillDesc = makeText(this, 10, 162, (data.skill && data.skill.desc) || '', 'muted', {
+        color: on ? UI.text.muted : UI.text.body,
         lineSpacing: 2, wordWrap: { width: CW - 20, useAdvancedWrap: true },
+      });
+      card.add(skillDesc);
+      card.add(makeText(this, 10, 200, '装备 护符 / 饰品', 'muted', {
+        color: on ? UI.text.muted : UI.text.locked,
       }));
-      const slots = this.keep(this.add.text(x + 10, y + 204, '装备 护符 / 饰品', {
-        fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
-      }));
-      if (!on) {
-        const price = priceOf(data);
-        const btn = this.keep(this.add.text(x + CW - 10, y + 220, '解锁 ' + price + ' 宝石', {
-          fontFamily: FONT, fontSize: '12px', color: this.meta.gem >= price ? '#9fe0ff' : '#8a7a70',
-        }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
-        btn.on('pointerdown', () => this.buy('char', data.id, price));
+      let buy = null;
+      if (on) {
+        card.add(makeText(this, CW - 10, 220, '可选', 'body', {
+          color: UI.text.info, origin: [1, 0],
+        }));
       } else {
-        this.keep(this.add.text(x + CW - 10, y + 220, '可选', {
-          fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
-        }).setOrigin(1, 0));
+        const price = priceOf(data);
+        buy = makeButton(this, {
+          x: x + CW - 108, y: y + 220, w: 98, h: 20,
+          label: '解锁 ' + price + ' 宝石', variant: 'ghost', depth: 2,
+          onClick: () => this.buy('char', data.id, price),
+        });
+        this.keep(buy.container);
+        this.keep(buy.hit);
       }
-      this.rows.push({ box, on, name: data.name, tail: desc, skill, skillDesc, slots });
+      this.rows.push({ card, on, name: data.name, skill, skillDesc, buy });
     });
   }
 

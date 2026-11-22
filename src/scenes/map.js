@@ -80,26 +80,18 @@ export class MapScene extends Phaser.Scene {
   }
 
   buildHeader() {
-    this.backText = this.add.text(12, 8, '← 返回', {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
-    }).setInteractive({ useHandCursor: true })
+    this.backText = makeText(this, 12, 8, '← 返回', 'body', { color: UI.text.muted })
+      .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.back());
-    this.titleText = this.add.text(102, 8, '世界地图', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
-    });
-    this.starText = this.add.text(S.W - 12, 8, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
-    }).setOrigin(1, 0);
-    this.specialText = this.add.text(S.W - 12, 24, '特殊关卡 ' + specials().length + ' ›', {
-      fontFamily: FONT, fontSize: '12px', color: '#d8b4ff',
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true })
+    this.titleText = makeText(this, 102, 8, '世界地图', 'h2', { color: UI.text.heading });
+    this.starText = makeText(this, S.W - 12, 8, '', 'body', { color: UI.text.info, origin: [1, 0] });
+    this.specialText = makeText(this, S.W - 12, 24, '特殊关卡 ' + specials().length + ' ›', 'body', { color: UI.text.special, origin: [1, 0] })
+      .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.openSpecial());
   }
 
   buildFoot() {
-    this.footText = this.add.text(S.W / 2, S.H - 15, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0cc',
-    }).setOrigin(0.5, 0);
+    this.footText = makeText(this, S.W / 2, S.H - 15, '', 'body', { color: UI.text.foot, origin: [0.5, 0] });
   }
 
   keep(obj) { this.content.push(obj); return obj; }
@@ -110,6 +102,12 @@ export class MapScene extends Phaser.Scene {
     this.nodes = [];
     this.cards = [];
     this.previewText = null;
+    this.panel = null;
+    this.pTitle = null;
+    this.pDiff = null;
+    this.pStart = null;
+    this.extraPanel = null;
+    this.extraText = null;
   }
 
   render() {
@@ -143,33 +141,37 @@ export class MapScene extends Phaser.Scene {
       })();
       let cleared = 0;
       for (let s = 1; s <= c.stages; s += 1) if (tierStarsOf(this.meta, c.id, s, 'normal') > 0) cleared += 1;
-      const box = this.keep(this.add.rectangle(x, y, cw, ch, open ? 0x1c2420 : 0x171b18, 0.94)
-        .setOrigin(0).setStrokeStyle(2, open ? 0x3f4f46 : 0x35302a)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
+      const accent = open ? (THEME[c.theme] || UI.color.neutral) : UI.color.lineMuted;
+      const card = makeCard(this, {
+        x, y, w: cw, h: ch, accent, state: open ? 'default' : 'locked',
+        onClick: () => {
           this.ci = i;
           if (!open) { this.mark(); this.toast('先通关「' + this.list[i - 1].name + '」最后一关'); this.sfx(); return; }
           this.openChapter(i);
-        }));
-      this.keep(this.add.rectangle(x + 2, y + ch - 4, cw - 4, 2, THEME[c.theme] || 0x7a9a5a, 0.85).setOrigin(0));
-      this.keep(this.add.text(x + 10, y + 6, '第' + CN[i] + '章 · ' + c.name, {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#ffe9b0' : '#7a6a64',
+        },
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      const title = makeText(this, 10, 6, '第' + CN[i] + '章 · ' + c.name, 'h2', {
+        color: open ? UI.text.heading : UI.text.nameLocked,
+      });
+      card.add(title);
+      card.add(makeText(this, 10, 26, '★ ' + stars + '/' + (c.stages * 3) + ' · 通关 ' + cleared + '/' + c.stages, 'body', {
+        color: open ? UI.text.gold : UI.text.locked,
       }));
-      this.keep(this.add.text(x + 10, y + 24, '★ ' + stars + '/' + (c.stages * 3) + ' · 通关 ' + cleared + '/' + c.stages, {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#ffd479' : '#7a6a64',
+      card.add(makeText(this, 10, 44, this.tierLine(c, open), 'body', {
+        color: open ? UI.text.typeOpen : UI.text.disabled,
       }));
-      this.keep(this.add.text(x + 10, y + 44, this.tierLine(c, open), {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#a9bcae' : '#5f6a60',
-      }));
-      this.keep(this.add.text(x + 10, y + 64, open ? '点击进入本章' : '通关上一章解锁', {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#9fe0ff' : '#ffb0a0',
-      }));
-      this.cards.push({ box, open, index: i });
+      const status = makeText(this, 10, 66, open ? '点击进入本章' : '通关上一章解锁', 'body', {
+        color: open ? UI.text.info : UI.text.danger,
+      });
+      card.add(status);
+      this.cards.push({ card, open, index: i, title, status, accent });
     });
 
-    this.previewText = this.keep(this.add.text(S.W / 2, 250,
-      '', {
-        fontFamily: FONT, fontSize: '12px', color: '#c8d8c0', align: 'center',
+    this.previewText = this.keep(makeText(this, S.W / 2, 250,
+      '', 'body', {
+        color: UI.text.body, align: 'center',
         wordWrap: { width: S.W - 40, useAdvancedWrap: true },
       }).setOrigin(0.5, 0));
     this.mark();
@@ -195,7 +197,10 @@ export class MapScene extends Phaser.Scene {
 
   markChapters() {
     this.cards.forEach((o) => {
-      o.box.setStrokeStyle(o.index === this.ci ? 3 : 2, o.index === this.ci ? 0xffe9b0 : (o.open ? 0x3f4f46 : 0x35302a));
+      const state = o.index === this.ci ? 'selected' : (o.open ? 'default' : 'locked');
+      o.card.setState(state);
+      o.title.setColor(o.open ? UI.text.heading : UI.text.nameLocked);
+      o.status.setColor(o.open ? UI.text.info : UI.text.danger);
     });
     const c = this.list[this.ci];
     if (!c) return;
@@ -240,6 +245,7 @@ export class MapScene extends Phaser.Scene {
     const h = rows > 1 ? 54 : 60;
     const gap = 12;
     const top = 56;
+    const theme = THEME[c.theme] || UI.color.neutral;
     this.layoutPanel(rows > 1 ? 184 : 150);
     for (let i = 1; i <= n; i += 1) {
       const row = Math.floor((i - 1) / perRow);
@@ -253,65 +259,93 @@ export class MapScene extends Phaser.Scene {
       const s = tierStarsOf(this.meta, c.id, i, this.tier);
       const open = chapterUnlocked(this.meta, this.ci) && stageUnlocked(this.meta, c.id, i);
       const isBoss = i === n;
-      const box = this.keep(this.add.rectangle(x, y, w, h, isBoss ? 0x3a1e1a : 0x1c2420, 0.94)
-        .setOrigin(0)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
+      const accent = open ? (isBoss ? UI.color.danger : theme) : UI.color.lineMuted;
+      const card = makeCard(this, {
+        x, y, w, h, accent, state: open ? 'default' : 'locked',
+        onClick: () => {
           if (!open) { this.toast(this.lockMsg(i)); this.sfx(); return; }
           this.si = i;
           this.markStages(c);
           this.sfx();
-        }));
-      this.keep(this.add.text(x + 8, y + 6, isBoss ? '首领' : ('第 ' + i + ' 关'), {
-        fontFamily: FONT, fontSize: '12px', color: isBoss ? '#ffb0a0' : '#e6efe6',
-      }));
-      this.keep(this.add.text(x + 8, y + 21, '房 ' + spec.rooms, {
-        fontFamily: FONT, fontSize: '12px', color: '#9fb0a6',
-      }));
-      this.keep(this.add.text(x + 8, y + 37, open ? (s ? '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s) : '可进入') : '未解锁', {
-        fontFamily: FONT, fontSize: '12px', color: open ? (s ? '#ffd479' : '#a9bcae') : '#7a6a64',
-      }));
-      this.nodes.push({ i, x, y, w, h, box, open, isBoss });
+        },
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      const py = h === 54 ? 4 : 6;
+      const label = makeText(this, 8, py, isBoss ? '首领' : ('第 ' + i + ' 关'), 'body', {
+        color: isBoss ? UI.text.danger : UI.text.primary,
+      });
+      const rooms = makeText(this, 8, py + 16, '房 ' + spec.rooms, 'muted', {
+        color: open ? UI.text.typeOpen : UI.text.disabled,
+      });
+      const status = makeText(this, 8, py + 32,
+        open ? (s ? '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s) : '可进入') : '未解锁', 'body', {
+          color: open ? (s ? UI.text.gold : UI.text.typeOpen) : UI.text.locked,
+        });
+      card.add(label, rooms, status);
+      this.nodes.push({ i, x, y, w, h, card, open, isBoss, accent, label, status, stars: s });
     }
   }
 
   buildPanel(c) {
-    this.panel = this.keep(this.add.rectangle(20, 0, S.W - 40, 108, 0x121a16, 0.94).setOrigin(0)
-      .setStrokeStyle(2, 0x3f4f46));
-    this.pTitle = this.keep(this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '14px', color: '#ffe9b0' }));
-    this.pStars = this.keep(this.add.text(S.W - 32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#ffd479' }).setOrigin(1, 0));
-    this.pLine = this.keep(this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#a9bcae' }));
-    this.pPick = this.keep(this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#d8e6da' }));
-    this.pReward = this.keep(this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#ffb0a0' }));
-    this.pDiff = this.keep(this.add.text(S.W - 32, 0, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
-      backgroundColor: '#00000066', padding: { x: 4, y: 2 },
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.openDiff()));
-    this.pStart = this.keep(this.add.text(S.W - 32, 0, '开始行动 ›', {
-      fontFamily: FONT, fontSize: '12px', color: '#101713',
-      backgroundColor: '#ffe9b0', padding: { x: 8, y: 4 },
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.enter()));
-    this.extraBox = this.keep(this.add.rectangle(20, 0, S.W - 40, 30, 0x121a16, 0.9).setOrigin(0)
-      .setStrokeStyle(2, 0x2f3b35));
-    this.extraText = this.keep(this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#b9c9bd' }));
-    if (this.pStart.input) this.pStart.input.enabled = false;
-    this.layoutPanel(this.panel.y);
+    this.panel = makePanel(this, {
+      x: 20, y: 0, w: S.W - 40, h: 108, variant: 'base', depth: 0,
+    });
+    this.keep(this.panel.container);
+    this.pTitle = this.keep(makeText(this, 32, 0, '', 'h2', { color: UI.text.heading }));
+    this.pStars = this.keep(makeText(this, S.W - 32, 0, '', 'body', {
+      color: UI.text.gold, origin: [1, 0],
+    }));
+    this.pLine = this.keep(makeText(this, 32, 0, '', 'body', {
+      color: UI.text.typeOpen, wordWrap: { width: 400, useAdvancedWrap: true },
+    }));
+    this.pPick = this.keep(makeText(this, 32, 0, '', 'body', {
+      color: UI.text.primary, wordWrap: { width: 430, useAdvancedWrap: true },
+    }));
+    this.pReward = this.keep(makeText(this, 32, 0, '', 'body', {
+      color: UI.text.danger, wordWrap: { width: 430, useAdvancedWrap: true },
+    }));
+    this.pDiff = makeButton(this, {
+      x: S.W - 152, y: 0, w: 118, h: 22, label: '难度', variant: 'ghost', depth: 2,
+      onClick: () => this.openDiff(),
+    });
+    this.keep(this.pDiff.container);
+    this.keep(this.pDiff.hit);
+    this.pStart = makeButton(this, {
+      x: S.W - 112, y: 0, w: 96, h: 24, label: '开始行动 ›', depth: 2,
+      onClick: () => this.enter(),
+    });
+    this.keep(this.pStart.container);
+    this.keep(this.pStart.hit);
+    this.pStart.setVisible(false);
+    this.pStart.setEnabled(false);
+    this.extraPanel = makePanel(this, {
+      x: 20, y: 0, w: S.W - 40, h: 36, variant: 'raised', depth: 1,
+    });
+    this.keep(this.extraPanel.container);
+    this.extraText = this.keep(makeText(this, 32, 0, '', 'body', {
+      color: UI.text.body, wordWrap: { width: 560, useAdvancedWrap: true },
+    }).setDepth(2));
+    this.layoutPanel(0);
     void c;
   }
 
   layoutPanel(y) {
-    this.panel.setY(y);
+    this.panel.container.setY(y);
     this.pTitle.setY(y + 8);
     this.pStars.setY(y + 10);
     this.pLine.setY(y + 28);
-    this.pDiff.setY(y + 28);
-    this.pPick.setY(y + 46);
-    this.pReward.setY(y + 66);
-    this.pStart.setY(y + 84);
-    this.extraBox.setY(y + 112);
+    this.pPick.setY(y + 54);
+    this.pReward.setY(y + 72);
+    this.placeButton(this.pDiff, S.W - 152, y + 26);
+    this.placeButton(this.pStart, S.W - 112, y + 80);
+    this.extraPanel.container.setY(y + 112);
     this.extraText.setY(y + 118);
+  }
+
+  placeButton(btn, x, y) {
+    btn.container.setPosition(x, y);
+    btn.hit.setPosition(x, y);
   }
 
   mark() {
@@ -323,17 +357,20 @@ export class MapScene extends Phaser.Scene {
     if (!c) return;
     this.nodes.forEach((o) => {
       const on = o.i === this.si;
-      o.box.setStrokeStyle(on ? 3 : 2, on ? 0xffe9b0 : (o.open ? 0x3f4f46 : 0x35302a));
-      o.box.setFillStyle(o.open ? (o.isBoss ? 0x3a1e1a : 0x24312a) : 0x171b18, 0.96);
+      o.card.setState(on ? 'selected' : (o.open ? 'default' : 'locked'));
+      o.label.setColor(on ? UI.text.heading : (o.open ? (o.isBoss ? UI.text.danger : UI.text.primary) : UI.text.nameLocked));
+      o.status.setColor(on
+        ? (o.open ? UI.text.gold : UI.text.danger)
+        : (o.open ? (o.stars ? UI.text.gold : UI.text.typeOpen) : UI.text.locked));
     });
     const p = progress(this.meta);
     this.starText.setText('主线 ★ ' + p.stars + ' / ' + p.max + ' · 本章 ★ ' + this.chapterStars(c, this.tier) + ' / ' + (c.stages * 3));
     const tm = tierMeta(this.tier);
     this.pTitle.setText('第' + CN[this.ci] + '章 · ' + c.name + ' · 第 ' + this.si + ' 关');
     this.pStars.setText('本章 ' + (this.tier === 'normal' ? '' : tm.name + ' ') + '★ ' + this.chapterStars(c, this.tier) + ' / ' + (c.stages * 3));
-    this.pDiff.setText('难度 ' + tm.name + ' ›').setColor(tm.color);
+    this.pDiff.setLabel('难度 ' + tm.name + ' ›');
     const press = (c.pressure || []).map((k) => PRESSURE[k] || k).join(' / ') || '无';
-    this.pLine.setText(c.stages + ' 关 · 每关 ' + (c.rooms[0] || 5) + ' 房 · 章内 +5% · 压力 ' + press);
+    this.pLine.setText(c.stages + ' 关 · 首关 ' + (c.rooms[0] || 5) + ' 房 · 章内 +5% · 压力 ' + press);
     const spec = stageSpec(c.id, this.si);
     const open = chapterUnlocked(this.meta, this.ci) && spec && stageUnlocked(this.meta, c.id, this.si);
     if (open && spec) {
@@ -341,19 +378,19 @@ export class MapScene extends Phaser.Scene {
       const mon = (c.monsters || []).slice(0, 4).map((m) => cn(m, MOB_CN)).join(' / ') || '—';
       this.pPick.setText('首领 ' + boss + ' · 出没 ' + mon);
       this.pReward.setText('通关奖励 ★ 首通宝石 · 高难星级单独记录');
-      if (this.pStart.input) this.pStart.input.enabled = true;
       this.pStart.setVisible(true);
+      this.pStart.setEnabled(true);
     } else {
       this.pPick.setText('第 ' + this.si + ' 关');
       this.pReward.setText(chapterUnlocked(this.meta, this.ci) ? this.lockMsg(this.si) : ('通关「' + this.list[this.ci - 1].name + '」后解锁本章'));
-      if (this.pStart.input) this.pStart.input.enabled = false;
       this.pStart.setVisible(false);
+      this.pStart.setEnabled(false);
     }
     const raw = window.__chaptersData || {};
     const sides = (raw.side || []).filter((e) => e.chapter === c.id);
     const sideTxt = sides.length ? ('支线 ' + sides.map((e) => e.name || e.id).join(' / ')) : '支线 无';
-    this.extraText.setText(sideTxt + ' · 全局隐藏关 ' + (raw.hidden || []).length
-      + ' 个 · 全局条件关 ' + (raw.conditional || []).length + ' 个 · 通关与星级解锁');
+    this.extraText.setText(sideTxt + ' · 隐藏 ' + (raw.hidden || []).length
+      + ' · 条件 ' + (raw.conditional || []).length + ' · 通关/星级解锁');
   }
 
   chapterStars(c, tier) {
