@@ -2,7 +2,7 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-A 章节地图两层化 + Hall 武器/角色页数据驱动升级完成。地图一层六章卡、二层节点路径与关卡详情面板已跑通；Hall 两页改读 `chars.json` / `weapons.json`，稀有度、属性、技能、装备位、价格、掉落权重全部上卡；Select 价格去硬编码。构建 `dist/game.43c15749.js`，单文件 `web/game.html` 1832 KB；本地 Playwright 20 项通过，`errs=[]`。本轮只做页面与展示层，实体扩张（3 角色/5 武器/6 饰品）仍在 P2-1；13 个特殊关卡节点通路未接。G0/开放世界继续暂停。
+当前段：P1-A 章节地图两层化 + Hall 武器/角色页数据驱动升级完成。地图一层六章卡、二层节点路径与关卡详情面板已跑通；Hall 两页改读 `chars.json` / `weapons.json`，稀有度、属性、技能、装备位、价格、掉落权重全部上卡；Select 价格去硬编码。构建 `dist/game.43c15749.js`，单文件 `web/game.html` 1832 KB；本地 Playwright 20 项通过，`errs=[]`。本轮只做页面与展示层，实体扩张（3 角色/5 武器/6 饰品）仍在 P2-1；13 个特殊关卡节点通路未接。已推送 `e901b8d` / `5104b39`，Pages 已切到 `game.43c15749.js`。G0/开放世界继续暂停。
 
 已完成的批 12B：`chapters.json` 的 `final` 落地为 1 关 ×1 房（`diff 1.8`、`pressure:["threePhase"]`、`bossPool:["weaver"]`、`unlock:"lava.stage9"`、`roomTemplate:["boss"]`）；`bosses.json` 的 `weaver` 从 `kind:frog` 占位改为 `kind:weaver / name:影织者 / hp 108 / dmg 3 / speed 52 / half 30 / scale 2.2`；新增 `CFG.weaverBoss` 与 `updateWeaver` 三幕状态机：第一幕 `stalk → dashWindup → lunge → recover` 影袭冲撞，第二幕 `hover → blinkOut → castWindup → cast` 中距瞬移 + 每 4.2s 召 2 只 `spirit` 影仆 + 12 发环形弹，第三幕 `storm` 4 圈紫粉星火火雨 + 16 发密集环弹；`damageFoe` 对 `weaver` 在 66%/33% 门槛钉血，最后一下不跨幕；`spawnRoomProps` 在 Boss 房提前 return，避免 1 房关混入引路人；新增 `sky` 主题（暗紫地面、58 颗 `dust` 星点、`aura` 星晕、冷色火把/光柱、暗角 1.0）；`win()` 终章分支写星级、`gems +5`、`commitRun(true)`、`finalFx()` 星火炸开与「星火归位 / 第 N 周目」；`hall.js` BOSSES 11 项并支持 tint，`map.js` 中文名同步「影织者」。验收 Q-1~Q-9 见 `docs/BATCH12B-FINAL.md`；普通构建 `dist/game.3229d58d.js`，单文件 `web/game.html` 1817 KB。
 
