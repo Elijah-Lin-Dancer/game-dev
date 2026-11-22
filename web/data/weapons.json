@@ -22,7 +22,14 @@
       "knock": 120,
       "fx": "slA",
       "fxScale": 1.9,
-      "sfx": "sword"
+      "sfx": "sword",
+      "rarity": "fine",
+      "desc": "均衡近战，出手快，适合走位补刀。",
+      "unlock": {
+        "channel": "initial",
+        "cost": 0
+      },
+      "poolWeight": 1.0
     },
     {
       "id": "bigsword",
@@ -41,7 +48,14 @@
       "fx": "slB",
       "fxScale": 1.9,
       "heavy": 1,
-      "sfx": "sword"
+      "sfx": "sword",
+      "rarity": "common",
+      "desc": "重击近战，前后摇明显，适合清堆。",
+      "unlock": {
+        "channel": "initial",
+        "cost": 0
+      },
+      "poolWeight": 1.0
     },
     {
       "id": "hammer",
@@ -60,7 +74,14 @@
       "fx": "slC",
       "fxScale": 2.0,
       "heavy": 2,
-      "sfx": "sword"
+      "sfx": "sword",
+      "rarity": "common",
+      "desc": "最重的一击，击退强，命中窗口窄。",
+      "unlock": {
+        "channel": "shop",
+        "cost": 20
+      },
+      "poolWeight": 0.8
     },
     {
       "id": "bow",
@@ -80,7 +101,14 @@
       "projSpeed": 300,
       "projLife": 700,
       "pierce": 0,
-      "sfx": "sword"
+      "sfx": "sword",
+      "rarity": "fine",
+      "desc": "远程直线，单发不穿透，适合拉枪线。",
+      "unlock": {
+        "channel": "shop",
+        "cost": 15
+      },
+      "poolWeight": 1.0
     },
     {
       "id": "wand",
@@ -101,7 +129,14 @@
       "projLife": 900,
       "projAnim": "fireball-play",
       "pierce": 0,
-      "sfx": "magic"
+      "sfx": "magic",
+      "rarity": "rare",
+      "desc": "远程火球，命中爆开，适合成排小怪。",
+      "unlock": {
+        "channel": "initial",
+        "cost": 0
+      },
+      "poolWeight": 0.8
     },
     {
       "id": "kunai",
@@ -121,7 +156,14 @@
       "projSpeed": 330,
       "projLife": 650,
       "pierce": 2,
-      "sfx": "sword"
+      "sfx": "sword",
+      "rarity": "fine",
+      "desc": "投掷穿透 2 个目标，适合直线排队。",
+      "unlock": {
+        "channel": "initial",
+        "cost": 0
+      },
+      "poolWeight": 1.0
     }
   ]
 }

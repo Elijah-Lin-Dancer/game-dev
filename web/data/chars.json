@@ -17,7 +17,16 @@
       "desc": "向前瞬移 100px，落地 0.4s 无敌",
       "distance": 100,
       "invuln": 400
-    }
+    },
+    "rarity": "common",
+    "unlock": {
+      "channel": "initial",
+      "cost": 0
+    },
+    "slots": [
+      "charm",
+      "relic"
+    ]
   },
   {
     "id": "mage",
@@ -41,7 +50,16 @@
       "blast": 44,
       "blastDmg": 3,
       "life": 900
-    }
+    },
+    "rarity": "rare",
+    "unlock": {
+      "channel": "shop",
+      "cost": 30
+    },
+    "slots": [
+      "charm",
+      "relic"
+    ]
   },
   {
     "id": "knight",
@@ -62,6 +80,15 @@
       "duration": 3000,
       "takenMul": 0.5,
       "push": 96
-    }
+    },
+    "rarity": "rare",
+    "unlock": {
+      "channel": "shop",
+      "cost": 40
+    },
+    "slots": [
+      "charm",
+      "relic"
+    ]
   }
 ]

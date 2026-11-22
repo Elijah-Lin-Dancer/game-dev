@@ -7,7 +7,7 @@ import { NAV } from '../systems/nav.js';
 import { normalizeTier, tierMeta } from '../systems/difficulty.js';
 
 const ORDER = ['ninja', 'mage', 'knight'];
-const LOCK_PRICE = { ninja: 0, mage: 30, knight: 40 };
+const priceOf = (c) => Math.max(0, Number(c && c.price) || 0);
 const CARD_W = 128;
 const CARD_H = 240;
 const GAP = 18;
@@ -30,6 +30,8 @@ function normalize(list) {
       face: String(c.face || 'faceNinja'),
       desc: String(c.desc || ''),
       skill: c.skill || { name: '技能', desc: '', cd: 8000 },
+      price: Math.max(0, Number(c.unlock && c.unlock.cost) || 0),
+      unlock: c.unlock || { channel: 'initial', cost: 0 },
     });
   });
   ORDER.forEach((id) => {
@@ -128,7 +130,7 @@ export class Select extends Phaser.Scene {
     });
     let lockT = null;
     if (!this.isOpen(i)) {
-      const price = LOCK_PRICE[c.id] || 30;
+      const price = priceOf(c);
       lockT = this.add.text(x + CARD_W / 2, y + 24, '未解锁 · ' + price + ' 宝石', {
         fontFamily: FONT, fontSize: '12px', color: '#ffb0a0',
       }).setOrigin(0.5, 0);
@@ -183,7 +185,7 @@ export class Select extends Phaser.Scene {
   confirm() {
     const c = this.chars[this.idx];
     if (!this.isOpen(this.idx)) {
-      this.toast(c.name + ' 还没解锁：去小屋花 ' + (LOCK_PRICE[c.id] || 30) + ' 宝石');
+      this.toast(c.name + ' 还没解锁：去小屋花 ' + priceOf(c) + ' 宝石');
       return;
     }
     patchSave({ lastChar: c.id });

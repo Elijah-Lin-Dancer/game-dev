@@ -14,15 +14,21 @@ import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 
 const TABS = ['武器', '角色', '图鉴'];
-const PRICE = { bow: 15, hammer: 20, mage: 30, knight: 40 };
-const CHARS = ['ninja', 'mage', 'knight'];
-const CHAR_NAME = { ninja: '忍者', mage: '法师', knight: '骑士' };
-const CHAR_FACE = { ninja: 'faceNinja', mage: 'faceMage', knight: 'faceKnight' };
+const RARITY = {
+  common: { name: '普通', color: 0x9aa0a6, hex: '#9aa0a6' },
+  fine: { name: '精良', color: 0x7cb342, hex: '#7cb342' },
+  rare: { name: '稀有', color: 0x42a5f5, hex: '#42a5f5' },
+  epic: { name: '史诗', color: 0xab47bc, hex: '#ab47bc' },
+};
 const KIND_NAME = { melee: '近战', ranged: '远程', throw: '投掷' };
 const ROOM_NAME = {
   battle: '战场', elite: '精英', treasure: '宝箱', shop: '商店',
   shrine: '石龛', rest: '篝火', gate: '机关', boss: '首领',
 };
+const rarityOf = (item) => RARITY[item && item.rarity] || RARITY.common;
+const priceOf = (item) => Math.max(0, Number(item && item.unlock && item.unlock.cost) || 0);
+const charList = () => (Array.isArray(window.__charsData) ? window.__charsData
+  : ((window.__charsData && window.__charsData.list) || []));
 /* 图鉴里要列的东西：怪用图集里的 kind 键（首帧当头像），Boss 用两只专用贴图 */
 const FOES = [
   ['beast', '野兽'], ['cyclope', '独眼'], ['eye', '眼球'], ['larva', '幼虫'],
@@ -143,76 +149,121 @@ export class Hall extends Phaser.Scene {
 
   keep(obj) { this.body.push(obj); return obj; }
 
-  /* 武器页：三列两行（逻辑屏 640×360 下每格约 200×108） */
+  /* 武器页：三列两行，稀有度 + 伤害 / 攻速 / 射程 / 穿透上墙 */
   renderWeapons() {
     const list = (window.__weaponsData && window.__weaponsData.list) || [];
     const unlocked = this.meta.unlockedWeapons || [];
     const CW = this.colW(3, 8);
-    const CH = 108;
-    const rowH = 122;
+    const CH = 112;
+    const rowH = 124;
     list.slice(0, 6).forEach((w, i) => {
       const x = 12 + (i % 3) * (CW + 8);
       const y = 72 + Math.floor(i / 3) * rowH;
       const on = unlocked.indexOf(w.id) >= 0;
+      const r = rarityOf(w);
       const box = this.keep(this.add.rectangle(x, y, CW, CH, on ? 0x1f2a20 : 0x1b211d, 0.92)
-        .setOrigin(0).setStrokeStyle(2, on ? 0x4a5f42 : 0x39423a));
+        .setOrigin(0).setStrokeStyle(on ? 2 : 1, on ? r.color : 0x39423a));
+      this.keep(this.add.rectangle(x, y, 3, CH, r.color, 0.95).setOrigin(0));
       this.keep(this.add.image(x + 30, y + 34, w.icon || 'wKatana', 0).setScale(1.5));
-      this.keep(this.add.text(x + 54, y + 12, w.name, {
+      this.keep(this.add.text(x + 52, y + 8, w.name, {
         fontFamily: FONT, fontSize: '12px', color: on ? '#ffffff' : '#a8b0a4',
       }));
-      this.keep(this.add.text(x + 54, y + 32, KIND_NAME[w.kind] || w.kind, {
+      this.keep(this.add.text(x + CW - 10, y + 8, r.name, {
+        fontFamily: FONT, fontSize: '12px', color: r.hex,
+      }).setOrigin(1, 0));
+      this.keep(this.add.text(x + 52, y + 26, KIND_NAME[w.kind] || w.kind, {
         fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
       }));
-      const tail = this.keep(this.add.text(x + 10, y + 58, on ? '已解锁 · 进掉落池' : '未解锁', {
+      this.keep(this.add.text(x + 10, y + 50,
+        '伤×' + Number(w.dmgMul || 1).toFixed(1) + '  ' + Math.round(w.cd || 0) + 'ms'
+        + (w.reach ? '  射程 ' + w.reach : ''),
+        { fontFamily: FONT, fontSize: '12px', color: on ? '#d8e8d0' : '#9a9f98' }));
+      this.keep(this.add.text(x + 10, y + 66,
+        w.kind === 'melee' ? ('击退 ' + Math.round(w.knock || 0))
+          : ('弹速 ' + Math.round(w.projSpeed || 0) + '  穿透 ' + (w.pierce ? w.pierce : '—')),
+        { fontFamily: FONT, fontSize: '12px', color: on ? '#a9bcae' : '#7f847d' }));
+      const tail = this.keep(this.add.text(x + 10, y + 88, on ? '已解锁 · 进掉落池' : '未解锁', {
         fontFamily: FONT, fontSize: '12px', color: on ? '#9fe0ff' : '#ffb0a0',
       }));
       if (!on) {
-        const price = PRICE[w.id] || 15;
-        const btn = this.keep(this.add.text(x + 10, y + 82, '解锁 ' + price + ' 宝石', {
-          fontFamily: FONT, fontSize: '12px', color: this.meta.gem >= price ? '#9fe0ff' : '#8a7a70',
-        }).setInteractive({ useHandCursor: true }));
-        btn.on('pointerdown', () => this.buy('weapon', w.id, price));
+        const price = priceOf(w);
+        if (price > 0) {
+          const btn = this.keep(this.add.text(x + CW - 10, y + 88, '解锁 ' + price + ' 宝石', {
+            fontFamily: FONT, fontSize: '12px', color: this.meta.gem >= price ? '#9fe0ff' : '#8a7a70',
+          }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
+          btn.on('pointerdown', () => this.buy('weapon', w.id, price));
+        } else {
+          this.keep(this.add.text(x + CW - 10, y + 88, '初始武器', {
+            fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
+          }).setOrigin(1, 0));
+        }
       } else {
-        this.keep(this.add.text(x + 10, y + 82, '本局会掉这把', {
+        this.keep(this.add.text(x + CW - 10, y + 88, '权重 ' + Number(w.poolWeight || 1).toFixed(1), {
           fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
-        }));
+        }).setOrigin(1, 0));
       }
       this.rows.push({ box, on, name: w.name, tail });
     });
   }
 
-  /* 角色页：三张卡 */
+  /* 角色页：数据驱动，定位 / 三属性 / 初始武器 / 技能全部上墙 */
   renderChars() {
-    const list = Array.isArray(window.__charsData) ? window.__charsData
-      : ((window.__charsData && window.__charsData.list) || []);
+    const list = charList();
     const unlocked = this.meta.chars || ['ninja'];
     const CW = this.colW(3, 8);
-    CHARS.forEach((id, i) => {
+    list.forEach((data, i) => {
       const x = 12 + i * (CW + 8);
       const y = 72;
-      const on = unlocked.indexOf(id) >= 0;
-      const data = list.find((c) => c.id === id) || {};
+      const on = unlocked.indexOf(data.id) >= 0;
+      const r = rarityOf(data);
       const box = this.keep(this.add.rectangle(x, y, CW, 240, on ? 0x1f2a20 : 0x1b211d, 0.92)
-        .setOrigin(0).setStrokeStyle(2, on ? 0x4a5f42 : 0x39423a));
-      this.keep(this.add.image(x + CW / 2, y + 62, CHAR_FACE[id], 0).setScale(1.5).setAlpha(on ? 1 : 0.45));
-      this.keep(this.add.text(x + CW / 2, y + 10, CHAR_NAME[id], {
+        .setOrigin(0).setStrokeStyle(on ? 2 : 1, on ? r.color : 0x39423a));
+      this.keep(this.add.rectangle(x, y, CW, 3, r.color, 0.95).setOrigin(0));
+      this.keep(this.add.image(x + CW / 2, y + 58, data.face || 'faceNinja', 0).setScale(1.5).setAlpha(on ? 1 : 0.45));
+      this.keep(this.add.text(x + 10, y + 8, data.name || data.id, {
         fontFamily: FONT, fontSize: '12px', color: on ? '#ffffff' : '#a8b0a4',
-      }).setOrigin(0.5, 0));
-      const desc = this.keep(this.add.text(x + 10, y + 108,
+      }));
+      this.keep(this.add.text(x + CW - 10, y + 8, r.name, {
+        fontFamily: FONT, fontSize: '12px', color: r.hex,
+      }).setOrigin(1, 0));
+      this.keep(this.add.text(x + 10, y + 92, data.tag || '—', {
+        fontFamily: FONT, fontSize: '12px', color: '#ffd479',
+      }));
+      const desc = this.keep(this.add.text(x + 10, y + 110,
         'HP ' + (data.hp || 20) + '  攻 ' + (data.dmg || 3) + '  速 ' + (data.speed || 96)
-        + '\n' + (on ? '可选' : '需 ' + (PRICE[id] || 30) + ' 宝石解锁'), {
+        + '\n初始 ' + (this.weaponName(data.weapon) || data.weapon || '—'), {
         fontFamily: FONT, fontSize: '12px', color: on ? '#d8e8d0' : '#c8b0a0',
         lineSpacing: 4, wordWrap: { width: CW - 20, useAdvancedWrap: true },
       }));
+      const skill = this.keep(this.add.text(x + 10, y + 150, '【' + (data.skill && data.skill.name || '技能') + '】', {
+        fontFamily: FONT, fontSize: '12px', color: '#9fd8ff',
+      }));
+      const skillDesc = this.keep(this.add.text(x + 10, y + 166, (data.skill && data.skill.desc) || '', {
+        fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+        lineSpacing: 2, wordWrap: { width: CW - 20, useAdvancedWrap: true },
+      }));
+      const slots = this.keep(this.add.text(x + 10, y + 204, '装备 护符 / 饰品', {
+        fontFamily: FONT, fontSize: '12px', color: '#7f8f86',
+      }));
       if (!on) {
-        const price = PRICE[id] || 30;
-        const btn = this.keep(this.add.text(x + CW / 2, y + 200, '解锁 ' + price + ' 宝石', {
+        const price = priceOf(data);
+        const btn = this.keep(this.add.text(x + CW - 10, y + 220, '解锁 ' + price + ' 宝石', {
           fontFamily: FONT, fontSize: '12px', color: this.meta.gem >= price ? '#9fe0ff' : '#8a7a70',
-        }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }));
-        btn.on('pointerdown', () => this.buy('char', id, price));
+        }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
+        btn.on('pointerdown', () => this.buy('char', data.id, price));
+      } else {
+        this.keep(this.add.text(x + CW - 10, y + 220, '可选', {
+          fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
+        }).setOrigin(1, 0));
       }
-      this.rows.push({ box, on, name: CHAR_NAME[id], tail: desc });
+      this.rows.push({ box, on, name: data.name, tail: desc, skill, skillDesc, slots });
     });
+  }
+
+  weaponName(id) {
+    const list = (window.__weaponsData && window.__weaponsData.list) || [];
+    const w = list.find((x) => x.id === id);
+    return w ? w.name : id;
   }
 
   /* 图鉴页：怪物 / Boss / 武器 / 房间四栏，未点亮显示 ??? */
