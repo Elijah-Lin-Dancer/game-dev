@@ -1,4 +1,6 @@
-# game-dev
+# 归途：星火之章
+
+> 仓库名 `game-dev`。游戏正式名 **《归途：星火之章》**；`Ninja Adventure` 是 CC0 美术包，不是游戏名。
 
 **在线试玩**：<https://elijah-lin-dancer.github.io/game-dev/>
 

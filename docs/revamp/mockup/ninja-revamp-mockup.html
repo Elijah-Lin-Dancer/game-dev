@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ninja Adventure · UI 改造高保真原型稿</title>
+<title>归途：星火之章 · UI 改造高保真原型稿</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
@@ -213,9 +213,9 @@ SCREENS.title = {
   render(){
     const scr = document.getElementById('scr-title'); scr.innerHTML='';
     const wrap = el('div',''); wrap.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding-top:28px;';
-    const title = el('div','t-display','忍者地牢');
+    const title = el('div','t-display','归途');
     title.style.cssText='color:#ffe9b0;letter-spacing:6px;text-shadow:0 3px 0 rgba(0,0,0,.5);';
-    const sub = el('div','t-cap','像素动作 Roguelike · 夺回被抢走的魔法石');
+    const sub = el('div','t-cap','星火之章 · 多角色动作 Roguelike');
     sub.style.marginTop='8px';
     wrap.appendChild(title); wrap.appendChild(sub);
     const menu = el('div',''); menu.style.cssText='margin-top:18px;display:flex;flex-direction:column;gap:10px;';

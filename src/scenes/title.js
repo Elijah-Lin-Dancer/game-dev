@@ -46,11 +46,14 @@ export class Title extends Phaser.Scene {
   }
 
   buildTitle() {
-    this.add.text(S.W / 2, 34, '忍 者 地 牢', {
-      fontFamily: FONT, fontSize: '24px', color: '#ffe9b0',
+    this.add.text(S.W / 2, 22, '归 途', {
+      fontFamily: FONT, fontSize: '36px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 66, '像素动作 Roguelike · 夺回被抢走的魔法石', {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
+    this.add.text(S.W / 2, 66, '星 火 之 章', {
+      fontFamily: FONT, fontSize: '14px', color: '#e6c07a',
+    }).setOrigin(0.5, 0);
+    this.add.text(S.W / 2, 88, '多角色动作 Roguelike · 六章冒险', {
+      fontFamily: FONT, fontSize: '11px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
     const m = this.meta;
     this.add.text(S.W / 2, S.H - 22,

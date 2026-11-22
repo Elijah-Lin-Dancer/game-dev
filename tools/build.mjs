@@ -278,7 +278,7 @@ const head = (title, fontUrl) => `<html lang="zh-CN">
 `;
 
 /* ---------- Pages 入口：引擎与资源分开，可被缓存 ---------- */
-const pagesHtml = `${head('Ninja Adventure · 开发中', './web/fonts/game.woff2')}<script src="./web/vendor/phaser.min.js"></script>
+const pagesHtml = `${head('归途：星火之章 · 开发中', './web/fonts/game.woff2')}<script src="./web/vendor/phaser.min.js"></script>
 <script src="./dist/${assetsName}"></script>
 <script src="./dist/${gameName}"></script>
 </body>
@@ -297,7 +297,7 @@ if (single) {
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
-  const singleHtml = `${head('Ninja Adventure · 单文件版', b64(FONT_OUT, 'font/woff2'))}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
+  const singleHtml = `${head('归途：星火之章 · 单文件版', b64(FONT_OUT, 'font/woff2'))}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
 <script>${code}</script>
 </body>
