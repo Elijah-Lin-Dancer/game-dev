@@ -2,7 +2,7 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-C-1 视觉基础层完成，新版特殊关卡覆盖层已在本地跑通。新增 `src/systems/ui/tokens.js`（字号 12/24、语义色、状态、图集键）与 `primitives.js`（`makePanel / makeCard / makeButton / makeText`）；Theme1 20 张 UI 切片入图集（97→117 张）；`map.js` 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 原生暖橙按钮，13 卡 5/5/3、锁卡 toast、Enter/ESC/遮罩/按钮/悬停均通过。构建 `dist/game.0faa720c.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；960×540 / 640×360 截图、特殊规则验收、13 关全量进入/结算、单文件冒烟均 `errs=[]`。**本轮只在本地完成，尚未推送，线上仍是 `game.54285c08.js`**。
+当前段：P1-C-1 视觉基础层完成，新版特殊关卡覆盖层已跑通。新增 `src/systems/ui/tokens.js`（字号 12/24、语义色、状态、图集键）与 `primitives.js`（`makePanel / makeCard / makeButton / makeText`）；Theme1 20 张 UI 切片入图集（97→117 张）；`map.js` 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 原生暖橙按钮，13 卡 5/5/3、锁卡 toast、Enter/ESC/遮罩/按钮/悬停均通过。构建 `dist/game.0faa720c.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；960×540 / 640×360 截图、特殊规则验收、13 关全量进入/结算、单文件冒烟均 `errs=[]`。功能 / 文档提交 `29f9076`、`2fc5906` 已推送；Pages 已切到 `game.0faa720c.js`。线上 13 卡、锁卡点击不跳转、开始按钮进入 Select `speedrun` 实测通过，`errs=[]`；线上加载约 35–45 秒。
 
 上一批：P1-A 特殊关卡规则补齐完成。`timer`（商队速递 300 秒倒计时、≤30 秒变红、归零「时间到」结算）、`noCoinPickup`（贫者之路不掉金币）、`fists`（赤手空拳伪武器、禁武器掉落与换装、隐藏图标/手持）三条规则已接入 Play；地图详情第二行补 `限时 300 秒 / 本关不掉金币 / 赤手空拳 / 仅限苦无` 标签。构建 `dist/game.54285c08.js`（199 KB）+ `assets.4a2b12f8.js`（95 KB），单文件 1845 KB；三条规则验收、`firefly` 回归、13 关全量进入/结算与单文件冒烟均通过，`errs=[]`。功能提交 `8f765c9` 已推送，Pages 已切到 `game.54285c08.js`；线上 `fists / poor / speedrun / firefly` 实测通过，`errs=[]`。
 

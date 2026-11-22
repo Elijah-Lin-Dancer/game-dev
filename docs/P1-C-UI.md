@@ -1,6 +1,6 @@
 # P1-C-1：UI 令牌、组件层与特殊关卡覆盖层
 
-状态：本地完成，尚未推送 / 部署；线上入口仍是 `game.54285c08.js`。
+状态：已完成并推送 `2fc5906`；Pages 已切到 `game.0faa720c.js`，线上特殊覆盖层与开始按钮实测通过。
 
 ## 范围
 
@@ -42,6 +42,8 @@
 - `docs/revamp/p1/p1c-special-960.png`、`p1c-special-640.png`：正常选中 `商队速递`，13 卡 5/5/3，按钮可见。
 - `docs/revamp/p1/p1c-special-locked-960.png`：选中锁卡 `灰烬墓`，卡名/类型可读，状态转红，开始按钮隐藏。
 - `docs/revamp/p1/p1c-hover-button.png`、`p1c-hover-card.png`：按钮 hover 与卡片 hover 状态。
+- `docs/revamp/p1/p1c-online-special.png`：线上 13 卡覆盖层，`商队速递` 选中，开始按钮可见。
+- `docs/revamp/p1/p1c-online-select.png`：线上实际点击开始按钮后进入 Select，标签 `条件 · 商队速递`。
 
 交互：
 
@@ -58,6 +60,14 @@
 - `special_all_run.py`：13 关全量进入 / 结算 / 返回，`errs=[]`。
 - `special_rules_single.py`：单文件 `fists / timer` 通过，`errs=[]`。
 - 960×540 与 640×360 覆盖层截图均无裁切；控制台 `errs=[]`。
+
+线上：
+
+- 入口 `https://elijah-lin-dancer.github.io/game-dev/` 已指向 `dist/game.0faa720c.js` 与 `dist/assets.5fb07765.js`。
+- 新档全主线三星种子：13 卡、仅 `灰烬墓` 锁；`商队速递` 选中时 `startVisible / startEnabled` 均为 true。
+- 实际点击锁卡 `灰烬墓`：选中保持 `商队速递`，无跳转。
+- 实际点击「开始挑战」：进入 Select，`stage.special='speedrun'`，标签 `条件 · 商队速递`。
+- 线上加载约 35–45 秒；全程控制台 `errs=[]`。
 
 ## 未完成
 
