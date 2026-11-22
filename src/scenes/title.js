@@ -8,13 +8,15 @@
 import { FONT, S } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { loadOptions, patchOptions } from '../systems/options.js';
+import { NAV } from '../systems/nav.js';
 
-const ITEMS = ['开始冒险', '设置', '制作名单'];
+const ITEMS = ['开始冒险', '收藏小屋', '设置', '制作名单'];
 
 export class Title extends Phaser.Scene {
   constructor() { super('title'); }
 
   create() {
+    NAV.reset('title');
     this.idx = 0;
     this.meta = loadSave();
     this.options = loadOptions();
@@ -67,7 +69,7 @@ export class Title extends Phaser.Scene {
     this.menu = ITEMS.map((name, i) => this.add.text(S.W / 2, 140 + i * 26, name, {
       fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
     }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.idx = i; this.choose(); })
+      .on('pointerdown', (p) => { if (p.button === 2) return; this.idx = i; this.choose(); })
       .on('pointerover', () => { this.idx = i; this.mark(); }));
     this.cursor = this.add.text(0, 0, '▶', {
       fontFamily: FONT, fontSize: '12px', color: '#ffd479',
@@ -86,10 +88,20 @@ export class Title extends Phaser.Scene {
     this.input.keyboard.on('keydown-DOWN', () => this.move(1));
     this.input.keyboard.on('keydown-ENTER', () => this.choose());
     this.input.keyboard.on('keydown-SPACE', () => this.choose());
-    this.input.keyboard.on('keydown-ESC', () => { if (this.setting) this.closeSettings(); });
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this.setting) { this.closeSettings(); return; }
+      if (this.credits) { this.closeCredits(); }
+    });
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (p) => {
+      if (p.button !== 2) return;
+      if (this.setting) this.closeSettings();
+      else if (this.credits) this.closeCredits();
+    });
   }
 
   move(d) {
+    if (this.credits) return;
     if (this.setting) {
       this.settingIdx = (this.settingIdx + d + 3) % 3;
       this.renderSettings();
@@ -101,10 +113,12 @@ export class Title extends Phaser.Scene {
   }
 
   choose() {
+    if (this.credits) { this.closeCredits(); return; }
     if (this.setting) { this.toggleSetting(); return; }
     this.sfxUi();
-    if (this.idx === 0) this.scene.start('hall');
-    else if (this.idx === 1) this.openSettings();
+    if (this.idx === 0) NAV.push('map');
+    else if (this.idx === 1) NAV.push('hall');
+    else if (this.idx === 2) this.openSettings();
     else this.openCredits();
   }
 
@@ -115,6 +129,7 @@ export class Title extends Phaser.Scene {
   /* ---------- 设置面板 ---------- */
   openSettings() {
     this.setting = true;
+    NAV.openOverlay('settings');
     this.settingIdx = 0;
     this.panel = this.add.container(0, 0).setDepth(50);
     this.menu.forEach((t) => t.setVisible(false));
@@ -170,6 +185,7 @@ export class Title extends Phaser.Scene {
 
   closeSettings() {
     this.setting = false;
+    NAV.closeOverlay('settings');
     if (this.panel) { this.panel.destroy(); this.panel = null; }
     this.settingRows = [];
     this.menu.forEach((t) => t.setVisible(true));
@@ -179,7 +195,7 @@ export class Title extends Phaser.Scene {
 
   /* ---------- 制作名单 ---------- */
   openCredits() {
-    if (this.credits) { this.credits.destroy(); this.credits = null; return; }
+    if (this.credits) { this.closeCredits(); return; }
     const lines = [
       '制作 · Elijah-Lin-Dancer',
       '',
@@ -190,11 +206,27 @@ export class Title extends Phaser.Scene {
       '',
       '素材清单见仓库 assets/CREDITS.md',
     ];
-    const box = this.add.rectangle(S.W / 2, S.H / 2 + 10, 360, 180, 0x101713, 0.96)
-      .setStrokeStyle(2, 0x4a5f42);
-    const t = this.add.text(S.W / 2, S.H / 2 - 66, lines.join('\n'), {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0', align: 'center', lineSpacing: 5,
+    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.5).setOrigin(0)
+      .setInteractive({ useHandCursor: false })
+      .on('pointerdown', () => this.closeCredits());
+    const box = this.add.rectangle(S.W / 2, S.H / 2 + 8, 380, 196, 0x101713, 0.98)
+      .setStrokeStyle(2, 0x4a5f42)
+      .setInteractive({ useHandCursor: false });
+    const t = this.add.text(S.W / 2, S.H / 2 - 82, lines.join('\n'), {
+      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0', align: 'center', lineSpacing: 4,
     }).setOrigin(0.5, 0);
-    this.credits = this.add.container(0, 0, [box, t]).setDepth(60);
+    const close = this.add.text(S.W / 2, S.H / 2 + 80, '关闭 ×', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
+    }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.closeCredits());
+    NAV.openOverlay('credits');
+    this.credits = this.add.container(0, 0, [mask, box, t, close]).setDepth(60);
+  }
+
+  closeCredits() {
+    if (!this.credits) return;
+    this.credits.destroy();
+    this.credits = null;
+    NAV.closeOverlay('credits');
   }
 }

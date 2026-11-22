@@ -4,6 +4,7 @@
  */
 import { FONT, S } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
+import { NAV } from '../systems/nav.js';
 import { chapters, stageSpec, starsOf, stageUnlocked, chapterUnlocked, progress } from '../systems/stages.js';
 
 const PRESSURE = {
@@ -56,7 +57,11 @@ export class MapScene extends Phaser.Scene {
   }
 
   buildHeader() {
-    this.add.text(12, 8, '世界地图', {
+    this.add.text(12, 8, '← 返回', {
+      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+    }).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.back());
+    this.add.text(92, 8, '世界地图', {
       fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
     });
     this.starText = this.add.text(S.W - 12, 8, '', {
@@ -206,7 +211,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.foot = this.add.text(S.W / 2, S.H - 15, '↑↓ 换章 · ←→ 选关 · Enter 进入 · ESC 回小屋', {
+    this.foot = this.add.text(S.W / 2, S.H - 15, '↑↓ 换章 · ←→ 选关 · Enter 进入 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0cc',
     }).setOrigin(0.5, 0);
   }
@@ -221,7 +226,16 @@ export class MapScene extends Phaser.Scene {
     kb.on('keydown-D', () => this.moveStage(1));
     kb.on('keydown-ENTER', () => this.enter());
     kb.on('keydown-SPACE', () => this.enter());
-    kb.on('keydown-ESC', () => this.scene.start('hall'));
+    kb.on('keydown-ESC', () => this.back());
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (p) => {
+      if (p.button === 2) this.back();
+    });
+  }
+
+  back() {
+    try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
+    if (!NAV.back()) this.scene.start('title');
   }
 
   switchChapter(d) {
@@ -246,7 +260,7 @@ export class MapScene extends Phaser.Scene {
     const spec = stageSpec(c.id, this.si);
     if (!spec) { this.toast('关卡数据缺失'); return; }
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
-    this.scene.start('select', { stage: { chapter: spec.chapterId, chapterName: spec.chapterName, index: spec.index } });
+    NAV.push('select', { stage: { chapter: spec.chapterId, chapterName: spec.chapterName, index: spec.index } });
   }
 
   sfx() { try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {} }

@@ -3,6 +3,7 @@
  */
 import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
+import { NAV } from '../systems/nav.js';
 
 const ORDER = ['ninja', 'mage', 'knight'];
 const LOCK_PRICE = { ninja: 0, mage: 30, knight: 40 };
@@ -61,6 +62,10 @@ export class Select extends Phaser.Scene {
       }
     }
 
+    this.add.text(12, 8, '← 返回地图', {
+      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+    }).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.back());
     this.add.text(S.W / 2, 26, '选择角色', {
       fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
@@ -85,6 +90,19 @@ export class Select extends Phaser.Scene {
     this.input.keyboard.on('keydown-D', () => this.move(1));
     this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     this.input.keyboard.on('keydown-SPACE', () => this.confirm());
+    this.input.keyboard.on('keydown-ESC', () => this.back());
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (p) => {
+      if (p.button === 2) this.back();
+    });
+  }
+
+  back() {
+    try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
+    const from = this.stage
+      ? { chapterId: this.stage.chapter, stage: this.stage.index }
+      : {};
+    if (!NAV.back(from)) this.scene.start('map', from);
   }
 
   buildCard(c, x, y, i) {
@@ -168,6 +186,7 @@ export class Select extends Phaser.Scene {
     }
     patchSave({ lastChar: c.id });
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
+    NAV.reset('play');
     this.scene.start('play', { char: c.id, stage: this.stage });
   }
 }

@@ -5,14 +5,14 @@
 **在线试玩**：<https://elijah-lin-dancer.github.io/game-dev/>
 
 
-新游戏的开发仓库。当前阶段：主美术与技术栈已定，P1 战斗已实现，P2 房间结构已实现并跑通一局（随机房间 / 清房开门 / 掉落 / Boss / 通关与死亡重开）。
+新游戏的开发仓库。当前阶段：批 12B 主线完成，正在做 UI/UX 改造 P0 导航底座。
 
 ## 目录
 
 | 位置 | 内容 |
 |---|---|
 | `index.html` | Pages 入口，跳转到 `web/game.html` |
-| `web/game.html` | **可直接打开玩的单文件原型**（Phaser + 素材 + 音效全内联，1.45 MB） |
+| `web/game.html` | **可直接打开玩的单文件版**（Phaser + 素材 + 音效全内联，1.82 MB） |
 | `src/` | 源码（`core/config.js` 数值、`systems/dungeon.js` 地牢、`scenes/` 场景、`main.js` 入口） |
 | `dist/` | 构建产物：`game.<hash>.js`（逻辑）、`assets.<hash>.js`（素材） |
 | `tools/build.mjs` | esbuild 打包，生成 Pages 入口与单文件自测版 |
@@ -26,6 +26,8 @@
 | `docs/PLAYTEST-2.md` | P2 验证记录（门锁 / 换房 / 掉落 / Boss / 重开的实测证据） |
 | `docs/ACCEPTANCE.md` | 验收标准（草案，未冻结） |
 | `docs/ROADMAP.md` | 后续扩展方案（8 批顺位 + 素材审计） |
+| `docs/REVAMP-PLAN.md` | UI/UX 与内容体系改造方案（15 款对标 / 93 条来源） |
+| `docs/P0-NAV.md` | P0-1 导航底座 / 返回栈 / 覆盖层验收 |
 | `docs/AUDIO.md` | 音频清单 / 源→产物映射 / 转码参数 / 播放策略 |
 | `web/data/weapons.json` | 武器表（6 把，数值与表现全在这里；改数字不用改代码） |
 | `assets/` | 素材落地目录；`00-raw` 放原始包与包内 LICENSE，不入 git |

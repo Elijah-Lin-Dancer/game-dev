@@ -7,6 +7,7 @@ import { Hall } from './scenes/hall.js';
 import { Title } from './scenes/title.js';
 import { MapScene } from './scenes/map.js';
 import { resetSave } from './systems/save.js';
+import { initNav, NAV } from './systems/nav.js';
 
 // 像素字体按 12px 设计；用带引号的族名，避免被当成通用族名解析
 const FONT_PROBE = '12px "NinjaPixel"';
@@ -43,6 +44,8 @@ window.addEventListener('load', () => {
     });
 
     window.__game = game;
+    initNav(game);
+    window.__nav = NAV;
 
     function present() {
       const g = game.scale;

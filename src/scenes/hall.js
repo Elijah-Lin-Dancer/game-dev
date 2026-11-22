@@ -11,6 +11,7 @@
  */
 import { FONT, S, TILE } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
+import { NAV } from '../systems/nav.js';
 
 const TABS = ['武器', '角色', '图鉴'];
 const PRICE = { bow: 15, hammer: 20, mage: 30, knight: 40 };
@@ -70,7 +71,11 @@ export class Hall extends Phaser.Scene {
   colW(cols, gap) { return Math.floor((S.W - 24 - gap * (cols - 1)) / cols); }
 
   buildHeader() {
-    this.add.text(12, 9, '归途小屋', {
+    this.add.text(12, 9, '← 返回', {
+      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+    }).setOrigin(0, 0).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.back());
+    this.add.text(92, 9, '归途小屋', {
       fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
     }).setOrigin(0, 0);
     this.gemIcon = this.add.image(S.W - 96, 17, 'gem', 43).setScale(1.4);
@@ -87,7 +92,7 @@ export class Hall extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发（选关）', {
+    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
   }
@@ -100,6 +105,16 @@ export class Hall extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-ENTER', () => this.start());
     this.input.keyboard.on('keydown-SPACE', () => this.start());
+    this.input.keyboard.on('keydown-ESC', () => this.back());
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (p) => {
+      if (p.button === 2) this.back();
+    });
+  }
+
+  back() {
+    try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
+    if (!NAV.back()) this.scene.start('title');
   }
 
   switchTab(d) {
@@ -109,7 +124,7 @@ export class Hall extends Phaser.Scene {
 
   start() {
     try { this.sound.play('ui', { volume: 0.4 }); } catch (e) {}
-    this.scene.start('map');
+    NAV.push('map');
   }
 
   /* ---------- 内容区 ---------- */
