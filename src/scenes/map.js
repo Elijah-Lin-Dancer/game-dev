@@ -7,7 +7,7 @@
 import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
-import { chapters, stageSpec, stageUnlocked, chapterUnlocked, progress } from '../systems/stages.js';
+import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel } from '../systems/stages.js';
 import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
 
 const PRESSURE = {
@@ -28,7 +28,7 @@ const MOB_CN = {
 };
 const THEME = {
   field: 0x7a9a5a, bamboo: 0x7a9a5a, fort: 0xa47a52, desert: 0xd0a45a,
-  sunken: 0x5a9ab0, lava: 0xc85a38, sky: 0x8a6ab0,
+  water: 0x5a9ab0, sunken: 0x5a9ab0, lava: 0xc85a38, sky: 0x8a6ab0,
 };
 const cn = (id, dict) => dict[id] || id;
 
@@ -37,6 +37,14 @@ export class MapScene extends Phaser.Scene {
 
   create(data) {
     this.meta = loadSave();
+    // 同一个场景实例会被 start 复用；上一轮的覆盖层对象已经销毁，引用必须清掉，
+    // 否则 pendingSpecial 打开时会被 if (this.specialBox) return 拦住
+    this.specialBox = null;
+    this.specialCards = [];
+    this.specialDetail = null;
+    this.specialStart = null;
+    this.specialSel = 0;
+    this.diffBox = null;
     this.list = chapters();
     this.ci = Math.max(0, Math.min(this.list.length - 1, (data && data.chapter) || 0));
     if (data && data.chapterId) {
@@ -45,6 +53,7 @@ export class MapScene extends Phaser.Scene {
     }
     this.si = Math.max(1, (data && data.stage) || 1);
     this.mode = (data && (data.chapterId || data.stage)) ? 'stages' : 'chapters';
+    this.pendingSpecial = (data && data.special) || null;
     this.tier = selectedTier(this.meta, this.list[this.ci].id);
     this.content = [];
     this.buildBackdrop();
@@ -52,6 +61,11 @@ export class MapScene extends Phaser.Scene {
     this.buildFoot();
     this.bindKeys();
     this.render();
+    if (this.pendingSpecial) {
+      const id = this.pendingSpecial;
+      this.pendingSpecial = null;
+      this.openSpecial(id);
+    }
   }
 
   /* ---------- 底子 ---------- */
@@ -74,6 +88,10 @@ export class MapScene extends Phaser.Scene {
     this.starText = this.add.text(S.W - 12, 8, '', {
       fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
     }).setOrigin(1, 0);
+    this.specialText = this.add.text(S.W - 12, 24, '特殊关卡 ' + specials().length + ' ›', {
+      fontFamily: FONT, fontSize: '12px', color: '#d8b4ff',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.openSpecial());
   }
 
   buildFoot() {
@@ -193,11 +211,10 @@ export class MapScene extends Phaser.Scene {
   }
 
   specialCount(c) {
-    const raw = window.__chaptersData || {};
-    const side = (raw.side || []).filter((e) => e.chapter === c.id).length;
-    const hidden = (raw.hidden || []).length;
-    const cond = (raw.conditional || []).length;
-    return '支线 ' + side + ' · 全局隐藏 ' + hidden + ' · 全局条件 ' + cond;
+    const list = specials();
+    return '支线 ' + list.filter((e) => e.chapter === c.id).length
+      + ' · 全局隐藏 ' + list.filter((e) => e.type === 'hidden').length
+      + ' · 全局条件 ' + list.filter((e) => e.type === 'conditional').length;
   }
 
   /* ---------- 二层：关卡节点 + 详情 ---------- */
@@ -417,6 +434,7 @@ export class MapScene extends Phaser.Scene {
 
   /* ---------- 交互 ---------- */
   back() {
+    if (this.specialBox) { this.closeSpecial(); return; }
     if (this.diffBox) { this.closeDiff(); return; }
     try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
     if (this.mode === 'stages') {
@@ -428,6 +446,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   move(dx, dy) {
+    if (this.specialBox) { this.moveSpecial(dx, dy); return; }
     if (this.diffBox) return;
     if (this.mode === 'chapters') {
       const cols = 3;
@@ -449,6 +468,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   activate() {
+    if (this.specialBox) { this.enterSpecial(); return; }
     if (this.diffBox) return;
     if (this.mode === 'chapters') {
       const open = chapterUnlocked(this.meta, this.ci);
@@ -471,6 +491,155 @@ export class MapScene extends Phaser.Scene {
     NAV.push('select', {
       stage: { chapter: spec.chapterId, chapterName: spec.chapterName, index: spec.index },
       difficulty: this.tier,
+    });
+  }
+
+
+  /* ---------- 特殊关卡覆盖层：支线 / 隐藏 / 条件 ---------- */
+  gateLabel(s) {
+    let txt = specialGateLabel(s, this.meta);
+    Object.keys(BOSS_CN).forEach((id) => { txt = txt.split(id).join(BOSS_CN[id]); });
+    const ws = (window.__weaponsData && window.__weaponsData.list) || [];
+    ws.forEach((w) => { txt = txt.split(w.id).join(w.name); });
+    return txt;
+  }
+
+  openSpecial(focusId) {
+    if (this.diffBox) this.closeDiff();
+    if (this.specialBox) return;
+    this.specialList = specials();
+    if (!this.specialList.length) { this.toast('特殊关卡数据缺失'); return; }
+    this.sfx();
+    NAV.openOverlay('special');
+    const objs = [];
+    const depth = 880;
+    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.78).setOrigin(0).setDepth(depth)
+      .setInteractive().on('pointerdown', () => this.closeSpecial());
+    objs.push(mask);
+    objs.push(this.add.rectangle(S.W / 2, S.H / 2, 600, 320, 0x121a16, 0.99)
+      .setStrokeStyle(2, 0x5a4f6c).setDepth(depth + 1));
+    objs.push(this.add.text(S.W / 2, 30, '特殊关卡', {
+      fontFamily: FONT, fontSize: '14px', color: '#e7d4ff',
+    }).setOrigin(0.5, 0).setDepth(depth + 2));
+    objs.push(this.add.text(S.W / 2, 48, '支线 ' + this.specialList.filter((x) => x.type === 'side').length
+      + ' · 隐藏 ' + this.specialList.filter((x) => x.type === 'hidden').length
+      + ' · 条件 ' + this.specialList.filter((x) => x.type === 'conditional').length
+      + ' · 与主线星级分开记录', {
+      fontFamily: FONT, fontSize: '12px', color: '#9e93aa',
+    }).setOrigin(0.5, 0).setDepth(depth + 2));
+
+    const cols = 5, cw = 108, ch = 50, gap = 6, top = 72;
+    const firstOpen = this.specialList.findIndex((x) => specialGateOk(this.meta, x));
+    this.specialSel = Math.max(0, firstOpen);
+    if (focusId) {
+      const at = this.specialList.findIndex((x) => x.id === focusId);
+      if (at >= 0) this.specialSel = at;
+    }
+    this.specialCards = [];
+    const TYPE_COLOR = { side: 0x7cb342, hidden: 0xab47bc, conditional: 0x42a5f5 };
+    this.specialList.forEach((s, i) => {
+      const row = Math.floor(i / cols);
+      const rowCount = Math.min(cols, this.specialList.length - row * cols);
+      const left = S.W / 2 - (rowCount * cw + (rowCount - 1) * gap) / 2;
+      const x = left + (i % cols) * (cw + gap);
+      const y = top + row * (ch + 8);
+      const open = specialGateOk(this.meta, s);
+      const cleared = specialCleared(this.meta, s.id);
+      const color = TYPE_COLOR[s.type] || 0x55645a;
+      const box = this.add.rectangle(x, y, cw, ch, open ? 0x1d2620 : 0x171b18, 0.96)
+        .setOrigin(0).setDepth(depth + 3).setStrokeStyle(2, open ? color : 0x35302a)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+          if (!open) { this.toast('条件未达成：' + this.gateLabel(s)); this.sfx(); return; }
+          this.specialSel = i;
+          this.refreshSpecial();
+          this.sfx();
+        });
+      objs.push(box);
+      objs.push(this.add.text(x + 6, y + 5, s.name, {
+        fontFamily: FONT, fontSize: '12px', color: open ? '#ffffff' : '#8a837e',
+      }).setDepth(depth + 4));
+      objs.push(this.add.text(x + 6, y + 21, s.typeName + (cleared ? ' · 已通' : ''), {
+        fontFamily: FONT, fontSize: '12px', color: cleared ? '#ffd479' : (open ? '#b8c8ba' : '#665f5a'),
+      }).setDepth(depth + 4));
+      objs.push(this.add.text(x + 6, y + 35, open ? '可挑战' : '未达成', {
+        fontFamily: FONT, fontSize: '12px', color: open ? '#9fe0ff' : '#7a6a64',
+      }).setDepth(depth + 4));
+      this.specialCards.push({ i, s, box, open, cleared });
+    });
+
+    this.specialDetail = this.add.text(40, 252, '', {
+      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
+      wordWrap: { width: 470, useAdvancedWrap: true },
+    }).setDepth(depth + 4);
+    objs.push(this.specialDetail);
+    this.specialStart = this.add.text(S.W - 38, 298, '开始挑战 ›', {
+      fontFamily: FONT, fontSize: '12px', color: '#101713', backgroundColor: '#ffe9b0',
+      padding: { x: 8, y: 4 },
+    }).setOrigin(1, 0).setDepth(depth + 4).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.enterSpecial());
+    objs.push(this.specialStart);
+    objs.push(this.add.text(S.W / 2, 318, '←→↑↓ 选关 · Enter 进入 · ESC / 点击空白关闭', {
+      fontFamily: FONT, fontSize: '12px', color: '#7d8a84',
+    }).setOrigin(0.5, 0).setDepth(depth + 4));
+    this.specialBox = objs;
+    this.refreshSpecial();
+  }
+
+  refreshSpecial() {
+    if (!this.specialCards || !this.specialDetail) return;
+    const picked = this.specialCards[this.specialSel];
+    const TYPE_COLOR = { side: 0x7cb342, hidden: 0xab47bc, conditional: 0x42a5f5 };
+    this.specialCards.forEach((c) => {
+      const color = TYPE_COLOR[c.s.type] || 0x55645a;
+      c.box.setStrokeStyle(c.i === this.specialSel ? 3 : 2,
+        c.i === this.specialSel ? 0xffe9b0 : (c.open ? color : 0x35302a));
+    });
+    if (!picked) { this.specialDetail.setText(''); this.specialStart.setVisible(false); return; }
+    const s = picked.s;
+    const cleared = specialCleared(this.meta, s.id);
+    const reward = (s.reward && s.reward.gem) ? ('首通 +' + s.reward.gem + ' 宝石') : '无首通宝石';
+    const base = s.chapter ? (' · ' + (chapterById(s.chapter) || {}).name) : '';
+    const gate = picked.open ? '条件已达成' : ('条件未达成 · ' + this.gateLabel(s));
+    this.specialDetail.setText(s.typeName + base + ' · ' + s.rooms + ' 房 · ' + gate + '\n'
+      + reward + (cleared ? ' · 已有通关记录' : ''));
+    this.specialStart.setVisible(!!picked.open);
+    if (this.specialStart.input) this.specialStart.input.enabled = !!picked.open;
+  }
+
+  closeSpecial() {
+    if (!this.specialBox) return;
+    this.specialBox.forEach((o) => o && o.destroy());
+    this.specialBox = null;
+    this.specialCards = null;
+    this.specialDetail = null;
+    this.specialStart = null;
+    NAV.closeOverlay('special');
+  }
+
+  moveSpecial(dx, dy) {
+    if (!this.specialCards) return;
+    const cols = 5;
+    let next = this.specialSel + dx + dy * cols;
+    next = Math.max(0, Math.min(this.specialCards.length - 1, next));
+    if (next === this.specialSel) return;
+    this.specialSel = next;
+    this.refreshSpecial();
+    this.sfx();
+  }
+
+  enterSpecial() {
+    const picked = this.specialCards && this.specialCards[this.specialSel];
+    if (!picked || !picked.open) {
+      this.toast('这个特殊关卡还没解锁');
+      return;
+    }
+    const s = picked.s;
+    const tier = s.chapter ? selectedTier(this.meta, s.chapter) : this.tier;
+    try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
+    NAV.push('select', {
+      stage: { special: s.id, chapterName: s.name, label: s.typeName + ' · ' + s.name, index: 1 },
+      difficulty: tier,
     });
   }
 

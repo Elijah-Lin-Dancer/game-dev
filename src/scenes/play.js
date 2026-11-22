@@ -9,7 +9,7 @@ import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../system
 import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions } from '../systems/options.js';
 import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
-import { stageSpec, starsOf, starRating } from '../systems/stages.js';
+import { stageSpec, specialSpec, starsOf, starRating } from '../systems/stages.js';
 
 const ROOM_COLOR = {
   battle: 0x7a6a52, elite: 0xffd479, treasure: 0xe8c15a,
@@ -50,9 +50,12 @@ export class Play extends Phaser.Scene {
     this.story = window.__storyData || {};
     // 批 9：章节关卡。没有 stage 参数时退回老的"随机一局"（?char= 调试仍走这条）
     this.stageData = (data && data.stage) || null;
-    this.spec = this.stageData ? stageSpec(this.stageData.chapter, this.stageData.index) : null;
+    this.spec = this.stageData
+      ? (this.stageData.special ? specialSpec(this.stageData.special) : stageSpec(this.stageData.chapter, this.stageData.index))
+      : null;
     this.stageMul = this.spec ? this.spec.diff : 1;
     this.usedRest = false;
+    this.hitsTaken = 0;
     this.chapterTheme = this.spec ? this.spec.chapter.theme : null;
     this.cycle = this.meta.cycle;
     this.talking = false;
@@ -115,6 +118,13 @@ export class Play extends Phaser.Scene {
     const keep = (w) => unlockedW.indexOf(w.id) >= 0 || w.id === this.char.weapon || w.id === this.W.global.startWeapon;
     const pool = this.W.list.filter(keep);
     this.W.list = pool.length ? pool : [this.weapon];
+    // 特殊关卡负载：只允许指定武器（空数组的赤手空拳暂保留当前武器，规则标记留待下一刀）
+    const forced = this.spec && this.spec.special && this.spec.special.loadout
+      && Array.isArray(this.spec.special.loadout.weapons) ? this.spec.special.loadout.weapons : null;
+    if (forced && forced.length) {
+      const fw = this.W.byId[forced[0]];
+      if (fw) this.weapon = fw;
+    }
     // 天赋：本局三选一，重开清零；与 upg 分开算（flat 先、mul 后）
     this.T = normalizeTalents(window.__talentsData);
     this.talents = [];
@@ -3871,6 +3881,7 @@ export class Play extends Phaser.Scene {
     let taken = Math.max(1, Math.round(dmg * this.mods.takenMul * this.diff.dmg));
     if (this.time.now < this.guardUntil) taken = Math.max(1, Math.round(taken * this.char.skill.takenMul));
     this.hp = Math.max(0, this.hp - taken);
+    this.hitsTaken += 1;
     this.iframe = CFG.iFrame;
     this.sfx.hurt.play({ rate: Phaser.Math.FloatBetween(0.9, 1.1) });
     playAct(this, 'hurt', this.player.x, this.player.y);
@@ -3891,7 +3902,7 @@ export class Play extends Phaser.Scene {
       this.roomLabel() + ' · 击杀 ' + this.kills
       + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems,
       this.spec ? '点击 / Enter 回地图' : '点击或按 R 重开',
-      this.spec ? { chapterId: this.spec.chapterId, stage: this.spec.index } : null);
+      this.spec ? (this.spec.special ? { special: this.spec.special.id } : { chapterId: this.spec.chapterId, stage: this.spec.index }) : null);
   }
 
   win() {
@@ -3899,6 +3910,29 @@ export class Play extends Phaser.Scene {
     this.won = true;
     setMood('victory', { loop: false });
     if (this.spec) {
+      // 特殊关：单独记 sp_<id>:1，不参与主线解锁；首通发一次宝石奖励
+      if (this.spec.special) {
+        const got = starRating({ hp: this.hp, maxHp: this.maxHp(), usedRest: this.usedRest });
+        const prev = starsOf(this.meta, this.spec.chapterId, 1);
+        const stars = Math.max(prev, got);
+        const map = Object.assign({}, this.meta.stars || {});
+        map[this.spec.key] = stars;
+        this.meta = patchSave({ stars: map });
+        const reward = Math.max(0, Number(this.spec.special.reward && this.spec.special.reward.gem) || 0);
+        const first = prev === 0;
+        if (first && reward) this.gems += reward;
+        this.commitRun(false);
+        const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+        this.starMarks = marks;
+        this.showOverlay(
+          this.spec.chapterName + ' 完成' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
+          marks + ' · ' + (first ? '首通奖励 +' + reward + ' 宝石' : '奖励已领取')
+            + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins,
+          '点击 / Enter 回地图',
+          { special: this.spec.special.id },
+        );
+        return;
+      }
       // 章节关：结算星级（通关 / 剩血 ≥70% / 未用休整房），取历史最高
       const got = starRating({ hp: this.hp, maxHp: this.maxHp(), usedRest: this.usedRest });
       let stars = got;
@@ -4035,6 +4069,9 @@ export class Play extends Phaser.Scene {
   /* ---------- HUD 与输入 ---------- */
   /* 章节模式显示"章 关-房"，老模式显示"第 x/y 间"；两者都短到不挤出 640 宽 */
   roomLabel() {
+    if (this.spec && this.spec.special) {
+      return this.spec.chapterName + ' · 房 ' + (this.room.idx + 1) + '/' + this.roomTotal;
+    }
     if (this.spec) {
       return this.spec.chapterName + ' ' + this.spec.index + ' · 房 ' + (this.room.idx + 1) + '/' + this.roomTotal;
     }

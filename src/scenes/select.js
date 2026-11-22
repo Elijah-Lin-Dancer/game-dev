@@ -49,6 +49,11 @@ export class Select extends Phaser.Scene {
   create(data) {
     this.stage = (data && data.stage) || null;
     this.difficulty = normalizeTier((data && data.difficulty) || 'normal');
+    this.stageLabel = this.stage
+      ? (this.stage.special
+        ? (this.stage.label || this.stage.chapterName || '特殊关卡')
+        : ((this.stage.chapterName || this.stage.chapter) + ' · 第 ' + this.stage.index + ' 关'))
+      : '';
     this.chars = normalize(window.__charsData);
     const meta = loadSave();
     this.unlocked = Array.isArray(meta.chars) && meta.chars.length ? meta.chars : ['ninja'];
@@ -74,7 +79,7 @@ export class Select extends Phaser.Scene {
       fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
     this.add.text(S.W / 2, 50, this.stage
-      ? ('准备进入：' + (this.stage.chapterName || this.stage.chapter) + ' · 第 ' + this.stage.index + ' 关 · ' + tierMeta(this.difficulty).name)
+      ? ('准备进入：' + this.stageLabel + ' · ' + tierMeta(this.difficulty).name)
       : '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
@@ -104,7 +109,7 @@ export class Select extends Phaser.Scene {
   back() {
     try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
     const from = this.stage
-      ? { chapterId: this.stage.chapter, stage: this.stage.index }
+      ? (this.stage.special ? { special: this.stage.special } : { chapterId: this.stage.chapter, stage: this.stage.index })
       : {};
     if (!NAV.back(from)) this.scene.start('map', from);
   }
