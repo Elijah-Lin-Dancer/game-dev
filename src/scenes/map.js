@@ -9,6 +9,8 @@ import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel, specialRuleLabel } from '../systems/stages.js';
 import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
+import { UI } from '../systems/ui/tokens.js';
+import { makePanel, makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
 
 const PRESSURE = {
   gate: '机关门', quicksand: '流沙', poison: '毒雾', waterSlow: '水沟减速',
@@ -513,22 +515,31 @@ export class MapScene extends Phaser.Scene {
     NAV.openOverlay('special');
     const objs = [];
     const depth = 880;
-    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.78).setOrigin(0).setDepth(depth)
+    const panelW = 600, panelH = 320;
+    const panelX = (S.W - panelW) / 2;
+    const panelY = (S.H - panelH) / 2;
+    const mask = this.add.rectangle(0, 0, S.W, S.H, UI.color.overlay, UI.alpha.overlay).setOrigin(0).setDepth(depth)
       .setInteractive().on('pointerdown', () => this.closeSpecial());
     objs.push(mask);
-    objs.push(this.add.rectangle(S.W / 2, S.H / 2, 600, 320, 0x121a16, 0.99)
-      .setStrokeStyle(2, 0x5a4f6c).setDepth(depth + 1));
-    objs.push(this.add.text(S.W / 2, 30, '特殊关卡', {
-      fontFamily: FONT, fontSize: '14px', color: '#e7d4ff',
-    }).setOrigin(0.5, 0).setDepth(depth + 2));
-    objs.push(this.add.text(S.W / 2, 48, '支线 ' + this.specialList.filter((x) => x.type === 'side').length
+    const panel = makePanel(this, {
+      x: panelX, y: panelY, w: panelW, h: panelH, variant: 'special', depth: depth + 1,
+    });
+    objs.push(panel.container);
+    panel.add(this.add.rectangle(0, 0, panelW, panelH).setOrigin(0)
+      .setStrokeStyle(2, UI.color.specialLine));
+    const title = makeText(this, panelX + panelW / 2, panelY + 8, '特殊关卡', 'h1', {
+      color: UI.text.special, origin: [0.5, 0],
+    }).setDepth(depth + 2);
+    objs.push(title);
+    const summary = makeText(this, panelX + panelW / 2, panelY + 36, '支线 ' + this.specialList.filter((x) => x.type === 'side').length
       + ' · 隐藏 ' + this.specialList.filter((x) => x.type === 'hidden').length
       + ' · 条件 ' + this.specialList.filter((x) => x.type === 'conditional').length
-      + ' · 与主线星级分开记录', {
-      fontFamily: FONT, fontSize: '12px', color: '#9e93aa',
-    }).setOrigin(0.5, 0).setDepth(depth + 2));
+      + ' · 与主线星级分开记录', 'specialMuted', {
+      origin: [0.5, 0],
+    }).setDepth(depth + 2);
+    objs.push(summary);
 
-    const cols = 5, cw = 108, ch = 50, gap = 6, top = 72;
+    const cols = 5, cw = 108, ch = 50, gap = 6, top = 54;
     const firstOpen = this.specialList.findIndex((x) => specialGateOk(this.meta, x));
     this.specialSel = Math.max(0, firstOpen);
     if (focusId) {
@@ -536,52 +547,54 @@ export class MapScene extends Phaser.Scene {
       if (at >= 0) this.specialSel = at;
     }
     this.specialCards = [];
-    const TYPE_COLOR = { side: 0x7cb342, hidden: 0xab47bc, conditional: 0x42a5f5 };
     this.specialList.forEach((s, i) => {
       const row = Math.floor(i / cols);
       const rowCount = Math.min(cols, this.specialList.length - row * cols);
-      const left = S.W / 2 - (rowCount * cw + (rowCount - 1) * gap) / 2;
+      const left = panelW / 2 - (rowCount * cw + (rowCount - 1) * gap) / 2;
       const x = left + (i % cols) * (cw + gap);
       const y = top + row * (ch + 8);
       const open = specialGateOk(this.meta, s);
       const cleared = specialCleared(this.meta, s.id);
-      const color = TYPE_COLOR[s.type] || 0x55645a;
-      const box = this.add.rectangle(x, y, cw, ch, open ? 0x1d2620 : 0x171b18, 0.96)
-        .setOrigin(0).setDepth(depth + 3).setStrokeStyle(2, open ? color : 0x35302a)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
+      const color = open ? UI.typeColor(s.type) : UI.color.lineMuted;
+      const card = makeCard(this, {
+        x: panelX + x, y: panelY + y, w: cw, h: ch, accent: color,
+        state: open ? (cleared ? 'cleared' : 'default') : 'locked',
+        depth: depth + 3,
+        onClick: () => {
           if (!open) { this.toast('条件未达成：' + this.gateLabel(s)); this.sfx(); return; }
           this.specialSel = i;
           this.refreshSpecial();
           this.sfx();
-        });
-      objs.push(box);
-      objs.push(this.add.text(x + 6, y + 5, s.name, {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#ffffff' : '#8a837e',
-      }).setDepth(depth + 4));
-      objs.push(this.add.text(x + 6, y + 21, s.typeName + (cleared ? ' · 已通' : ''), {
-        fontFamily: FONT, fontSize: '12px', color: cleared ? '#ffd479' : (open ? '#b8c8ba' : '#665f5a'),
-      }).setDepth(depth + 4));
-      objs.push(this.add.text(x + 6, y + 35, open ? '可挑战' : '未达成', {
-        fontFamily: FONT, fontSize: '12px', color: open ? '#9fe0ff' : '#7a6a64',
-      }).setDepth(depth + 4));
-      this.specialCards.push({ i, s, box, open, cleared });
+        },
+      });
+      objs.push(card.container, card.hit);
+      const nameText = makeText(this, 6, 5, s.name, 'body', {
+        color: open ? UI.text.primary : UI.text.nameLocked,
+      });
+      const typeText = makeText(this, 6, 21, s.typeName + (cleared ? ' · 已通' : ''), 'body', {
+        color: cleared ? UI.text.gold : (open ? UI.text.typeOpen : UI.text.disabled),
+      });
+      const statusText = makeText(this, 6, 35, open ? '可挑战' : '未达成', 'body', {
+        color: open ? UI.text.info : UI.text.locked,
+      });
+      card.add(nameText, typeText, statusText);
+      this.specialCards.push({ i, s, box: card, open, cleared, nameText, typeText, statusText });
     });
 
-    this.specialDetail = this.add.text(40, 252, '', {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
-      wordWrap: { width: 470, useAdvancedWrap: true },
+    this.specialDetail = makeText(this, panelX + 20, panelY + 232, '', 'body', {
+      wordWrap: { width: 540, useAdvancedWrap: true },
     }).setDepth(depth + 4);
     objs.push(this.specialDetail);
-    this.specialStart = this.add.text(S.W - 38, 298, '开始挑战 ›', {
-      fontFamily: FONT, fontSize: '12px', color: '#101713', backgroundColor: '#ffe9b0',
-      padding: { x: 8, y: 4 },
-    }).setOrigin(1, 0).setDepth(depth + 4).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.enterSpecial());
-    objs.push(this.specialStart);
-    objs.push(this.add.text(S.W / 2, 318, '←→↑↓ 选关 · Enter 进入 · ESC / 点击空白关闭', {
-      fontFamily: FONT, fontSize: '12px', color: '#7d8a84',
-    }).setOrigin(0.5, 0).setDepth(depth + 4));
+    const start = makeButton(this, {
+      x: panelX + 494, y: panelY + 274, w: 88, h: 24, label: '开始挑战 ›', depth: depth + 4,
+      onClick: () => this.enterSpecial(),
+    });
+    this.specialStart = start;
+    objs.push(start.container, start.hit);
+    const foot = makeText(this, panelX + panelW / 2, panelY + 304, '←→↑↓ 选关 · Enter 进入 · ESC / 点击空白关闭', 'locked', {
+      origin: [0.5, 0],
+    }).setDepth(depth + 4);
+    objs.push(foot);
     this.specialBox = objs;
     this.refreshSpecial();
   }
@@ -589,13 +602,25 @@ export class MapScene extends Phaser.Scene {
   refreshSpecial() {
     if (!this.specialCards || !this.specialDetail) return;
     const picked = this.specialCards[this.specialSel];
-    const TYPE_COLOR = { side: 0x7cb342, hidden: 0xab47bc, conditional: 0x42a5f5 };
     this.specialCards.forEach((c) => {
-      const color = TYPE_COLOR[c.s.type] || 0x55645a;
-      c.box.setStrokeStyle(c.i === this.specialSel ? 3 : 2,
-        c.i === this.specialSel ? 0xffe9b0 : (c.open ? color : 0x35302a));
+      const pickedCard = c.i === this.specialSel;
+      const accent = c.open ? UI.typeColor(c.s.type) : UI.color.lineMuted;
+      const state = pickedCard ? 'selected' : (c.open ? (c.cleared ? 'cleared' : 'default') : 'locked');
+      c.box.setState(state, { accent });
+      c.nameText.setColor(pickedCard ? UI.text.primary : (c.open ? UI.text.primary : UI.text.nameLocked));
+      c.typeText.setColor(pickedCard
+        ? (c.cleared ? UI.text.gold : UI.text.typeOpen)
+        : (c.cleared ? UI.text.gold : (c.open ? UI.text.typeOpen : UI.text.disabled)));
+      c.statusText.setColor(pickedCard
+        ? (c.open ? UI.text.info : UI.text.danger)
+        : (c.open ? UI.text.info : UI.text.locked));
     });
-    if (!picked) { this.specialDetail.setText(''); this.specialStart.setVisible(false); return; }
+    if (!picked) {
+      this.specialDetail.setText('');
+      this.specialStart.setVisible(false);
+      this.specialStart.setEnabled(false);
+      return;
+    }
     const s = picked.s;
     const cleared = specialCleared(this.meta, s.id);
     const reward = (s.reward && s.reward.gem) ? ('首通 +' + s.reward.gem + ' 宝石') : '无首通宝石';
@@ -605,7 +630,7 @@ export class MapScene extends Phaser.Scene {
     this.specialDetail.setText(s.typeName + base + ' · ' + s.rooms + ' 房 · ' + gate + '\n'
       + reward + (rule ? ' · ' + rule : '') + (cleared ? ' · 已有通关记录' : ''));
     this.specialStart.setVisible(!!picked.open);
-    if (this.specialStart.input) this.specialStart.input.enabled = !!picked.open;
+    this.specialStart.setEnabled(!!picked.open);
   }
 
   closeSpecial() {
