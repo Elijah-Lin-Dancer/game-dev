@@ -2,7 +2,7 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-A 特殊关卡通路完成。特殊关卡 API 组落地，13 卡 5/5/3 覆盖层接入地图页眉；支线/隐藏/条件三色，默认新档只开 `kunai`，条件未达成只弹 toast；Enter 进 Select、Play，首通写 `sp_<id>:1` 并只发一次宝石，返回 Map 自动重开并显示「已通 / 已有通关记录」。修复 Map 场景复用导致 `specialBox` 残留、覆盖层不重开的 bug。构建 `dist/game.acaaf12d.js`（197 KB）+ `assets.4a2b12f8.js`（95 KB），单文件 1843 KB；13 关逐项进入/结算与单文件冒烟通过，`errs=[]`。代码与文档待推送，线上仍是 P1-A `game.43c15749.js`。
+当前段：P1-A 特殊关卡通路完成。特殊关卡 API 组落地，13 卡 5/5/3 覆盖层接入地图页眉；支线/隐藏/条件三色，默认新档只开 `kunai`，条件未达成只弹 toast；Enter 进 Select、Play，首通写 `sp_<id>:1` 并只发一次宝石，返回 Map 自动重开并显示「已通 / 已有通关记录」。修复 Map 场景复用导致 `specialBox` 残留、覆盖层不重开的 bug。构建 `dist/game.acaaf12d.js`（197 KB）+ `assets.4a2b12f8.js`（95 KB），单文件 1843 KB；13 关逐项进入/结算与单文件冒烟通过，`errs=[]`。已推送 `a3ed3c6`，Pages 已切到 `game.acaaf12d.js`；线上特殊覆盖层与 `firefly` 首通返回实测通过，`errs=[]`。
 
 上一批：P1-A 章节地图两层化 + Hall 武器/角色页数据驱动升级完成。地图一层六章卡、二层节点路径与关卡详情面板已跑通；Hall 两页改读 `chars.json` / `weapons.json`，稀有度、属性、技能、装备位、价格、掉落权重全部上卡；Select 价格去硬编码。构建 `dist/game.43c15749.js`，单文件 `web/game.html` 1832 KB；本地 Playwright 20 项通过，`errs=[]`。本轮只做页面与展示层，实体扩张（3 角色/5 武器/6 饰品）仍在 P2-1；13 个特殊关卡节点通路未接。已推送 `e901b8d` / `5104b39`，Pages 已切到 `game.43c15749.js`。G0/开放世界继续暂停。
 

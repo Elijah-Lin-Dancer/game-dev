@@ -65,6 +65,8 @@
 
 构建：`dist/game.acaaf12d.js`（197 KB）+ `dist/assets.4a2b12f8.js`（95 KB）；单文件 `web/game.html` 1843 KB；`index.html` 指向 `game.acaaf12d.js`。
 
+已推送 `a3ed3c6`（`69ef762..a3ed3c6`）；GitHub Pages 构建状态 `built`，线上入口与 bundle SHA 均核对为 `acaaf12de94b0c84e2591da531d7f3ddb5fcc6885fffddf3c91acdb86330f1d5`；线上新档仅 `kunai` 可挑战、`firefly` 进入/首通/返回记录实测通过，`errs=[]`。
+
 | 编号 | 检查 | 结果 |
 |---|---|---|
 | S-01 | 新档 `?reset` 打开特殊覆盖层 | 13 卡，5/5/3 居中；默认仅 `kunai` 可挑战 |
@@ -84,6 +86,8 @@
 - `docs/revamp/p1/p1-special-locked.png`：锁卡 toast
 - `docs/revamp/p1/p1-special-win.png`：特殊关结算
 - `docs/revamp/p1/p1-special-single.png`：单文件冒烟
+- `docs/revamp/p1/p1-online-special.png`：线上新档 13 卡
+- `docs/revamp/p1/p1-online-special-return.png`：线上 `firefly` 首通返回
 
 ## 7. 未接规则
 
