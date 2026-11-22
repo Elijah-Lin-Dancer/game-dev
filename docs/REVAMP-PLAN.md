@@ -1,5 +1,7 @@
-# Ninja Adventure · UI/UX 与内容体系改造方案
+# 《忍者地牢》· UI/UX 与内容体系改造方案
 
+> 命名基线：游戏工作名为 **《忍者地牢》**；`Ninja Adventure` 是 CC0 美术包名，只用于素材署名，不作为游戏标题。正式品牌名待定；定名后统一替换 `index.html`、`title.js`、`README.md` 与本方案封面。
+>
 > 基线：`game-repo` commit `f8d4a22`（批 12B 终章星火之巅），线上 https://elijah-lin-dancer.github.io/game-dev/ ；Phaser 3.80.1，逻辑分辨率 640×360，esbuild 单文件包，键盘 + 触屏双输入，中文 12px 像素字体。
 > 边界：本轮只出方案，不写代码、不改线上、不碰开放世界 G0、不动终章平衡。现有资产：3 角色 / 6 武器 / 25 怪 / 11 Boss；关卡口径 **36 主线 + 6 支线 + 3 隐藏 + 4 条件 = 49 个关卡条目，主线满星 108**。
 > 检索日期：2026-11-22。本方案与 `game-repo/docs/REVAMP-PLAN.md` 逐字一致，仅图片相对路径前缀不同。
