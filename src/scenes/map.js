@@ -1,11 +1,12 @@
 /* 世界地图（批 9）：六章 × 每章 1–9 关的节点图
  * 数据全部来自 chapters.json + 存档 stars；本场景只做"选关 / 展示进度 / 拦截未解锁"。
- * 交互：↑↓ 换章、←→ 选关、Enter 进入（走选人界面）、ESC 回小屋。
+ * 交互：↑↓ 换章、←→ 选关、Enter 进入（走选人界面）、点击「难度」切三档、ESC 返回。
  */
 import { FONT, S } from '../core/config.js';
-import { loadSave } from '../systems/save.js';
+import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
-import { chapters, stageSpec, starsOf, stageUnlocked, chapterUnlocked, progress } from '../systems/stages.js';
+import { chapters, stageSpec, stageUnlocked, chapterUnlocked, progress } from '../systems/stages.js';
+import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
 
 const PRESSURE = {
   gate: '机关门', quicksand: '流沙', poison: '毒雾', waterSlow: '水沟减速',
@@ -37,6 +38,7 @@ export class MapScene extends Phaser.Scene {
       if (at >= 0) this.ci = at;
     }
     this.si = Math.max(1, (data && data.stage) || 1);
+    this.tier = selectedTier(this.meta, this.list[this.ci].id);
     this.buildBackdrop();
     this.buildHeader();
     this.buildTabs();
@@ -90,6 +92,11 @@ export class MapScene extends Phaser.Scene {
     this.pLine = this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#a9bcae' });
     this.pPick = this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#d8e6da' });
     this.pUnlock = this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#ffb0a0' });
+    this.pDiff = this.add.text(S.W - 32, 0, '', {
+      fontFamily: FONT, fontSize: '12px', color: '#9fe0ff',
+      backgroundColor: '#00000066', padding: { x: 4, y: 2 },
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.openDiff());
     this.extraBox = this.add.rectangle(20, 0, S.W - 40, 34, 0x121a16, 0.9).setOrigin(0)
       .setStrokeStyle(2, 0x2f3b35);
     this.extraText = this.add.text(32, 0, '', { fontFamily: FONT, fontSize: '12px', color: '#b9c9bd' });
@@ -100,6 +107,7 @@ export class MapScene extends Phaser.Scene {
     this.pTitle.setY(y + 8);
     this.pStars.setY(y + 10);
     this.pLine.setY(y + 30);
+    this.pDiff.setY(y + 30);
     this.pPick.setY(y + 48);
     this.pUnlock.setY(y + 66);
     this.extraBox.setY(y + 100);
@@ -126,7 +134,7 @@ export class MapScene extends Phaser.Scene {
       const x = left + col * (w + gap);
       const y = top + row * (h + 10);
       const spec = stageSpec(c.id, i);
-      const s = starsOf(this.meta, c.id, i);
+      const s = tierStarsOf(this.meta, c.id, i, this.tier);
       const open = chapterUnlocked(this.meta, this.ci) && stageUnlocked(this.meta, c.id, i);
       const isBoss = i === n;
       const box = this.add.rectangle(x, y, w, h, isBoss ? 0x3a1e1a : 0x1c2420, 0.94).setOrigin(0)
@@ -157,6 +165,7 @@ export class MapScene extends Phaser.Scene {
     }
     this.ci = i;
     this.si = 1;
+    this.tier = selectedTier(this.meta, this.list[i].id);
     this.liftNodes();
     this.buildNodes();
     this.mark();
@@ -179,9 +188,11 @@ export class MapScene extends Phaser.Scene {
     const p = progress(this.meta);
     this.starText.setText('主线 ★ ' + p.stars + ' / ' + p.max + ' · 通关 ' + p.cleared + ' / ' + p.total);
     this.pTitle.setText('第' + CN[this.ci] + '章 · ' + c.name + (c.theme ? '' : ''));
+    const tm = tierMeta(this.tier);
     let cs = 0;
-    for (let i = 1; i <= c.stages; i += 1) cs += starsOf(this.meta, c.id, i);
-    this.pStars.setText('本章 ★ ' + cs + ' / ' + (c.stages * 3));
+    for (let i = 1; i <= c.stages; i += 1) cs += tierStarsOf(this.meta, c.id, i, this.tier);
+    this.pStars.setText('本章 ' + (this.tier === 'normal' ? '' : tm.name + ' ') + '★ ' + cs + ' / ' + (c.stages * 3));
+    this.pDiff.setText('难度 ' + tm.name + ' ›').setColor(tm.color);
     const press = (c.pressure || []).map((k) => PRESSURE[k] || k).join(' / ') || '无';
     this.pLine.setText(c.stages + ' 关 · 每关 ' + (c.rooms[0] || 5) + ' 房 · 难度 ×' + (+c.diff).toFixed(2)
       + ' · 章内每关 +5% · 压力 ' + press);
@@ -211,7 +222,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.foot = this.add.text(S.W / 2, S.H - 15, '↑↓ 换章 · ←→ 选关 · Enter 进入 · ESC 返回', {
+    this.foot = this.add.text(S.W / 2, S.H - 15, '↑↓ 换章 · ←→ 选关 · Enter 进入 · 点「难度」切换 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0cc',
     }).setOrigin(0.5, 0);
   }
@@ -226,11 +237,84 @@ export class MapScene extends Phaser.Scene {
     kb.on('keydown-D', () => this.moveStage(1));
     kb.on('keydown-ENTER', () => this.enter());
     kb.on('keydown-SPACE', () => this.enter());
-    kb.on('keydown-ESC', () => this.back());
+    kb.on('keydown-ESC', () => {
+      if (this.diffBox) { this.closeDiff(); return; }
+      this.back();
+    });
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', (p) => {
-      if (p.button === 2) this.back();
+      if (p.button === 2) {
+        if (this.diffBox) this.closeDiff();
+        else this.back();
+      }
     });
+  }
+
+  openDiff() {
+    if (this.diffBox) return;
+    const c = this.list[this.ci];
+    this.sfx();
+    NAV.openOverlay('difficulty');
+    const objs = [];
+    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.74).setOrigin(0).setDepth(880)
+      .setInteractive().on('pointerdown', () => this.closeDiff());
+    objs.push(mask);
+    objs.push(this.add.rectangle(S.W / 2, S.H / 2, 430, 236, 0x121a16, 0.98)
+      .setStrokeStyle(2, 0x55645a).setDepth(881));
+    objs.push(this.add.text(S.W / 2, 76, '选择本章难度', {
+      fontFamily: FONT, fontSize: '14px', color: '#ffe9b0',
+    }).setOrigin(0.5).setDepth(882));
+    objs.push(this.add.text(S.W / 2, 94, c.name + ' · 普通 ' + tierClearCount(this.meta, c.id, 'normal') + '/' + c.stages + ' 关已通 · 难度按章保存', {
+      fontFamily: FONT, fontSize: '12px', color: '#9fb0a6',
+    }).setOrigin(0.5).setDepth(882));
+    TIERS.forEach((t, idx) => {
+      const locked = !tierUnlocked(this.meta, c.id, t.id);
+      const cur = this.tier === t.id;
+      const y = 112 + idx * 36;
+      const row = this.add.rectangle(S.W / 2, y, 390, 30, cur ? 0x2a3a30 : 0x1c2420, 1)
+        .setStrokeStyle(2, cur ? 0xffe9b0 : (locked ? 0x35302a : 0x3f4f46)).setDepth(882)
+        .setInteractive({ useHandCursor: !locked })
+        .on('pointerdown', () => this.chooseDiff(t.id));
+      objs.push(row);
+      objs.push(this.add.text(140, y, t.name, {
+        fontFamily: FONT, fontSize: '12px', color: locked ? '#7a6a64' : (cur ? '#ffe9b0' : '#e6efe6'),
+      }).setOrigin(0, 0.5).setDepth(882));
+      objs.push(this.add.text(210, y, t.note, {
+        fontFamily: FONT, fontSize: '12px', color: locked ? '#6e615c' : '#9fb0a6',
+      }).setOrigin(0, 0.5).setDepth(882));
+      const st = cur ? '当前' : (locked ? (t.id === 'nightmare' ? '需通关普通' : '需通关噩梦') : '已解锁');
+      objs.push(this.add.text(504, y, st, {
+        fontFamily: FONT, fontSize: '12px', color: cur ? '#ffe9b0' : (locked ? '#7a6a64' : '#9fe0ff'),
+      }).setOrigin(1, 0.5).setDepth(882));
+    });
+    objs.push(this.add.text(S.W / 2, 228, '点击选项切换 · ESC / 点击空白关闭', {
+      fontFamily: FONT, fontSize: '12px', color: '#7d8a84',
+    }).setOrigin(0.5).setDepth(882));
+    this.diffBox = objs;
+  }
+
+  closeDiff() {
+    if (!this.diffBox) return;
+    this.diffBox.forEach((o) => o && o.destroy());
+    this.diffBox = null;
+    NAV.closeOverlay('difficulty');
+  }
+
+  chooseDiff(id) {
+    const c = this.list[this.ci];
+    if (!tierUnlocked(this.meta, c.id, id)) {
+      this.toast(id === 'nightmare' ? '通关本章普通全部关卡后解锁噩梦' : '通关本章噩梦全部关卡后解锁地狱');
+      return;
+    }
+    const sel = Object.assign({}, this.meta.diffSel || {});
+    sel[c.id] = id;
+    this.meta = patchSave({ diffSel: sel });
+    this.tier = id;
+    this.closeDiff();
+    this.liftNodes();
+    this.buildNodes();
+    this.mark();
+    this.sfx();
   }
 
   back() {
@@ -260,7 +344,10 @@ export class MapScene extends Phaser.Scene {
     const spec = stageSpec(c.id, this.si);
     if (!spec) { this.toast('关卡数据缺失'); return; }
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
-    NAV.push('select', { stage: { chapter: spec.chapterId, chapterName: spec.chapterName, index: spec.index } });
+    NAV.push('select', {
+      stage: { chapter: spec.chapterId, chapterName: spec.chapterName, index: spec.index },
+      difficulty: this.tier,
+    });
   }
 
   sfx() { try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {} }

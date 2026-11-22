@@ -103,7 +103,7 @@ export class Title extends Phaser.Scene {
   move(d) {
     if (this.credits) return;
     if (this.setting) {
-      this.settingIdx = (this.settingIdx + d + 3) % 3;
+      this.settingIdx = (this.settingIdx + d + 2) % 2;
       this.renderSettings();
       return;
     }
@@ -134,12 +134,12 @@ export class Title extends Phaser.Scene {
     this.panel = this.add.container(0, 0).setDepth(50);
     this.menu.forEach((t) => t.setVisible(false));
     if (this.cursor) this.cursor.setVisible(false);
-    const box = this.add.rectangle(S.W / 2, 152, 300, 168, 0x101713, 1)
+    const box = this.add.rectangle(S.W / 2, 148, 300, 140, 0x101713, 1)
       .setStrokeStyle(2, 0x4a5f42);
     const head = this.add.text(S.W / 2, 92, '设置', {
       fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
-    const foot = this.add.text(S.W / 2, 220, '↑↓ 选择 · Enter 切换 · ESC 返回', {
+    const foot = this.add.text(S.W / 2, 196, '↑↓ 选择 · Enter 切换 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
     }).setOrigin(0.5, 0);
     this.panel.add([box, head, foot]);
@@ -152,7 +152,6 @@ export class Title extends Phaser.Scene {
     return [
       ['静音', o.muted ? '开' : '关'],
       ['震屏', o.shake ? '开' : '关'],
-      ['难度', o.difficulty === 'hard' ? '困难' : '普通'],
     ];
   }
 
@@ -177,8 +176,7 @@ export class Title extends Phaser.Scene {
   toggleSetting() {
     const o = this.options;
     if (this.settingIdx === 0) this.options = patchOptions({ muted: !o.muted });
-    else if (this.settingIdx === 1) this.options = patchOptions({ shake: !o.shake });
-    else this.options = patchOptions({ difficulty: o.difficulty === 'hard' ? 'normal' : 'hard' });
+    else this.options = patchOptions({ shake: !o.shake });
     this.sfxUi();
     this.renderSettings();
   }

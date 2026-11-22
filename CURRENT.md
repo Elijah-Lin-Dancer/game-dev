@@ -2,7 +2,7 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P0-1 导航底座完成（`src/systems/nav.js` 返回栈 + 覆盖层；Title→Map 直达、Hall 降为二级、Credits/ESC/右键/返回按钮全通）。下一步 P0-2 逐章难度；G0/开放世界继续暂停。
+当前段：P0-1 导航底座 + P0-2 逐章难度完成。P0-2 已把全局普通/困难改为每章普通/噩梦/地狱，入口在章节面板，`diffSel`/`tierStars` 入存档 v7；本地构建与 Playwright 验收通过，待 push 后核对 Pages。下一步进入 P1 章节地图二层与内容数据层；G0/开放世界继续暂停。
 
 已完成的批 12B：`chapters.json` 的 `final` 落地为 1 关 ×1 房（`diff 1.8`、`pressure:["threePhase"]`、`bossPool:["weaver"]`、`unlock:"lava.stage9"`、`roomTemplate:["boss"]`）；`bosses.json` 的 `weaver` 从 `kind:frog` 占位改为 `kind:weaver / name:影织者 / hp 108 / dmg 3 / speed 52 / half 30 / scale 2.2`；新增 `CFG.weaverBoss` 与 `updateWeaver` 三幕状态机：第一幕 `stalk → dashWindup → lunge → recover` 影袭冲撞，第二幕 `hover → blinkOut → castWindup → cast` 中距瞬移 + 每 4.2s 召 2 只 `spirit` 影仆 + 12 发环形弹，第三幕 `storm` 4 圈紫粉星火火雨 + 16 发密集环弹；`damageFoe` 对 `weaver` 在 66%/33% 门槛钉血，最后一下不跨幕；`spawnRoomProps` 在 Boss 房提前 return，避免 1 房关混入引路人；新增 `sky` 主题（暗紫地面、58 颗 `dust` 星点、`aura` 星晕、冷色火把/光柱、暗角 1.0）；`win()` 终章分支写星级、`gems +5`、`commitRun(true)`、`finalFx()` 星火炸开与「星火归位 / 第 N 周目」；`hall.js` BOSSES 11 项并支持 tint，`map.js` 中文名同步「影织者」。验收 Q-1~Q-9 见 `docs/BATCH12B-FINAL.md`；普通构建 `dist/game.3229d58d.js`，单文件 `web/game.html` 1817 KB。
 
@@ -17,6 +17,7 @@
 已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
+- P0-2 逐章难度：`difficulty.js` 三档倍率与按章解锁、`save` v7（`diffSel`/`tierStars`）、地图难度覆盖层、Select/Play 消费链、Title 设置减为两行；验收见 `docs/P0-DIFF.md`
 - 批 12B 终章「星火之巅」：影织者三阶段（影袭/影潮/星火）、终章结局与周目写盘、`sky` 主题、图鉴 25/11、单文件 1817 KB（`docs/BATCH12B-FINAL.md`）
 - 批 12A 第五章熔岩地心：9 关 ×10 房、5 新怪、2 Boss、灼烧/火雨、暗角贴图修 HUD、图鉴 25/10、单文件 1807 KB（`docs/BATCH12A-LAVA.md`）
 - 批 9 章节骨架：六章 36 关主线（5/6/7/8/9+终章，单关房数 5/6/7/8/10）、108★、259 房；地图六章页签 + 关卡卡 + 章面板；星级三判据（通关/剩血≥70%/未用休整房）写 `na.save.stars` 并取最高；存档 v6；单文件版可走通（`docs/BATCH9-STAGE.md`）

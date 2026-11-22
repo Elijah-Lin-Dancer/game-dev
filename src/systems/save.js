@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 6;
+const VERSION = 7;
 
 const defaults = () => ({
   v: VERSION,
@@ -22,6 +22,10 @@ const defaults = () => ({
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
   stars: {},
+  // 批 13：逐章难度。键 = 章 id，值 = normal | nightmare | hell
+  diffSel: {},
+  // 噩梦/地狱星级。键 = "章:关"，值 = { nightmare:1..3, hell:1..3 }
+  tierStars: {},
   updatedAt: 0,
 });
 
@@ -75,6 +79,34 @@ function sanitizeStars(v) {
   return out;
 }
 
+const TIERS = ['normal', 'nightmare', 'hell'];
+function sanitizeDiffSel(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  Object.keys(v).slice(0, 40).forEach((k) => {
+    if (!/^[a-z][a-z0-9_-]{0,20}$/i.test(k)) return;
+    if (TIERS.includes(v[k])) out[k] = v[k];
+  });
+  return out;
+}
+
+function sanitizeTierStars(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  Object.keys(v).slice(0, 200).forEach((k) => {
+    if (!/^[a-z][a-z0-9_-]{0,20}:\d{1,2}$/i.test(k)) return;
+    const raw = v[k];
+    if (!raw || typeof raw !== 'object') return;
+    const slot = {};
+    ['nightmare', 'hell'].forEach((tier) => {
+      const n = Math.max(0, Math.min(3, Math.round(num(raw[tier], 0))));
+      if (n > 0) slot[tier] = n;
+    });
+    if (Object.keys(slot).length) out[k] = slot;
+  });
+  return out;
+}
+
 /* v1 → v2：v1 只有 coins/kills，缺的字段补齐即可，不需要丢弃 */
 function migrate(old) {
   const base = defaults();
@@ -90,6 +122,8 @@ function migrate(old) {
     chars: sanitizeChars(old.chars),
     gem: num(old.gem),
     stars: sanitizeStars(old.stars),
+    diffSel: sanitizeDiffSel(old.diffSel),
+    tierStars: sanitizeTierStars(old.tierStars),
     unlockedWeapons: sanitizeWeapons(old.unlockedWeapons),
     seen: {
       enemies: sanitizeMarks(old.seen && old.seen.enemies),
@@ -126,6 +160,8 @@ export function patchSave(patch) {
   next.roomsSeen = sanitizeSeen(next.roomsSeen);
   next.chars = sanitizeChars(next.chars);
   next.stars = sanitizeStars(next.stars);
+  next.diffSel = sanitizeDiffSel(next.diffSel);
+  next.tierStars = sanitizeTierStars(next.tierStars);
   if (!CHARS.includes(next.lastChar)) next.lastChar = 'ninja';
   return writeSave(next);
 }

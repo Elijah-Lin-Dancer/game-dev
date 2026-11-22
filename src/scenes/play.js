@@ -7,7 +7,8 @@ import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js'
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
 import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
 import { normalizeChars, pickChar } from '../systems/chars.js';
-import { loadOptions, difficultyMods } from '../systems/options.js';
+import { loadOptions } from '../systems/options.js';
+import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
 import { stageSpec, starsOf, starRating } from '../systems/stages.js';
 
 const ROOM_COLOR = {
@@ -30,7 +31,9 @@ export class Play extends Phaser.Scene {
   create(data) {
     this.meta = loadSave();
     this.options = loadOptions();
-    this.diff = difficultyMods(this.options);
+    this.tier = normalizeTier((data && data.difficulty) || 'normal');
+    this.diff = difficultyMods(this.tier);
+    this.tierName = tierMeta(this.tier).name;
     this.paused = false;
     setMuted(this.meta.muted || this.options.muted);
     this.meta = patchSave({ runs: this.meta.runs + 1 });
@@ -3898,11 +3901,24 @@ export class Play extends Phaser.Scene {
     if (this.spec) {
       // 章节关：结算星级（通关 / 剩血 ≥70% / 未用休整房），取历史最高
       const got = starRating({ hp: this.hp, maxHp: this.maxHp(), usedRest: this.usedRest });
-      const prev = starsOf(this.meta, this.spec.chapterId, this.spec.index);
-      const stars = Math.max(prev, got);
-      const map = Object.assign({}, this.meta.stars || {});
-      map[this.spec.key] = stars;
-      this.meta = patchSave({ stars: map });
+      let stars = got;
+      if (this.tier === 'normal') {
+        // 普通：写主线星级，参与章节/关卡解锁
+        const prev = starsOf(this.meta, this.spec.chapterId, this.spec.index);
+        stars = Math.max(prev, got);
+        const map = Object.assign({}, this.meta.stars || {});
+        map[this.spec.key] = stars;
+        this.meta = patchSave({ stars: map });
+      } else {
+        // 噩梦/地狱：单独记星，不覆盖普通星级，也不影响主线解锁
+        const prev = tierStarsOf(this.meta, this.spec.chapterId, this.spec.index, this.tier);
+        stars = Math.max(prev, got);
+        const slot = Object.assign({}, (this.meta.tierStars && this.meta.tierStars[this.spec.key]) || {});
+        slot[this.tier] = stars;
+        const map = Object.assign({}, this.meta.tierStars || {});
+        map[this.spec.key] = slot;
+        this.meta = patchSave({ tierStars: map });
+      }
       if (this.spec.chapterId === 'final') {
         // 终章：结局演出 + 周目写盘。普通章节关不涨周目，只有这里 commitRun(true)。
         this.gems += 5;
@@ -3912,7 +3928,7 @@ export class Play extends Phaser.Scene {
         this.starMarks = marks;
         const cyc = this.meta.cycle || 1;
         this.showOverlay(
-          '星火归位',
+          '星火归位' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
           marks + ' · 影织者散去 · 村子回暖 · 第 ' + cyc + ' 周目',
           '点击 / Enter 回地图（下一周目）',
           { chapterId: this.spec.chapterId, stage: this.spec.index },
@@ -3924,7 +3940,7 @@ export class Play extends Phaser.Scene {
       const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
       this.starMarks = marks;
       this.showOverlay(
-        this.spec.chapterName + ' ' + this.spec.index + ' 关 通关',
+        this.spec.chapterName + ' ' + this.spec.index + ' 关 通关' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
         marks + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems,
         '点击 / Enter 回地图',
         { chapterId: this.spec.chapterId, stage: this.spec.index },
@@ -4374,7 +4390,8 @@ export class Play extends Phaser.Scene {
     }
     if (this.metaText) {
       const m = this.meta || loadSave();
-      this.metaText.setText(`第 ${this.cycle} 周目 · 累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6}`);
+      const tier = this.spec ? (' · ' + this.tierName) : '';
+      this.metaText.setText(`第 ${this.cycle} 周目${tier} · 累计 ${m.coins} 金币 · 最深 ${m.bestRoom}/${this.roomTotal || 6}`);
     }
     if (this.skillText) {
       const K = this.char.skill;

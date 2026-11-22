@@ -4,6 +4,7 @@
 import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
+import { normalizeTier, tierMeta } from '../systems/difficulty.js';
 
 const ORDER = ['ninja', 'mage', 'knight'];
 const LOCK_PRICE = { ninja: 0, mage: 30, knight: 40 };
@@ -45,6 +46,7 @@ export class Select extends Phaser.Scene {
 
   create(data) {
     this.stage = (data && data.stage) || null;
+    this.difficulty = normalizeTier((data && data.difficulty) || 'normal');
     this.chars = normalize(window.__charsData);
     const meta = loadSave();
     this.unlocked = Array.isArray(meta.chars) && meta.chars.length ? meta.chars : ['ninja'];
@@ -70,7 +72,7 @@ export class Select extends Phaser.Scene {
       fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
     }).setOrigin(0.5, 0);
     this.add.text(S.W / 2, 50, this.stage
-      ? ('准备进入：' + (this.stage.chapterName || this.stage.chapter) + ' · 第 ' + this.stage.index + ' 关')
+      ? ('准备进入：' + (this.stage.chapterName || this.stage.chapter) + ' · 第 ' + this.stage.index + ' 关 · ' + tierMeta(this.difficulty).name)
       : '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
       fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
     }).setOrigin(0.5, 0);
@@ -187,6 +189,6 @@ export class Select extends Phaser.Scene {
     patchSave({ lastChar: c.id });
     try { this.sound.play('ui', { volume: 0.5 }); } catch (e) {}
     NAV.reset('play');
-    this.scene.start('play', { char: c.id, stage: this.stage });
+    this.scene.start('play', { char: c.id, stage: this.stage, difficulty: this.difficulty });
   }
 }

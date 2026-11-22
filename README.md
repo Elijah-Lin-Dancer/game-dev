@@ -5,7 +5,7 @@
 **在线试玩**：<https://elijah-lin-dancer.github.io/game-dev/>
 
 
-新游戏的开发仓库。当前阶段：批 12B 主线完成，正在做 UI/UX 改造 P0 导航底座。
+新游戏的开发仓库。当前阶段：批 12B 主线完成；UI/UX 改造 P0-1 导航底座与 P0-2 逐章难度已完成，下一步 P1。
 
 ## 目录
 
@@ -28,6 +28,7 @@
 | `docs/ROADMAP.md` | 后续扩展方案（8 批顺位 + 素材审计） |
 | `docs/REVAMP-PLAN.md` | UI/UX 与内容体系改造方案（15 款对标 / 93 条来源） |
 | `docs/P0-NAV.md` | P0-1 导航底座 / 返回栈 / 覆盖层验收 |
+| `docs/P0-DIFF.md` | P0-2 逐章难度 / 三档倍率 / 存档与验收 |
 | `docs/AUDIO.md` | 音频清单 / 源→产物映射 / 转码参数 / 播放策略 |
 | `web/data/weapons.json` | 武器表（6 把，数值与表现全在这里；改数字不用改代码） |
 | `assets/` | 素材落地目录；`00-raw` 放原始包与包内 LICENSE，不入 git |
