@@ -2,7 +2,7 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-C-2 Hall 卡片与 Map 章节 / 节点 / 详情面板完成。`hall.js` 的 6 张武器卡、3 张角色卡改为 `makeCard / makeText / makeButton`，保留稀有度、属性、技能、装备位、价格与解锁；`map.js` 的 6 张章节卡、5–9 个关卡节点、详情面板迁移到组件层，难度改 ghost 按钮，开始行动改 Theme1 暖橙主按钮；`primitives.js` 新增 `makeButton({variant:'ghost'})`。构建 `dist/game.357978dd.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；Hall 解锁、Map 章节/节点/开始进 Select、锁定章节/节点、难度覆盖层、特殊关卡入口、960×540 / 640×360 截图与单文件冒烟均通过，`errs=[]`。**本轮只在本地完成，尚未推送；线上仍是 `game.0faa720c.js`**。
+当前段：P1-C-2 Hall 卡片与 Map 章节 / 节点 / 详情面板完成。`hall.js` 的 6 张武器卡、3 张角色卡改为 `makeCard / makeText / makeButton`，保留稀有度、属性、技能、装备位、价格与解锁；`map.js` 的 6 张章节卡、5–9 个关卡节点、详情面板迁移到组件层，难度改 ghost 按钮，开始行动改 Theme1 暖橙主按钮；`primitives.js` 新增 `makeButton({variant:'ghost'})`。构建 `dist/game.357978dd.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；Hall 解锁、Map 章节/节点/开始进 Select、锁定章节/节点、难度覆盖层、特殊关卡入口、960×540 / 640×360 截图与单文件冒烟均通过，`errs=[]`。已推送 `31e53b4`（代码 / 构建）、`1fee341`（文档 / 截图）；Pages 已切到 `game.357978dd.js`，线上 Hall 6 武器 / 3 角色、战锤 200→180、法师 180→150、Map 6 章 / 5 节点 / 开始进 Select `bamboo:2`、锁定章节 / 节点、特殊入口 13 卡实测通过，`errs=[]`。
 
 上一批：P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / primitives.js`；Theme1 20 张 UI 切片入图集（97→117）；Map 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 暖橙按钮，13 卡、锁卡 toast、Enter/ESC/遮罩/按钮/悬停通过。构建 `dist/game.0faa720c.js`（204 KB），已推送 `29f9076` / `2fc5906`，Pages 切到 `game.0faa720c.js`；线上 13 卡与开始按钮进 Select `speedrun` 实测 `errs=[]`。
 

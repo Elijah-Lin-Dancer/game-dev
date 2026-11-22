@@ -1,6 +1,7 @@
 # P1-C-1：UI 令牌、组件层与特殊关卡覆盖层
 
-状态：已完成并推送 `2fc5906`；Pages 已切到 `game.0faa720c.js`，线上特殊覆盖层与开始按钮实测通过。
+状态：已完成并推送 `2fc5906`；C1 上线时 Pages 曾切到 `game.0faa720c.js`，线上特殊覆盖层与开始按钮实测通过。
+后续：P1-C-2 已上线 `game.357978dd.js`，本页线上记录为 C1 时点；最新状态见 `docs/P1-C-2.md`。
 
 ## 范围
 
@@ -63,7 +64,7 @@
 
 线上：
 
-- 入口 `https://elijah-lin-dancer.github.io/game-dev/` 已指向 `dist/game.0faa720c.js` 与 `dist/assets.5fb07765.js`。
+- C1 上线时入口 `https://elijah-lin-dancer.github.io/game-dev/` 指向 `dist/game.0faa720c.js` 与 `dist/assets.5fb07765.js`；P1-C-2 后已切到 `game.357978dd.js`。
 - 新档全主线三星种子：13 卡、仅 `灰烬墓` 锁；`商队速递` 选中时 `startVisible / startEnabled` 均为 true。
 - 实际点击锁卡 `灰烬墓`：选中保持 `商队速递`，无跳转。
 - 实际点击「开始挑战」：进入 Select，`stage.special='speedrun'`，标签 `条件 · 商队速递`。
