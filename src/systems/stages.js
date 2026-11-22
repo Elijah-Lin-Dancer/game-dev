@@ -117,7 +117,8 @@ export function progress(save) {
 
 /* ---------- 特殊关卡（支线 / 隐藏 / 条件） ----------
  * 特殊关与主线分开记：键统一为 sp_<id>:1，不计入主线 ★ 与章节解锁。
- * 这里只做规格、条件判定与清关记录；规则字段（无伤/限时/无金币/负载）由 Play 后续消费。
+ * 这里只做规格、条件判定与清关记录；timer / noCoinPickup / fists 已由 Play 消费，
+ * braziers / noHitStage / resources / 多武器槽仍待接入。
  */
 const SPECIAL_TYPES = [
   ['side', '支线'], ['hidden', '隐藏'], ['conditional', '条件'],
@@ -236,6 +237,18 @@ export function specialSpec(id) {
     chapter: pseudo, chapterId: pseudo.id, chapterName: s.name, index: 1,
     key: specialKey(s.id), rooms, template, diff, bossPool, special: s,
   };
+}
+
+export function specialRuleLabel(s) {
+  if (!s) return '';
+  if (s.rule === 'timer') { const sec = Math.max(1, Math.round(num(s.seconds, 300))); return '限时 ' + sec + ' 秒'; }
+  if (s.rule === 'noCoinPickup') return '本关不掉金币';
+  const weapons = s.loadout && s.loadout.weapons;
+  if (Array.isArray(weapons)) {
+    if (!weapons.length) return '赤手空拳';
+    return '仅限' + String(weapons[0]);
+  }
+  return '';
 }
 
 export function specialGateLabel(s, save) {

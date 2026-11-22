@@ -19,6 +19,13 @@ const UPG_ICON = { power: 'upgPower', speed: 'upgSpeed', atk: 'upgAtk' };
 const UPG_NAME = { power: '攻击', speed: '移速', atk: '攻速' };
 const TYPE_NAME = { battle: '战斗', elite: '精英', treasure: '宝箱', shop: '行脚商', shrine: '石龛', rest: '篝火', gate: '机关', boss: '首领' };
 
+/* 赤手空拳：不读 weapons.json，也不参与掉落；仅给 attack() 一套短拳参数 */
+const FIST_WEAPON = {
+  id: 'fist', name: '赤手', kind: 'melee', icon: 'wKatana', inhand: 'hKatana',
+  dmgMul: 0.5, cd: 320, reach: 24, box: [26, 24], knock: 70,
+  fx: 'slA', fxScale: 1.8, hitHeavy: 0, sfx: 'sword',
+};
+
 /* 批 10：怪物与 Boss 的名称/贴图/前缀全部读 web/data/*.json，代码只留行为 */
 const ENEMY_META = () => ((window.__enemiesData && window.__enemiesData.list) || []);
 const BOSS_META = () => ((window.__bossesData && window.__bossesData.list) || []);
@@ -118,10 +125,18 @@ export class Play extends Phaser.Scene {
     const keep = (w) => unlockedW.indexOf(w.id) >= 0 || w.id === this.char.weapon || w.id === this.W.global.startWeapon;
     const pool = this.W.list.filter(keep);
     this.W.list = pool.length ? pool : [this.weapon];
-    // 特殊关卡负载：只允许指定武器（空数组的赤手空拳暂保留当前武器，规则标记留待下一刀）
-    const forced = this.spec && this.spec.special && this.spec.special.loadout
-      && Array.isArray(this.spec.special.loadout.weapons) ? this.spec.special.loadout.weapons : null;
-    if (forced && forced.length) {
+    // 特殊关卡规则：空武器 = 赤手空拳；timer = 限时；noCoinPickup = 本关不掉金币
+    const sp = this.spec && this.spec.special;
+    const rule = (sp && sp.rule) || '';
+    const forced = sp && sp.loadout && Array.isArray(sp.loadout.weapons) ? sp.loadout.weapons : null;
+    this.fistMode = !!(forced && forced.length === 0);
+    this.noCoinRule = rule === 'noCoinPickup';
+    this.timeLimit = rule === 'timer' ? Math.max(1, Math.round(Number(sp.seconds) || 300)) : 0;
+    this.timeLeft = this.timeLimit;
+    if (this.fistMode) {
+      this.weapon = FIST_WEAPON;
+      this.W.list = [];
+    } else if (forced && forced.length) {
       const fw = this.W.byId[forced[0]];
       if (fw) this.weapon = fw;
     }
@@ -148,6 +163,12 @@ export class Play extends Phaser.Scene {
     this.enterRoom(this.dungeon.start, null);
 
     this.buildHud();
+    if (this.fistMode) this.floatText(this.player.x, this.player.y - 34, '赤手空拳', '#ffb0a0');
+    if (this.noCoinRule) this.floatText(this.player.x, this.player.y - 50, '本关不掉金币', '#ffd479');
+    if (this.timeLimit) {
+      this.timeEvent = this.time.addEvent({ delay: 1000, loop: true, callback: () => this.tickTimer() });
+      this.updateTimerHud();
+    }
     setMood(this.room.isBoss ? 'fight' : 'dungeon');
     this.bindInput();
 
@@ -1798,6 +1819,7 @@ export class Play extends Phaser.Scene {
   }
 
   equipWeapon(id, silent) {
+    if (this.fistMode) return;
     const w = this.W.byId[id];
     if (!w) return;
     this.markSeen('weapons', id);
@@ -1817,7 +1839,7 @@ export class Play extends Phaser.Scene {
     this.hand.setPosition(p.x + off[0], p.y + off[1]);
     this.hand.setFlipX(this.facing === 'left');
     this.hand.setDepth(this.facing === 'up' ? 499 : 521);
-    this.hand.setVisible(this.time.now < (this.swingUntil || 0));
+    this.hand.setVisible(!this.fistMode && this.time.now < (this.swingUntil || 0));
   }
 
   swingHand(w) {
@@ -3792,6 +3814,8 @@ export class Play extends Phaser.Scene {
   }
 
   dropItem(x, y, kind, up, id) {
+    if (this.fistMode && kind === 'weapon') return;
+    if (this.noCoinRule && kind === 'coin') return;
     let spr;
     if (kind === 'coin') {
       spr = this.add.sprite(x, y, 'coin', 0).setScale(2.4).setDepth(3).play('coin-spin');
@@ -3890,6 +3914,36 @@ export class Play extends Phaser.Scene {
     dir.normalize().scale(150);
     this.player.kb = dir;
     if (this.hp <= 0) this.gameOver();
+  }
+
+  updateTimerHud() {
+    if (!this.timerText) return;
+    const left = Math.max(0, Math.ceil(this.timeLeft));
+    const m = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
+    this.timerText.setText('剩余 ' + m + ':' + ss);
+    this.timerText.setColor(left <= 30 ? '#ff9a8a' : '#ffe9b0');
+  }
+
+  tickTimer() {
+    if (this.dead || this.won || this.timeLeft <= 0) return;
+    if (this.paused || this.panelOpen || this.talking) return;
+    this.timeLeft = Math.max(0, this.timeLeft - 1);
+    this.updateTimerHud();
+    if (this.timeLeft <= 0) this.timeUp();
+  }
+
+  timeUp() {
+    if (this.dead || this.won) return;
+    if (this.timeEvent) { this.timeEvent.remove(false); this.timeEvent = null; }
+    this.dead = true;
+    stopMusic();
+    this.commitRun(false);
+    this.sfx.gameover.play();
+    this.player.setAlpha(0.7);
+    this.showOverlay('时间到',
+      this.roomLabel() + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems,
+      '点击 / Enter 回地图',
+      this.spec && this.spec.special ? { special: this.spec.special.id } : null);
   }
 
   gameOver() {
@@ -4100,9 +4154,14 @@ export class Play extends Phaser.Scene {
       fontFamily: FONT, fontSize: '12px', color: '#ffffffcc',
       backgroundColor: '#00000055', padding: { x: 5, y: 3 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(800);
+    this.timerText = this.timeLimit ? this.add.text(S.W - 10, 54, '', {
+      fontFamily: FONT, fontSize: '14px', color: '#ffe9b0',
+      backgroundColor: '#000000cc', padding: { x: 6, y: 3 },
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(801) : null;
     // 武器行：图标 2× 保证在 16px 图标上也认得出形状，底色加深以免压在墙上糊掉
     this.weaponIcon = this.add.image(20, 78, this.weapon.icon)
       .setScrollFactor(0).setDepth(800).setScale(2);
+    if (this.fistMode) this.weaponIcon.setVisible(false);
     this.weaponName = this.add.text(32, 70, this.weapon.name, {
       fontFamily: FONT, fontSize: '12px', color: '#ffffff',
       backgroundColor: '#000000cc', padding: { x: 6, y: 3 },
@@ -4441,7 +4500,9 @@ export class Play extends Phaser.Scene {
       this.guardAura.setVisible(this.time.now < this.guardUntil);
       this.guardAura.setPosition(this.player.x, this.player.y + 6);
     }
-    const wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音';
+    let wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音';
+    if (this.fistMode) wantHint = 'WASD 移动 · 空格 出拳 · Q 技能 · 本关赤手空拳';
+    if (this.noCoinRule && !this.fistMode) wantHint += ' · 本关不掉金币';
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
       const left = Math.max(0, Math.min(4, Math.min(this.hp, this.maxHp()) - i * 4));
@@ -4452,6 +4513,7 @@ export class Play extends Phaser.Scene {
       this.roomLabel() + ' · 击杀 ' + this.kills
       + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
     );
+    this.updateTimerHud();
 
     // 精英光环跟着走，怪物死了就藏起来（sprite 由清尸循环销毁）
     this.enemies.forEach((e) => {

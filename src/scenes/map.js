@@ -7,7 +7,7 @@
 import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
-import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel } from '../systems/stages.js';
+import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel, specialRuleLabel } from '../systems/stages.js';
 import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
 
 const PRESSURE = {
@@ -599,10 +599,11 @@ export class MapScene extends Phaser.Scene {
     const s = picked.s;
     const cleared = specialCleared(this.meta, s.id);
     const reward = (s.reward && s.reward.gem) ? ('首通 +' + s.reward.gem + ' 宝石') : '无首通宝石';
+    const rule = specialRuleLabel(s).replace(/kunai/g, '苦无');
     const base = s.chapter ? (' · ' + (chapterById(s.chapter) || {}).name) : '';
     const gate = picked.open ? '条件已达成' : ('条件未达成 · ' + this.gateLabel(s));
     this.specialDetail.setText(s.typeName + base + ' · ' + s.rooms + ' 房 · ' + gate + '\n'
-      + reward + (cleared ? ' · 已有通关记录' : ''));
+      + reward + (rule ? ' · ' + rule : '') + (cleared ? ' · 已有通关记录' : ''));
     this.specialStart.setVisible(!!picked.open);
     if (this.specialStart.input) this.specialStart.input.enabled = !!picked.open;
   }
