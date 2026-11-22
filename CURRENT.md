@@ -2,9 +2,11 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-C-3 Title / Select / 设置 / 制作名单 / Map 难度覆盖层完成。Title 改为 24px 主标题 + 12px 副标题与 4 个 320×36 双行菜单卡；设置 300×190、名单 420×230 迁入 `makePanel / makeCard / makeText / makeButton`，支持键盘与遮罩关闭；Select 3 张 128×232 角色卡迁入组件层，锁定价格移至卡底；Map 难度层改 460×228 面板 + 3 行 412×34 卡片，当前档 / 解锁态 / 锁定原因保留。构建 `dist/game.fe65475a.js`（210,981 B）+ `assets.5fb07765.js`（98,298 B），单文件 1,898,881 B；Title、设置、名单、Select、锁卡 toast、难度打开 / 切换 / 空白关闭 / ESC、960×540 与 640×360 截图、单文件 Title→Map→Select→Play 冒烟均通过，`errs=[]`。已推送 `f34d355`（代码 / 构建）、`e8098fe`（本地验收文档）；Pages 已切到 `game.fe65475a.js`，线上 Title / 设置 / 名单 / 难度层 / Select / Play 实测通过，`errs=[]`。
+当前段：P1-C-4 Play HUD / 浮层迁移完成。`play.js` HUD 文本、房名横幅、引路人对话、事件 / 商店 / 篝火 / 天赋、暂停、死亡结算统一接 `hudText / screenPanel / makeCard`，字号 12 / 24；`tokens.js` 新增 `UI.hud` 三档底色；事件 / 商店 / 篝火 ESC 改为先关面板，不再叠加暂停。构建 `dist/game.86f15d99.js`（211,017 B）+ `assets.5fb07765.js`（98,298 B），单文件 1,898,973 B；HUD / 暂停 / 结算 / 对话 / 事件 / 天赋 / 商店 / 篝火 / 限时计时 960×540 / 640×360 截图、实际 Title→Map→竹林村2→Select→Play、单文件冒烟 `errs=[]`。本地提交 `a7a9b6c`，待推送。
 
-上一批：P1-C-2 Hall 卡片与 Map 章节 / 节点 / 详情面板完成并推送。`hall.js` 的 6 张武器卡、3 张角色卡改为 `makeCard / makeText / makeButton`；`map.js` 的 6 张章节卡、5–9 个关卡节点、详情面板迁移到组件层，难度改 ghost 按钮，开始行动改 Theme1 暖橙主按钮；`primitives.js` 新增 `makeButton({variant:'ghost'})`。构建 `dist/game.357978dd.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；已推送 `31e53b4`（代码 / 构建）、`1fee341`（文档 / 截图）；Pages 已切到 `game.357978dd.js`，线上 Hall 6 武器 / 3 角色、战锤 200→180、法师 180→150、Map 6 章 / 5 节点 / 开始进 Select `bamboo:2`、锁定章节 / 节点、特殊入口 13 卡实测通过，`errs=[]`。
+上一批：P1-C-3 Title / Select / 设置 / 制作名单 / Map 难度覆盖层完成。Title 改为 24px 主标题 + 12px 副标题与 4 个 320×36 双行菜单卡；设置 300×190、名单 420×230 迁入 `makePanel / makeCard / makeText / makeButton`，支持键盘与遮罩关闭；Select 3 张 128×232 角色卡迁入组件层，锁定价格移至卡底；Map 难度层改 460×228 面板 + 3 行 412×34 卡片，当前档 / 解锁态 / 锁定原因保留。构建 `dist/game.fe65475a.js`（210,981 B）+ `assets.5fb07765.js`（98,298 B），单文件 1,898,881 B；Title、设置、名单、Select、锁卡 toast、难度打开 / 切换 / 空白关闭 / ESC、960×540 与 640×360 截图、单文件 Title→Map→Select→Play 冒烟均通过，`errs=[]`。已推送 `f34d355`（代码 / 构建）、`e8098fe`（本地验收文档）；Pages 已切到 `game.fe65475a.js`，线上 Title / 设置 / 名单 / 难度层 / Select / Play 实测通过，`errs=[]`。
+
+P1-C-2 Hall 卡片与 Map 章节 / 节点 / 详情面板完成并推送。`hall.js` 的 6 张武器卡、3 张角色卡改为 `makeCard / makeText / makeButton`；`map.js` 的 6 张章节卡、5–9 个关卡节点、详情面板迁移到组件层，难度改 ghost 按钮，开始行动改 Theme1 暖橙主按钮；`primitives.js` 新增 `makeButton({variant:'ghost'})`。构建 `dist/game.357978dd.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；已推送 `31e53b4`（代码 / 构建）、`1fee341`（文档 / 截图）；Pages 已切到 `game.357978dd.js`，线上 Hall 6 武器 / 3 角色、战锤 200→180、法师 180→150、Map 6 章 / 5 节点 / 开始进 Select `bamboo:2`、锁定章节 / 节点、特殊入口 13 卡实测通过，`errs=[]`。
 
 P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / primitives.js`；Theme1 20 张 UI 切片入图集（97→117）；Map 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 暖橙按钮，13 卡、锁卡 toast、Enter/ESC/遮罩/按钮/悬停通过。构建 `dist/game.0faa720c.js`（204 KB），已推送 `29f9076` / `2fc5906`，Pages 切到 `game.0faa720c.js`；线上 13 卡与开始按钮进 Select `speedrun` 实测 `errs=[]`。
 
@@ -23,6 +25,7 @@ P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / pr
 已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
+- P1-C-4 Play HUD / 浮层：`play.js` HUD 文本、房名横幅、引路人对话、事件 / 商店 / 篝火 / 天赋、暂停、死亡结算迁入 `hudText / screenPanel / makeCard`，字号收敛到 12 / 24；事件 / 商店 / 篝火 ESC 先关面板；960/640 截图、实际入口与单文件冒烟通过，`errs=[]`（`docs/P1-C-4.md`，本地提交 `a7a9b6c`）
 - P1-C-3 Title / Select / 设置 / 制作名单 / 难度层：`title.js`、`select.js`、`map.js openDiff()` 迁入 `tokens / primitives`，字号收敛到 12 / 24；960/640 截图、锁卡 toast、难度切换与单文件冒烟通过，`errs=[]`（`docs/P1-C-3.md`，已推送 `f34d355` / `e8098fe`，线上验证通过）
 - P1-C-1 视觉基础层：`src/systems/ui/tokens.js` + `primitives.js`；Theme1 20 张 UI 切片入图集（117 张）；Map 特殊覆盖层改九宫格面板/类型色条卡片/暖橙按钮；13 卡、锁卡、Enter/ESC/遮罩/按钮/悬停与 960/640 截图通过，`errs=[]`（`docs/P1-C-UI.md`，2026-11-22）
 - P1-A 章节地图两层 + Hall 数据驱动：`map.js` 重写为六章卡一层 / 关卡节点+详情面板二层（6–9 关按 `ceil(n/2)` 双行居中）；`hall.js` 武器页 3×2 六卡、角色页三卡改读 JSON，补稀有度/属性/技能/装备位/价格/权重；`select.js` 删除 `LOCK_PRICE`，改读 `unlock.cost`；`chars.json`/`weapons.json` 补齐字段；修 `panel` 未定义、6 关 5+1 孤行、难度覆盖层副标题遮挡、锁定角色价格压技能标题、武器卡重复「掉落池」；验收见 `docs/P1-A.md`（2026-11-22）
