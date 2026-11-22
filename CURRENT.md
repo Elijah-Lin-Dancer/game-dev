@@ -2,9 +2,9 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：P1-C-1 视觉基础层完成，新版特殊关卡覆盖层已跑通。新增 `src/systems/ui/tokens.js`（字号 12/24、语义色、状态、图集键）与 `primitives.js`（`makePanel / makeCard / makeButton / makeText`）；Theme1 20 张 UI 切片入图集（97→117 张）；`map.js` 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 原生暖橙按钮，13 卡 5/5/3、锁卡 toast、Enter/ESC/遮罩/按钮/悬停均通过。构建 `dist/game.0faa720c.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；960×540 / 640×360 截图、特殊规则验收、13 关全量进入/结算、单文件冒烟均 `errs=[]`。功能 / 文档提交 `29f9076`、`2fc5906` 已推送；Pages 已切到 `game.0faa720c.js`。线上 13 卡、锁卡点击不跳转、开始按钮进入 Select `speedrun` 实测通过，`errs=[]`；线上加载约 35–45 秒。
+当前段：P1-C-2 Hall 卡片与 Map 章节 / 节点 / 详情面板完成。`hall.js` 的 6 张武器卡、3 张角色卡改为 `makeCard / makeText / makeButton`，保留稀有度、属性、技能、装备位、价格与解锁；`map.js` 的 6 张章节卡、5–9 个关卡节点、详情面板迁移到组件层，难度改 ghost 按钮，开始行动改 Theme1 暖橙主按钮；`primitives.js` 新增 `makeButton({variant:'ghost'})`。构建 `dist/game.357978dd.js`（204 KB）+ `assets.5fb07765.js`（96 KB），单文件 1853 KB；Hall 解锁、Map 章节/节点/开始进 Select、锁定章节/节点、难度覆盖层、特殊关卡入口、960×540 / 640×360 截图与单文件冒烟均通过，`errs=[]`。**本轮只在本地完成，尚未推送；线上仍是 `game.0faa720c.js`**。
 
-上一批：P1-A 特殊关卡规则补齐完成。`timer`（商队速递 300 秒倒计时、≤30 秒变红、归零「时间到」结算）、`noCoinPickup`（贫者之路不掉金币）、`fists`（赤手空拳伪武器、禁武器掉落与换装、隐藏图标/手持）三条规则已接入 Play；地图详情第二行补 `限时 300 秒 / 本关不掉金币 / 赤手空拳 / 仅限苦无` 标签。构建 `dist/game.54285c08.js`（199 KB）+ `assets.4a2b12f8.js`（95 KB），单文件 1845 KB；三条规则验收、`firefly` 回归、13 关全量进入/结算与单文件冒烟均通过，`errs=[]`。功能提交 `8f765c9` 已推送，Pages 已切到 `game.54285c08.js`；线上 `fists / poor / speedrun / firefly` 实测通过，`errs=[]`。
+上一批：P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / primitives.js`；Theme1 20 张 UI 切片入图集（97→117）；Map 特殊覆盖层改为深色九宫格面板 + 类型色条卡片 + 暖橙按钮，13 卡、锁卡 toast、Enter/ESC/遮罩/按钮/悬停通过。构建 `dist/game.0faa720c.js`（204 KB），已推送 `29f9076` / `2fc5906`，Pages 切到 `game.0faa720c.js`；线上 13 卡与开始按钮进 Select `speedrun` 实测 `errs=[]`。
 
 更早：P1-A 特殊关卡通路完成。特殊关卡 API 组落地，13 卡 5/5/3 覆盖层接入地图页眉；支线/隐藏/条件三色，默认新档只开 `kunai`，条件未达成只弹 toast；Enter 进 Select、Play，首通写 `sp_<id>:1` 并只发一次宝石，返回 Map 自动重开并显示「已通 / 已有通关记录」。修复 Map 场景复用导致 `specialBox` 残留、覆盖层不重开的 bug。构建 `dist/game.acaaf12d.js`（197 KB）+ `assets.4a2b12f8.js`（95 KB），单文件 1843 KB；13 关逐项进入/结算与单文件冒烟通过，`errs=[]`。已推送 `a3ed3c6`，Pages 已切到 `game.acaaf12d.js`；线上特殊覆盖层与 `firefly` 首通返回实测通过，`errs=[]`。
 
