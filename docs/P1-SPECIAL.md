@@ -111,7 +111,7 @@
 
 构建：`dist/game.54285c08.js`（204,154 B / 199 KB）+ `dist/assets.4a2b12f8.js`（97,038 B / 95 KB）；单文件 `web/game.html`（1,889,402 B / 1845 KB）；`index.html` 指向 `game.54285c08.js`。
 
-本批已本地提交 `2f526ae`，**尚未 push / 部署**；线上入口仍是旧包 `game.acaaf12d.js`（SHA-256 `acaaf12de94b0c84e2591da531d7f3ddb5fcc6885fffddf3c91acdb86330f1d5`）。
+功能提交 `8f765c9` 已推送；GitHub Pages 构建状态 `built`，线上入口 `game.54285c08.js`，线上 bundle 204,154 B、SHA-256 `54285c086a9d308eef6080a304eab783a1cee97428722e7ae53877a6f5d7a815` 与本地一致。线上 `fists / poor / speedrun / firefly` 实测通过，`errs=[]`；13 关全量进入/结算回归在同一 SHA 的本地包上通过。
 
 | 编号 | 检查 | 结果 |
 |---|---|---|
@@ -124,6 +124,7 @@
 | R-07 | 13 关全量进入 / 结算 | 13/13 `open`；13 个 `sp_<id>:1` 均写入；首通宝石 20/25/30/35/40/50，隐藏/条件关 0；返回均带 `{special:id}`；`errs=[]` |
 | R-08 | 普通特殊关回归 | `firefly` +20 宝石、`key=sp_firefly:1`、`rooms=5`、`errs=[]` |
 | R-09 | 单文件冒烟 | `web/game.html` 进入 `fists`（`fist`、图标隐藏）与 `speedrun`（`300` / 「剩余 5:00」），`errs=[]` |
+| R-10 | 线上 Pages 实测 | 线上脚本加载 `game.54285c08.js`；`fists` 空手状态、`poor` 金币拦截、`speedrun` 300→297 / 归零「时间到」、`firefly` +20 宝石均通过，`errs=[]` |
 
 上一批通路验收（S-01～S-09）仍保留，证据见 `docs/revamp/p1/p1-special-all.png`、`p1-special-return.png`、`p1-special-locked.png`、`p1-special-win.png`、`p1-special-single.png`。
 
@@ -134,6 +135,9 @@
 - `docs/revamp/p1/p1-special-poor.png`：贫者之路「本关不掉金币」与升级掉落
 - `docs/revamp/p1/p1-special-timeup.png`：商队速递「时间到」覆盖层，计时在右上
 - `docs/revamp/p1/p1-special-timer-640.png`：640×360 下计时 HUD 与顶部 meta 不重叠
+- `docs/revamp/p1/p1-online-fists.png`：线上赤手空拳
+- `docs/revamp/p1/p1-online-poor.png`：线上贫者之路
+- `docs/revamp/p1/p1-online-timeup.png`：线上商队速递「时间到」
 
 已知边界：计时在 960×540 与 640×360 下验证（640 截图见 `p1-special-timer-640.png`），更窄 / 超宽视口尚未逐项验证；`noCoinPickup` 只验证直接 `dropItem`，未逐房间核对宝箱 / 商店 / 击杀的全部金币来源；`fists` 只验证近身 beast 与武器拦截，全部怪物碰撞、Boss、拳击音画与关卡平衡未逐项验证。
 
