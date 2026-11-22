@@ -65,9 +65,9 @@ Title
 
 构建：
 
-- `npm run build` → `dist/game.341ee017.js`（187 KB）、`dist/assets.4a2b12f8.js`（95 KB）
+- `npm run build` → `dist/game.43c15749.js`（187 KB）、`dist/assets.4a2b12f8.js`（95 KB）
 - `npm run build:single` → `web/game.html` 1832 KB
-- `index.html` 指向 `game.341ee017.js`
+- `index.html` 指向 `game.43c15749.js`
 
 本地 Playwright（Chromium，960×540）：
 
@@ -111,4 +111,4 @@ Title
 - 角色/武器仍只有现有 3 / 6；P2-1 的 3 角色、5 武器、6 饰品未落地。
 - 二层交互当前是「点节点只选中，Enter/开始行动进场」；如希望单击节点直接进场，需要再拍板。
 - 地图章节层点击锁定章会把选中态移过去（只预览 + toast），不会进场；键盘 Enter 会再提示一次锁定原因。
-- 线上仍是 P0-2 包，P1-A 推送后才会切到 `game.341ee017.js`。
+- 线上仍是 P0-2 包，P1-A 推送后才会切到 `game.43c15749.js`。

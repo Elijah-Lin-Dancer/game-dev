@@ -197,7 +197,7 @@ export class MapScene extends Phaser.Scene {
     const side = (raw.side || []).filter((e) => e.chapter === c.id).length;
     const hidden = (raw.hidden || []).length;
     const cond = (raw.conditional || []).length;
-    return '支线 ' + side + ' · 隐藏 ' + hidden + ' · 条件 ' + cond;
+    return '支线 ' + side + ' · 全局隐藏 ' + hidden + ' · 全局条件 ' + cond;
   }
 
   /* ---------- 二层：关卡节点 + 详情 ---------- */
@@ -333,8 +333,8 @@ export class MapScene extends Phaser.Scene {
     const raw = window.__chaptersData || {};
     const sides = (raw.side || []).filter((e) => e.chapter === c.id);
     const sideTxt = sides.length ? ('支线 ' + sides.map((e) => e.name || e.id).join(' / ')) : '支线 无';
-    this.extraText.setText(sideTxt + ' · 隐藏关 ' + (raw.hidden || []).length
-      + ' 个 · 条件关 ' + (raw.conditional || []).length + ' 个 · 通关与星级解锁');
+    this.extraText.setText(sideTxt + ' · 全局隐藏关 ' + (raw.hidden || []).length
+      + ' 个 · 全局条件关 ' + (raw.conditional || []).length + ' 个 · 通关与星级解锁');
   }
 
   chapterStars(c, tier) {
