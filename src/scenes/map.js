@@ -412,40 +412,56 @@ export class MapScene extends Phaser.Scene {
     this.sfx();
     NAV.openOverlay('difficulty');
     const objs = [];
-    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.74).setOrigin(0).setDepth(880)
+    const panelW = 460;
+    const panelH = 228;
+    const panelX = (S.W - panelW) / 2;
+    const panelY = (S.H - panelH) / 2;
+    const mask = this.add.rectangle(0, 0, S.W, S.H, UI.color.overlay, UI.alpha.overlay).setOrigin(0).setDepth(880)
       .setInteractive().on('pointerdown', () => this.closeDiff());
     objs.push(mask);
-    objs.push(this.add.rectangle(S.W / 2, S.H / 2, 430, 264, 0x121a16, 0.98)
-      .setStrokeStyle(2, 0x55645a).setDepth(881));
-    objs.push(this.add.text(S.W / 2, 72, '选择本章难度', {
-      fontFamily: FONT, fontSize: '14px', color: '#ffe9b0',
-    }).setOrigin(0.5).setDepth(882));
-    objs.push(this.add.text(S.W / 2, 90, c.name + ' · 普通 ' + tierClearCount(this.meta, c.id, 'normal') + '/' + c.stages + ' 关已通 · 难度按章保存', {
-      fontFamily: FONT, fontSize: '12px', color: '#9fb0a6',
-    }).setOrigin(0.5).setDepth(882));
+    const panel = makePanel(this, {
+      x: panelX, y: panelY, w: panelW, h: panelH, variant: 'base', depth: 881,
+    });
+    objs.push(panel.container);
+    panel.add(this.add.rectangle(0, 0, panelW, panelH).setOrigin(0)
+      .setStrokeStyle(2, UI.color.line));
+    // 面板本体的透明命中层：点面板空白处不触发遮罩关闭
+    objs.push(this.add.rectangle(panelX, panelY, panelW, panelH, 0, 0).setOrigin(0)
+      .setDepth(882).setInteractive());
+    objs.push(makeText(this, panelX + panelW / 2, panelY + 8, '选择本章难度', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0],
+    }).setDepth(883));
+    objs.push(makeText(this, panelX + panelW / 2, panelY + 40,
+      c.name + ' · 普通 ' + tierClearCount(this.meta, c.id, 'normal') + '/' + c.stages + ' 关已通 · 难度按章保存', 'body', {
+      color: UI.text.body, origin: [0.5, 0],
+    }).setDepth(883));
     TIERS.forEach((t, idx) => {
       const locked = !tierUnlocked(this.meta, c.id, t.id);
       const cur = this.tier === t.id;
-      const y = 120 + idx * 36;
-      const row = this.add.rectangle(S.W / 2, y, 390, 30, cur ? 0x2a3a30 : 0x1c2420, 1)
-        .setStrokeStyle(2, cur ? 0xffe9b0 : (locked ? 0x35302a : 0x3f4f46)).setDepth(882)
-        .setInteractive({ useHandCursor: !locked })
-        .on('pointerdown', () => this.chooseDiff(t.id));
-      objs.push(row);
-      objs.push(this.add.text(140, y, t.name, {
-        fontFamily: FONT, fontSize: '12px', color: locked ? '#7a6a64' : (cur ? '#ffe9b0' : '#e6efe6'),
-      }).setOrigin(0, 0.5).setDepth(882));
-      objs.push(this.add.text(210, y, t.note, {
-        fontFamily: FONT, fontSize: '12px', color: locked ? '#6e615c' : '#9fb0a6',
-      }).setOrigin(0, 0.5).setDepth(882));
-      const st = cur ? '当前' : (locked ? (t.id === 'nightmare' ? '需通关普通' : '需通关噩梦') : '已解锁');
-      objs.push(this.add.text(504, y, st, {
-        fontFamily: FONT, fontSize: '12px', color: cur ? '#ffe9b0' : (locked ? '#7a6a64' : '#9fe0ff'),
-      }).setOrigin(1, 0.5).setDepth(882));
+      const row = makeCard(this, {
+        x: panelX + 24, y: panelY + 64 + idx * 40, w: panelW - 48, h: 34,
+        accent: cur ? UI.color.gold : (locked ? UI.color.lineMuted : (t.id === 'nightmare' ? UI.color.danger : UI.color.info)),
+        state: cur ? 'selected' : (locked ? 'locked' : 'default'),
+        depth: 883,
+        onClick: () => this.chooseDiff(t.id),
+      });
+      objs.push(row.container, row.hit);
+      const name = makeText(this, 14, 9, t.name, 'body', {
+        color: cur ? UI.text.heading : (locked ? UI.text.locked : UI.text.primary),
+      });
+      const note = makeText(this, 84, 9, t.note, 'body', {
+        color: locked ? UI.text.locked : UI.text.muted,
+      });
+      const status = makeText(this, panelW - 62, 9,
+        cur ? '当前' : (locked ? (t.id === 'nightmare' ? '需通关普通' : '需通关噩梦') : '已解锁'), 'body', {
+          color: cur ? UI.text.gold : (locked ? UI.text.locked : UI.text.info),
+          origin: [1, 0],
+        });
+      row.add(name, note, status);
     });
-    objs.push(this.add.text(S.W / 2, 232, '点击选项切换 · ESC / 点击空白关闭', {
-      fontFamily: FONT, fontSize: '12px', color: '#7d8a84',
-    }).setOrigin(0.5).setDepth(882));
+    objs.push(makeText(this, panelX + panelW / 2, panelY + 204, '点击选项切换 · ESC / 点击空白关闭', 'caption', {
+      color: UI.text.foot, origin: [0.5, 0],
+    }).setDepth(883));
     this.diffBox = objs;
   }
 

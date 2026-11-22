@@ -4,13 +4,21 @@
  * 玩家连"这是个完整游戏"的第一印象都拿不到。外壳是骨架，先立起来。
  *
  * 素材：地面用 Interior 花砖、角色用现成立绘、火把用 FX/Aura，全部包内件，无外部件无自绘。
+ * P1-C-3：文字、菜单、设置与名单统一走 UI 令牌和组件层，字号只保留 12 / 24。
  */
-import { FONT, S } from '../core/config.js';
+import { S } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { loadOptions, patchOptions } from '../systems/options.js';
 import { NAV } from '../systems/nav.js';
+import { UI } from '../systems/ui/tokens.js';
+import { makePanel, makeCard, makeText, makeButton } from '../systems/ui/primitives.js';
 
-const ITEMS = ['开始冒险', '收藏小屋', '设置', '制作名单'];
+const ITEMS = [
+  { name: '开始冒险', note: '进入世界地图' },
+  { name: '收藏小屋', note: '武器 / 角色 / 图鉴' },
+  { name: '设置', note: '静音 / 震屏' },
+  { name: '制作名单', note: '素材与致谢' },
+];
 
 export class Title extends Phaser.Scene {
   constructor() { super('title'); }
@@ -22,6 +30,7 @@ export class Title extends Phaser.Scene {
     this.options = loadOptions();
     this.setting = false;
     this.settingIdx = 0;
+    this.credits = null;
 
     this.buildBackdrop();
     this.buildTitle();
@@ -43,44 +52,61 @@ export class Title extends Phaser.Scene {
     });
     // 三个角色立绘站台，暗示可选角色池
     ['faceNinja', 'faceMage', 'faceKnight'].forEach((k, i) => {
-      this.add.image(S.W / 2 - 120 + i * 120, S.H - 96, k, 0).setScale(1.4).setAlpha(0.85);
+      this.add.image(S.W / 2 - 120 + i * 120, S.H - 58, k, 0).setScale(1.0).setAlpha(0.82);
     });
   }
 
   buildTitle() {
-    this.add.text(S.W / 2, 22, '归 途', {
-      fontFamily: FONT, fontSize: '36px', color: '#ffe9b0',
-    }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 66, '星 火 之 章', {
-      fontFamily: FONT, fontSize: '14px', color: '#e6c07a',
-    }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 88, '多角色动作 Roguelike · 六章冒险', {
-      fontFamily: FONT, fontSize: '11px', color: '#c8d8c0',
-    }).setOrigin(0.5, 0);
+    makeText(this, S.W / 2, 22, '归 途', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0],
+    });
+    makeText(this, S.W / 2, 58, '星 火 之 章', 'h2', {
+      color: UI.text.gold, origin: [0.5, 0],
+    });
+    makeText(this, S.W / 2, 76, '多角色动作 Roguelike · 六章冒险', 'body', {
+      color: UI.text.body, origin: [0.5, 0],
+    });
     const m = this.meta;
-    this.add.text(S.W / 2, S.H - 22,
+    makeText(this, S.W / 2, S.H - 20,
       '已解锁 ' + (m.chars ? m.chars.length : 1) + '/3 角色 · 宝石 ' + (m.gem || 0)
-      + ' · 最深 第' + (m.bestRoom || 1) + ' 间 · 通关 ' + (m.wins || 0) + ' 次', {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
-    }).setOrigin(0.5, 0);
+      + ' · 最深 第' + (m.bestRoom || 1) + ' 间 · 通关 ' + (m.wins || 0) + ' 次',
+      'caption', { color: UI.text.muted, origin: [0.5, 0] });
   }
 
   buildMenu() {
-    this.menu = ITEMS.map((name, i) => this.add.text(S.W / 2, 140 + i * 26, name, {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
-    }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', (p) => { if (p.button === 2) return; this.idx = i; this.choose(); })
-      .on('pointerover', () => { this.idx = i; this.mark(); }));
-    this.cursor = this.add.text(0, 0, '▶', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffd479',
-    }).setOrigin(1, 0);
+    this.menu = ITEMS.map((item, i) => {
+      const card = makeCard(this, {
+        x: S.W / 2 - 160, y: 112 + i * 40, w: 320, h: 36,
+        accent: UI.color.gold, state: i === this.idx ? 'selected' : 'default',
+        onClick: () => { this.idx = i; this.choose(); },
+      });
+      const name = makeText(this, 26, 5, item.name, 'body', {
+        color: i === this.idx ? UI.text.heading : UI.text.primary,
+      });
+      const sub = makeText(this, 26, 21, item.note, 'caption', {
+        color: i === this.idx ? UI.text.typeOpen : UI.text.muted,
+      });
+      const arrow = makeText(this, 304, 11, '›', 'h2', {
+        color: i === this.idx ? UI.text.gold : UI.text.muted, origin: [1, 0],
+      });
+      card.add(name, sub, arrow);
+      card.hit.on('pointerover', () => {
+        this.idx = i;
+        this.mark();
+      });
+      return { card, name, sub, arrow };
+    });
     this.mark();
   }
 
   mark() {
-    this.menu.forEach((t, i) => t.setColor(i === this.idx ? '#ffffff' : '#8fa0a8'));
-    const t = this.menu[this.idx];
-    this.cursor.setPosition(t.x - t.width / 2 - 8, t.y);
+    this.menu.forEach((m, i) => {
+      const on = i === this.idx;
+      m.card.setState(on ? 'selected' : 'default');
+      m.name.setColor(on ? UI.text.heading : UI.text.primary);
+      m.sub.setColor(on ? UI.text.typeOpen : UI.text.muted);
+      m.arrow.setColor(on ? UI.text.gold : UI.text.muted);
+    });
   }
 
   bindKeys() {
@@ -104,7 +130,7 @@ export class Title extends Phaser.Scene {
     if (this.credits) return;
     if (this.setting) {
       this.settingIdx = (this.settingIdx + d + 2) % 2;
-      this.renderSettings();
+      this.markSettings();
       return;
     }
     this.idx = (this.idx + d + ITEMS.length) % ITEMS.length;
@@ -129,20 +155,33 @@ export class Title extends Phaser.Scene {
   /* ---------- 设置面板 ---------- */
   openSettings() {
     this.setting = true;
-    NAV.openOverlay('settings');
     this.settingIdx = 0;
-    this.panel = this.add.container(0, 0).setDepth(50);
-    this.menu.forEach((t) => t.setVisible(false));
-    if (this.cursor) this.cursor.setVisible(false);
-    const box = this.add.rectangle(S.W / 2, 148, 300, 140, 0x101713, 1)
-      .setStrokeStyle(2, 0x4a5f42);
-    const head = this.add.text(S.W / 2, 92, '设置', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
-    }).setOrigin(0.5, 0);
-    const foot = this.add.text(S.W / 2, 196, '↑↓ 选择 · Enter 切换 · ESC 返回', {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
-    }).setOrigin(0.5, 0);
-    this.panel.add([box, head, foot]);
+    NAV.openOverlay('settings');
+    this.menu.forEach((m) => m.card.setVisible(false));
+
+    const panelW = 300;
+    const panelH = 190;
+    const panelX = (S.W - panelW) / 2;
+    const panelY = 85;
+    this.settingMask = this.add.rectangle(0, 0, S.W, S.H, UI.color.overlay, UI.alpha.overlay)
+      .setOrigin(0).setDepth(50).setInteractive()
+      .on('pointerdown', () => this.closeSettings());
+    this.settingBlock = this.add.rectangle(panelX, panelY, panelW, panelH, 0, 0)
+      .setOrigin(0).setDepth(52).setInteractive();
+    this.settingPanel = makePanel(this, {
+      x: panelX, y: panelY, w: panelW, h: panelH, variant: 'base', depth: 51,
+    });
+    this.settingPanel.add(this.add.rectangle(0, 0, panelW, panelH).setOrigin(0)
+      .setStrokeStyle(2, UI.color.line));
+    this.settingTitle = makeText(this, panelX + panelW / 2, panelY + 12, '设置', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0],
+    }).setDepth(53);
+    this.settingSub = makeText(this, panelX + panelW / 2, panelY + 38, '程序级选项 · 只影响本机', 'caption', {
+      color: UI.text.muted, origin: [0.5, 0],
+    }).setDepth(53);
+    this.settingFoot = makeText(this, panelX + panelW / 2, panelY + 158, '↑↓ 选择 · Enter 切换 · ESC 返回', 'caption', {
+      color: UI.text.foot, origin: [0.5, 0],
+    }).setDepth(53);
     this.settingRows = [];
     this.renderSettings();
   }
@@ -156,20 +195,45 @@ export class Title extends Phaser.Scene {
   }
 
   renderSettings() {
-    (this.settingRows || []).forEach((r) => r.destroy());
+    (this.settingRows || []).forEach((r) => {
+      r.card.container.destroy();
+      r.card.hit.destroy();
+    });
     this.settingRows = [];
     const rows = this.settingList();
+    const panelX = (S.W - 300) / 2;
+    const panelY = 85;
     rows.forEach(([k, v], i) => {
-      const y = 116 + i * 26;
-      const on = i === this.settingIdx;
-      const name = this.add.text(S.W / 2 - 110, y, (on ? '▶ ' : '   ') + k, {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#ffffff' : '#c8d8c0',
+      const card = makeCard(this, {
+        x: panelX + 20, y: panelY + 58 + i * 38, w: 260, h: 32,
+        accent: UI.color.neutral, state: i === this.settingIdx ? 'selected' : 'default',
+        depth: 54,
+        onClick: () => { this.settingIdx = i; this.toggleSetting(); },
       });
-      const val = this.add.text(S.W / 2 + 96, y, v, {
-        fontFamily: FONT, fontSize: '12px', color: on ? '#9fe0ff' : '#8fa0a8',
-      }).setOrigin(1, 0);
-      this.panel.add([name, val]);
-      this.settingRows.push(name, val);
+      const name = makeText(this, 14, 9, k, 'body', {
+        color: i === this.settingIdx ? UI.text.heading : UI.text.primary,
+      });
+      const val = makeText(this, 246, 9, v, 'body', {
+        color: i === this.settingIdx ? UI.text.info : UI.text.muted, origin: [1, 0],
+      });
+      card.add(name, val);
+      card.hit.on('pointerover', () => {
+        if (!this.setting) return;
+        this.settingIdx = i;
+        this.markSettings();
+      });
+      this.settingRows.push({ card, name, val });
+    });
+    this.markSettings();
+  }
+
+  markSettings() {
+    if (!this.settingRows) return;
+    this.settingRows.forEach((r, i) => {
+      const on = i === this.settingIdx;
+      r.card.setState(on ? 'selected' : 'default');
+      r.name.setColor(on ? UI.text.heading : UI.text.primary);
+      r.val.setColor(on ? UI.text.info : UI.text.muted);
     });
   }
 
@@ -184,10 +248,17 @@ export class Title extends Phaser.Scene {
   closeSettings() {
     this.setting = false;
     NAV.closeOverlay('settings');
-    if (this.panel) { this.panel.destroy(); this.panel = null; }
+    (this.settingRows || []).forEach((r) => {
+      r.card.container.destroy();
+      r.card.hit.destroy();
+    });
     this.settingRows = [];
-    this.menu.forEach((t) => t.setVisible(true));
-    if (this.cursor) this.cursor.setVisible(true);
+    [this.settingMask, this.settingBlock, this.settingPanel && this.settingPanel.container,
+      this.settingTitle, this.settingSub, this.settingFoot].forEach((o) => o && o.destroy());
+    this.settingMask = null;
+    this.settingBlock = null;
+    this.settingPanel = null;
+    this.menu.forEach((m) => m.card.setVisible(true));
     this.mark();
   }
 
@@ -204,27 +275,45 @@ export class Title extends Phaser.Scene {
       '',
       '素材清单见仓库 assets/CREDITS.md',
     ];
-    const mask = this.add.rectangle(0, 0, S.W, S.H, 0x000000, 0.5).setOrigin(0)
-      .setInteractive({ useHandCursor: false })
+    const panelW = 420;
+    const panelH = 230;
+    const panelX = (S.W - panelW) / 2;
+    const panelY = 65;
+    const mask = this.add.rectangle(0, 0, S.W, S.H, UI.color.overlay, UI.alpha.overlay)
+      .setOrigin(0).setDepth(58).setInteractive()
       .on('pointerdown', () => this.closeCredits());
-    const box = this.add.rectangle(S.W / 2, S.H / 2 + 8, 380, 196, 0x101713, 0.98)
-      .setStrokeStyle(2, 0x4a5f42)
-      .setInteractive({ useHandCursor: false });
-    const t = this.add.text(S.W / 2, S.H / 2 - 82, lines.join('\n'), {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0', align: 'center', lineSpacing: 4,
-    }).setOrigin(0.5, 0);
-    const close = this.add.text(S.W / 2, S.H / 2 + 80, '关闭 ×', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
-    }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.closeCredits());
+    const block = this.add.rectangle(panelX, panelY, panelW, panelH, 0, 0)
+      .setOrigin(0).setDepth(61).setInteractive();
+    const panel = makePanel(this, {
+      x: panelX, y: panelY, w: panelW, h: panelH, variant: 'base', depth: 60,
+    });
+    panel.add(this.add.rectangle(0, 0, panelW, panelH).setOrigin(0)
+      .setStrokeStyle(2, UI.color.line));
+    const title = makeText(this, panelX + panelW / 2, panelY + 12, '制作名单', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0],
+    }).setDepth(62);
+    const body = makeText(this, panelX + panelW / 2, panelY + 44, lines.join('\n'), 'body', {
+      color: UI.text.body, align: 'center', lineSpacing: 4, origin: [0.5, 0],
+    }).setDepth(62);
+    const close = makeButton(this, {
+      x: panelX + 160, y: panelY + 190, w: 100, h: 24, label: '关闭 ×',
+      variant: 'ghost', depth: 63,
+      onClick: () => this.closeCredits(),
+    });
     NAV.openOverlay('credits');
-    this.credits = this.add.container(0, 0, [mask, box, t, close]).setDepth(60);
+    this.credits = {
+      mask, block, panel: panel.container, title, body, close,
+    };
   }
 
   closeCredits() {
     if (!this.credits) return;
-    this.credits.destroy();
+    const c = this.credits;
+    c.close.container.destroy();
+    c.close.hit.destroy();
+    [c.mask, c.block, c.panel, c.title, c.body].forEach((o) => o && o.destroy());
     this.credits = null;
     NAV.closeOverlay('credits');
+    this.mark();
   }
 }

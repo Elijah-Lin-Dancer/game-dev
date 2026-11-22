@@ -1,15 +1,18 @@
 /* 选人界面：三张立绘卡，键盘 ←/→ + Enter，或直接点卡
  * 角色数值全部来自 web/data/chars.json，界面只做展示与选择。
+ * P1-C-3：卡片、文字与底部提示统一走 UI 令牌和组件层。
  */
-import { FONT, S } from '../core/config.js';
+import { S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 import { normalizeTier, tierMeta } from '../systems/difficulty.js';
+import { UI } from '../systems/ui/tokens.js';
+import { makeCard, makeText } from '../systems/ui/primitives.js';
 
 const ORDER = ['ninja', 'mage', 'knight'];
 const priceOf = (c) => Math.max(0, Number(c && c.price) || 0);
 const CARD_W = 128;
-const CARD_H = 240;
+const CARD_H = 232;
 const GAP = 18;
 
 function normalize(list) {
@@ -71,27 +74,27 @@ export class Select extends Phaser.Scene {
       }
     }
 
-    this.add.text(12, 8, '← 返回地图', {
-      fontFamily: FONT, fontSize: '12px', color: '#8fa0a8',
+    makeText(this, 12, 8, '← 返回地图', 'body', {
+      color: UI.text.muted,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.back());
-    this.add.text(S.W / 2, 26, '选择角色', {
-      fontFamily: FONT, fontSize: '16px', color: '#ffe9b0',
-    }).setOrigin(0.5, 0);
-    this.add.text(S.W / 2, 50, this.stage
+    makeText(this, S.W / 2, 18, '选择角色', 'h1', {
+      color: UI.text.heading, origin: [0.5, 0],
+    });
+    makeText(this, S.W / 2, 50, this.stage
       ? ('准备进入：' + this.stageLabel + ' · ' + tierMeta(this.difficulty).name)
-      : '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', {
-      fontFamily: FONT, fontSize: '12px', color: '#c8d8c0',
-    }).setOrigin(0.5, 0);
+      : '← → 切换 · Enter / 空格出发 · 也可以直接点 · 未解锁的去小屋花宝石', 'body', {
+      color: UI.text.body, origin: [0.5, 0],
+    });
 
     const total = this.chars.length * CARD_W + (this.chars.length - 1) * GAP;
     const left = S.W / 2 - total / 2;
-    this.chars.forEach((c, i) => this.buildCard(c, left + i * (CARD_W + GAP), 64, i));
+    this.chars.forEach((c, i) => this.buildCard(c, left + i * (CARD_W + GAP), 72, i));
 
     this.mark();
-    this.add.text(S.W / 2, S.H - 10, 'Q 释放技能 · 冷却 8 秒 · 本局有效', {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff88',
-    }).setOrigin(0.5, 1);
+    makeText(this, S.W / 2, S.H - 10, 'Q 释放技能 · 冷却 8 秒 · 本局有效', 'caption', {
+      color: UI.text.foot, origin: [0.5, 1],
+    });
 
     this.input.keyboard.on('keydown-LEFT', () => this.move(-1));
     this.input.keyboard.on('keydown-A', () => this.move(-1));
@@ -115,34 +118,45 @@ export class Select extends Phaser.Scene {
   }
 
   buildCard(c, x, y, i) {
-    const box = this.add.rectangle(x, y, CARD_W, CARD_H, 0x2b3a26, 1).setOrigin(0)
-      .setStrokeStyle(2, 0x4a5f42)
-      .setInteractive({ useHandCursor: true });
-    const face = this.add.image(x + CARD_W / 2, y + 54, c.face, 0).setScale(1.7);
-    const name = this.add.text(x + CARD_W / 2, y + 8, c.name, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffffff',
-    }).setOrigin(0.5, 0);
-    const tag = this.add.text(x + CARD_W / 2, y + 92, c.tag, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffd479',
-    }).setOrigin(0.5, 0);
-    const WN = this.weaponName(c.weapon);
-    const stat = this.add.text(x + 8, y + 110, 'HP ' + c.hp + '  攻 ' + c.dmg + '\n速 ' + c.speed + '  武器 ' + WN, {
-      fontFamily: FONT, fontSize: '12px', color: '#d8e8d0', lineSpacing: 3,
+    const open = this.isOpen(i);
+    const card = makeCard(this, {
+      x, y, w: CARD_W, h: CARD_H,
+      accent: open ? UI.color.side : UI.color.lineMuted,
+      state: open ? (i === this.idx ? 'selected' : 'default') : 'locked',
+      onClick: () => this.pick(i),
     });
-    const skill = this.add.text(x + 8, y + 144, '【' + c.skill.name + '】\n' + (c.skill.desc || ''), {
-      fontFamily: FONT, fontSize: '12px', color: '#9fd8ff', lineSpacing: 2,
+    const face = this.add.image(CARD_W / 2, 50, c.face, 0).setScale(1.55);
+    const name = makeText(this, CARD_W / 2, 8, c.name, 'h2', {
+      color: open ? UI.text.heading : UI.text.nameLocked, origin: [0.5, 0],
+    });
+    const tag = makeText(this, CARD_W / 2, 88, c.tag, 'body', {
+      color: open ? UI.text.gold : UI.text.locked, origin: [0.5, 0],
+    });
+    const stat = makeText(this, 8, 106, 'HP ' + c.hp + '  攻 ' + c.dmg
+      + '\n速 ' + c.speed + '  武器 ' + this.weaponName(c.weapon), 'body', {
+      color: open ? UI.text.primary : UI.text.body, lineSpacing: 3,
+      wordWrap: { width: CARD_W - 16, useAdvancedWrap: true },
+    });
+    const skillName = makeText(this, 8, 136, '【' + c.skill.name + '】', 'body', {
+      color: open ? UI.text.info : UI.text.locked,
+    });
+    const skillDesc = makeText(this, 8, 150, (c.skill.desc || ''), 'body', {
+      color: UI.text.body, lineSpacing: 2,
       wordWrap: { width: CARD_W - 16, useAdvancedWrap: true },
     });
     let lockT = null;
-    if (!this.isOpen(i)) {
-      const price = priceOf(c);
-      lockT = this.add.text(x + CARD_W / 2, y + 24, '未解锁 · ' + price + ' 宝石', {
-        fontFamily: FONT, fontSize: '12px', color: '#ffb0a0',
-      }).setOrigin(0.5, 0);
+    if (!open) {
+      lockT = makeText(this, CARD_W / 2, 208, '未解锁 · ' + priceOf(c) + ' 宝石', 'body', {
+        color: UI.text.danger, origin: [0.5, 0],
+        backgroundColor: '#121a16dd', padding: { x: 3, y: 1 },
+      });
     }
-    box.on('pointerdown', () => { this.idx = i; this.mark(); this.confirm(); });
-    box.on('pointerover', () => { this.idx = i; this.mark(); });
-    this.cards.push({ box, face, name, tag, stat, skill, lockT });
+    card.add(face, name, tag, stat, skillName, skillDesc, lockT);
+    card.hit.on('pointerover', () => {
+      this.idx = i;
+      this.mark();
+    });
+    this.cards.push({ card, face, name, tag, stat, skillName, skillDesc, lockT });
   }
 
   weaponName(id) {
@@ -155,9 +169,13 @@ export class Select extends Phaser.Scene {
     this.cards.forEach((k, i) => {
       const on = i === this.idx;
       const open = this.isOpen(i);
-      k.box.setFillStyle(on ? 0x3a4f2e : 0x2b3a26, 1);
-      k.box.setStrokeStyle(on ? 3 : 2, !open ? 0x5a4a44 : (on ? 0xffe9b0 : 0x4a5f42));
-      k.face.setAlpha((!open ? 0.35 : (on ? 1 : 0.55))).setScale(on ? 1.85 : 1.7);
+      k.card.setState(!open ? 'locked' : (on ? 'selected' : 'default'));
+      k.name.setColor(!open ? UI.text.nameLocked : (on ? UI.text.heading : UI.text.primary));
+      k.tag.setColor(open ? (on ? UI.text.gold : UI.text.typeOpen) : UI.text.locked);
+      k.stat.setColor(open ? (on ? UI.text.primary : UI.text.body) : UI.text.body);
+      k.skillName.setColor(open ? UI.text.info : UI.text.muted);
+      k.skillDesc.setColor(open ? UI.text.body : UI.text.body);
+      k.face.setAlpha(!open ? 0.35 : (on ? 1 : 0.55)).setScale(on ? 1.6 : 1.55);
     });
   }
 
@@ -170,10 +188,10 @@ export class Select extends Phaser.Scene {
 
   toast(msg) {
     if (this.toastT) this.toastT.destroy();
-    this.toastT = this.add.text(S.W / 2, S.H - 44, msg, {
-      fontFamily: FONT, fontSize: '12px', color: '#ffb0a0', backgroundColor: '#000000aa',
-      padding: { x: 6, y: 3 },
-    }).setOrigin(0.5, 0).setDepth(900);
+    this.toastT = makeText(this, S.W / 2, S.H - 44, msg, 'body', {
+      color: UI.text.danger, backgroundColor: '#000000cc',
+      padding: { x: 6, y: 3 }, origin: [0.5, 0],
+    }).setDepth(900);
     this.time.delayedCall(1600, () => { if (this.toastT) { this.toastT.destroy(); this.toastT = null; } });
   }
 
@@ -181,6 +199,12 @@ export class Select extends Phaser.Scene {
     this.idx = (this.idx + d + this.chars.length) % this.chars.length;
     this.sfxUi();
     this.mark();
+  }
+
+  pick(i) {
+    this.idx = i;
+    this.mark();
+    this.confirm();
   }
 
   sfxUi() {
