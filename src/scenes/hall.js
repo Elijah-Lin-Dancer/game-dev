@@ -9,14 +9,19 @@
  * 素材：全部包内件 —— 地面用 Interior 花砖、宝石图标用 TilesetDungeon frame 43、
  * 武器图标与角色立绘复用既有图集，没有外部件也没有自绘。
  */
-import { FONT, S, TILE } from '../core/config.js';
+import { FONT, S, TILE, CFG } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { chapterById, starsOf } from '../systems/stages.js';
 import { NAV } from '../systems/nav.js';
+import {
+  FORGE_LEVELS, FORGE_MAX, FORGE_BLUEPRINT_MAX,
+  forgeLevel, forgeNext, forgeMul, forgeBonus, hasBlueprint,
+} from '../systems/forge.js';
+import { NPCS, npcDialogue } from '../systems/npc.js';
 import { UI } from '../systems/ui/tokens.js';
-import { makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
+import { makeCard, makeButton, makeText, makePanel } from '../systems/ui/primitives.js';
 
-const TABS = ['武器', '角色', '图鉴'];
+const TABS = ['武器', '角色', '图鉴', '小屋'];
 const RARITY = {
   common: { name: '普通', color: 0x9aa0a6, hex: '#9aa0a6' },
   fine: { name: '精良', color: 0x7cb342, hex: '#7cb342' },
@@ -57,6 +62,14 @@ export class Hall extends Phaser.Scene {
     this.tab = 0;
     this.meta = loadSave();
     this.rows = [];
+    this.modalOpen = false;
+    this.modalObjs = [];
+    this.modalEnter = null;
+    this.trainTimer = null;
+    this.trainStop = null;
+    this.trainText = null;
+    this.trainHits = 0;
+    this.trainTotal = 0;
     this.buildBackdrop();
     this.buildHeader();
     this.buildWorldEntry();
@@ -88,6 +101,10 @@ export class Hall extends Phaser.Scene {
     this.add.text(92, 9, '归途小屋', {
       fontFamily: FONT, fontSize: '12px', color: UI.text.heading,
     }).setOrigin(0, 0);
+    this.coinIcon = this.add.image(S.W - 198, 17, 'coin', 0).setScale(1.3);
+    this.coinText = this.add.text(S.W - 184, 9, '0', {
+      fontFamily: FONT, fontSize: '12px', color: UI.text.gold,
+    }).setOrigin(0, 0);
     this.gemIcon = this.add.image(S.W - 96, 17, 'gem', 43).setScale(1.4);
     this.gemText = this.add.text(S.W - 82, 9, '0', {
       fontFamily: FONT, fontSize: '12px', color: UI.text.info,
@@ -118,30 +135,45 @@ export class Hall extends Phaser.Scene {
   }
 
   buildTabs() {
-    this.tabs = TABS.map((name, i) => this.add.text(S.W / 2 - 120 + i * 120, 44, name, {
+    const gap = 104;
+    const start = S.W / 2 - gap * 1.5;
+    this.tabs = TABS.map((name, i) => this.add.text(start + i * gap, 44, name, {
       fontFamily: FONT, fontSize: '12px', color: UI.text.muted,
     }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.tab = i; this.render(); }));
+      .on('pointerdown', () => { if (this.modalOpen) return; this.tab = i; this.render(); }));
   }
 
   buildFoot() {
-    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · Enter 出发 · 东门远征 · ESC 返回', {
+    this.add.text(S.W / 2, S.H - 16, '1–4 / ← → 切页 · Enter 出发 · 东门远征 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: UI.text.foot,
     }).setOrigin(0.5, 0);
   }
 
   bindKeys() {
-    this.input.keyboard.on('keydown-LEFT', () => this.switchTab(-1));
-    this.input.keyboard.on('keydown-RIGHT', () => this.switchTab(1));
-    ['ONE', 'TWO', 'THREE'].forEach((k, i) => {
-      this.input.keyboard.on('keydown-' + k, () => { this.tab = i; this.render(); });
+    const guard = (fn) => () => { if (!this.modalOpen) fn(); };
+    this.input.keyboard.on('keydown-LEFT', guard(() => this.switchTab(-1)));
+    this.input.keyboard.on('keydown-RIGHT', guard(() => this.switchTab(1)));
+    ['ONE', 'TWO', 'THREE', 'FOUR'].forEach((k, i) => {
+      this.input.keyboard.on('keydown-' + k, guard(() => { this.tab = i; this.render(); }));
     });
-    this.input.keyboard.on('keydown-ENTER', () => this.start());
-    this.input.keyboard.on('keydown-SPACE', () => this.start());
-    this.input.keyboard.on('keydown-ESC', () => this.back());
+    this.input.keyboard.on('keydown-ENTER', () => {
+      if (this.modalOpen && this.modalEnter) this.modalEnter();
+      else if (!this.modalOpen) this.start();
+    });
+    this.input.keyboard.on('keydown-SPACE', () => {
+      if (this.modalOpen && this.modalEnter) this.modalEnter();
+      else if (!this.modalOpen) this.start();
+    });
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this.modalOpen) this.closeModal();
+      else this.back();
+    });
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', (p) => {
-      if (p.button === 2) this.back();
+      if (p.button === 2) {
+        if (this.modalOpen) this.closeModal();
+        else this.back();
+      }
     });
   }
 
@@ -162,16 +194,19 @@ export class Hall extends Phaser.Scene {
 
   /* ---------- 内容区 ---------- */
   render() {
+    if (this.modalOpen) this.closeModal();
     if (this.body) this.body.forEach((o) => o.destroy());
     this.body = [];
     this.rows = [];
     this.meta = loadSave();
     this.gemText.setText(String(this.meta.gem || 0));
+    this.coinText.setText(String(this.meta.coins || 0));
     this.tabs.forEach((t, i) => t.setColor(i === this.tab ? '#ffe9b0' : '#8fa0a8'));
 
     if (this.tab === 0) this.renderWeapons();
     else if (this.tab === 1) this.renderChars();
-    else this.renderGallery();
+    else if (this.tab === 2) this.renderGallery();
+    else this.renderHub();
   }
 
   keep(obj) { this.body.push(obj); return obj; }
@@ -365,6 +400,339 @@ export class Hall extends Phaser.Scene {
       this.keep(this.add.text(rx, 76 + i * 18, (got ? '● ' : '○ ') + (got ? ROOM_NAME[k] : '???'), {
         fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',
       }));
+    });
+  }
+
+  /* ---------- 批 13：小屋四区 ---------- */
+  safeTex(key, fallback) {
+    return this.textures.exists(key) ? key : fallback;
+  }
+
+  renderHub() {
+    const CW = this.colW(3, 8);
+    const topY = 72;
+    const topH = 88;
+    const npcY = 176;
+    const npcH = 126;
+    const entries = [
+      {
+        id: 'depart', name: '出发台', icon: 'statue', fallback: 'statue',
+        desc: '章节地图 · 星级\n支线 / 隐藏 / 条件关入口', status: 'Enter 出发',
+        accent: 0x7cb342, action: () => this.start(),
+      },
+      {
+        id: 'forge', name: '锻造坊', icon: 'forgeAnvil', fallback: 'wHammer',
+        desc: '金币升级 Lv.1–3\n图纸开 Lv.4', status: '铁匠在炉边等你',
+        accent: 0xffd479, action: () => this.openForge(),
+      },
+      {
+        id: 'train', name: '训练场', icon: 'trainDummy', fallback: 'upgAtk',
+        desc: '木桩 DPS · 4 秒试挥\n试武器与锻造加成', status: '按武器冷却自动试挥',
+        accent: 0x9fe0ff, action: () => this.openTrain(),
+      },
+    ];
+
+    entries.forEach((e, i) => {
+      const x = 12 + i * (CW + 8);
+      const card = makeCard(this, {
+        x, y: topY, w: CW, h: topH, accent: e.accent,
+        onClick: e.action,
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      card.add(this.add.image(32, 32, this.safeTex(e.icon, e.fallback), 0)
+        .setDisplaySize(48, 48));
+      card.add(makeText(this, 62, 9, e.name, 'h2', { color: UI.text.heading }));
+      card.add(makeText(this, 62, 26, e.status, 'muted', {
+        color: UI.text.info, wordWrap: { width: CW - 70, useAdvancedWrap: true },
+      }));
+      card.add(makeText(this, 10, 56, e.desc, 'body', {
+        color: UI.text.body, lineSpacing: 2,
+        wordWrap: { width: CW - 20, useAdvancedWrap: true },
+      }));
+    });
+
+    this.keep(this.add.text(12, npcY - 14, 'NPC 区 · 归途小屋的常驻住客', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
+    }));
+
+    NPCS.forEach((npc, i) => {
+      const x = 12 + i * (CW + 8);
+      const d = npcDialogue(npc.id, this.meta) || npc;
+      const card = makeCard(this, {
+        x, y: npcY, w: CW, h: npcH, accent: npc.accent,
+        onClick: () => this.openNpc(npc.id),
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      card.add(this.add.image(42, 52, this.safeTex(npc.face, 'faceNinja'), 0)
+        .setDisplaySize(52, 52));
+      card.add(makeText(this, 78, 12, npc.name, 'h2', { color: UI.text.heading }));
+      card.add(makeText(this, 78, 30, npc.role, 'muted', {
+        color: UI.text.info, wordWrap: { width: CW - 84, useAdvancedWrap: true },
+      }));
+      card.add(makeText(this, 10, 76, '“' + (d.lines && d.lines[0] ? d.lines[0] : '……') + '”', 'body', {
+        color: UI.text.body, lineSpacing: 2,
+        wordWrap: { width: CW - 20, useAdvancedWrap: true },
+      }));
+      card.add(makeText(this, 10, npcH - 18, '点击交谈 →', 'body', { color: UI.text.gold }));
+    });
+  }
+
+  /* ---------- 批 13：弹层底座 ---------- */
+  addModalText(x, y, text, role = 'body', opts = {}) {
+    const t = makeText(this, x, y, text, role, opts).setDepth(520);
+    this.modalObjs.push(t);
+    return t;
+  }
+
+  addModalImage(x, y, key, fallback, w = 0, h = 0) {
+    const img = this.add.image(x, y, this.safeTex(key, fallback), 0).setDepth(520);
+    if (w && h) img.setDisplaySize(w, h);
+    this.modalObjs.push(img);
+    return img;
+  }
+
+  addModalButton(opts) {
+    const b = makeButton(this, { ...opts, depth: 522 });
+    this.modalObjs.push(b.container, b.hit);
+    return b;
+  }
+
+  modalFrame({ w, h, title, subtitle = '' }) {
+    this.closeModal();
+    this.modalOpen = true;
+    const pw = Math.min(w, S.W - 24);
+    const ph = h;
+    const px = Math.round((S.W - pw) / 2);
+    const py = Math.round((S.H - ph) / 2 + 4);
+    const dim = this.add.rectangle(0, 0, S.W, S.H, 0x000000, UI.alpha.overlay)
+      .setOrigin(0).setDepth(500).setInteractive({ useHandCursor: true });
+    dim.on('pointerdown', () => this.closeModal());
+    this.modalObjs = [dim];
+    const panel = makePanel(this, { x: px, y: py, w: pw, h: ph, variant: 'raised', depth: 510 });
+    this.modalObjs.push(panel.container);
+    const block = this.add.rectangle(px, py, pw, ph, 0, 0).setOrigin(0)
+      .setDepth(510.2).setInteractive();
+    this.modalObjs.push(block);
+    this.addModalText(px + 16, py + 10, title, 'h1', { color: UI.text.heading });
+    if (subtitle) this.addModalText(px + 16, py + 38, subtitle, 'muted', {
+      color: UI.text.muted, wordWrap: { width: pw - 100, useAdvancedWrap: true },
+    });
+    this.addModalButton({
+      x: px + pw - 66, y: py + 10, w: 56, h: 20, label: '关闭',
+      variant: 'ghost', onClick: () => this.closeModal(),
+    });
+    this.modalEnter = () => this.closeModal();
+    return { x: px, y: py, w: pw, h: ph };
+  }
+
+  closeModal() {
+    if (this.trainTimer) { this.trainTimer.remove(); this.trainTimer = null; }
+    if (this.trainStop) { this.trainStop.remove(); this.trainStop = null; }
+    if (this.modalObjs) {
+      this.modalObjs.forEach((o) => { try { if (o && o.destroy) o.destroy(); } catch (e) {} });
+    }
+    this.modalObjs = [];
+    this.modalOpen = false;
+    this.modalEnter = null;
+    this.trainText = null;
+    this.trainHits = 0;
+    this.trainTotal = 0;
+  }
+
+  /* ---------- 批 13：锻造坊 ---------- */
+  forgeWeaponName(id) {
+    return this.weaponName(id) || id;
+  }
+
+  openForge() {
+    const pw = Math.min(600, S.W - 24);
+    const f = this.modalFrame({
+      w: pw, h: 250, title: '锻造坊',
+      subtitle: '金币升级武器，普通锻造 Lv.3 封顶；支线图纸解锁 Lv.4',
+    });
+    const meta = loadSave();
+    this.meta = meta;
+    this.coinText.setText(String(meta.coins || 0));
+    this.addModalText(f.x + f.w - 180, f.y + 40, '金币 ' + (meta.coins || 0), 'gold', {
+      color: UI.text.gold, origin: [1, 0], wordWrap: { width: 160, useAdvancedWrap: true },
+    });
+    const weapons = ((window.__weaponsData && window.__weaponsData.list) || []);
+    const unlocked = meta.unlockedWeapons || [];
+    const cols = 3;
+    const gap = 8;
+    const cw = Math.floor((f.w - 24 - gap * (cols - 1)) / cols);
+    const ch = 86;
+    const y0 = f.y + 60;
+
+    weapons.slice(0, 6).forEach((w, i) => {
+      const x = f.x + 12 + (i % cols) * (cw + gap);
+      const y = y0 + Math.floor(i / cols) * (ch + 8);
+      const lv = forgeLevel(meta, w.id);
+      const next = forgeNext(meta, w.id);
+      const on = unlocked.indexOf(w.id) >= 0;
+      const card = makeCard(this, {
+        x, y, w: cw, h: ch, accent: on ? UI.color.gold : UI.color.neutral,
+        state: on ? 'default' : 'locked', depth: 511,
+      });
+      this.modalObjs.push(card.container, card.hit);
+      card.add(this.add.image(28, 30, w.icon || 'wKatana', 0).setDisplaySize(36, 36));
+      card.add(makeText(this, 50, 8, w.name, 'h2', {
+        color: on ? UI.text.heading : UI.text.nameLocked,
+      }));
+      card.add(makeText(this, cw - 8, 8, 'Lv.' + lv, 'body', {
+        color: on ? UI.text.gold : UI.text.locked, origin: [1, 0],
+      }));
+      card.add(makeText(this, 50, 26, on ? '伤害 +' + forgeBonus(lv) + '%' : '未解锁', 'body', {
+        color: on ? UI.text.info : UI.text.locked,
+      }));
+      if (!on) {
+        card.add(makeText(this, 10, 60, '先去武器页解锁', 'muted', { color: UI.text.locked }));
+      } else if (!next) {
+        card.add(makeText(this, 10, 60, '已到 Lv.4 · 星火', 'body', { color: UI.text.info }));
+      } else {
+        const blueprintLocked = !!next.blueprint && !hasBlueprint(meta, w.id);
+        const label = blueprintLocked
+          ? '图纸未获得'
+          : '升级 ' + next.label + ' · ' + next.cost;
+        const btn = this.addModalButton({
+          x: x + 10, y: y + 62, w: cw - 20, h: 20, label,
+          variant: 'ghost', state: blueprintLocked ? 'disabled' : 'normal',
+          onClick: () => this.upgradeForge(w.id),
+        });
+        card.add(makeText(this, 10, 46,
+          blueprintLocked ? '支线图纸' : next.name,
+          'muted', { color: on ? UI.text.muted : UI.text.locked }));
+        btn.setVisible(true);
+      }
+    });
+  }
+
+  upgradeForge(id) {
+    const meta = loadSave();
+    const lv = forgeLevel(meta, id);
+    const next = forgeNext(meta, id);
+    if (!next) { this.toast('这把武器已经满级'); return; }
+    if (next.blueprint && !hasBlueprint(meta, id)) {
+      this.toast('需要支线图纸才能开 Lv.4');
+      return;
+    }
+    if ((meta.unlockedWeapons || []).indexOf(id) < 0) {
+      this.toast('先解锁这把武器');
+      return;
+    }
+    if ((meta.coins || 0) < next.cost) {
+      this.toast('金币不够：还差 ' + (next.cost - (meta.coins || 0)));
+      return;
+    }
+    const forge = { ...(meta.forge || {}), [id]: lv + 1 };
+    this.meta = patchSave({ coins: (meta.coins || 0) - next.cost, forge });
+    this.coinText.setText(String(this.meta.coins || 0));
+    try { this.sound.play('bonus', { volume: 0.7 }); } catch (e) {}
+    this.toast(this.forgeWeaponName(id) + ' → Lv.' + (lv + 1));
+    this.openForge();
+  }
+
+  /* ---------- 批 13：训练场 ---------- */
+  openTrain() {
+    const f = this.modalFrame({
+      w: Math.min(600, S.W - 24), h: 230, title: '训练场',
+      subtitle: '木桩无限血；按武器冷却自动试挥 4 秒，读出基准 DPS',
+    });
+    const meta = loadSave();
+    const weapons = ((window.__weaponsData && window.__weaponsData.list) || []);
+    const unlocked = meta.unlockedWeapons || [];
+    const list = weapons.filter((w) => unlocked.indexOf(w.id) >= 0);
+    if (!list.length) return;
+    if (!list.some((w) => w.id === this.trainPick)) this.trainPick = list[0].id;
+    const picked = list.find((w) => w.id === this.trainPick) || list[0];
+
+    this.addModalImage(f.x + 62, f.y + 112, 'trainDummy', 'upgAtk', 72, 72);
+    this.addModalText(f.x + 24, f.y + 158, '木桩 · 无限 HP', 'gold', { color: UI.text.gold });
+    this.addModalText(f.x + 24, f.y + 178, '基准角色伤害 × 武器倍率 × 锻造', 'muted', {
+      color: UI.text.muted, wordWrap: { width: 100, useAdvancedWrap: true },
+    });
+
+    const bx = f.x + 142;
+    const by = f.y + 58;
+    const bw = 130;
+    list.slice(0, 6).forEach((w, i) => {
+      const x = bx + (i % 2) * (bw + 8);
+      const y = by + Math.floor(i / 2) * 30;
+      this.addModalButton({
+        x, y, w: bw, h: 24,
+        label: (w.id === picked.id ? '● ' : '') + w.name,
+        variant: 'ghost',
+        onClick: () => { this.trainPick = w.id; this.openTrain(); },
+      });
+    });
+
+    this.trainText = this.addModalText(bx, f.y + 164, '选一把武器，点“开始试挥”', 'body', {
+      color: UI.text.body, wordWrap: { width: f.w - 158, useAdvancedWrap: true },
+    });
+    this.addModalButton({
+      x: bx, y: f.y + 190, w: 160, h: 24,
+      label: '开始 4 秒试挥', variant: 'ghost',
+      onClick: () => this.startTrain(picked),
+    });
+    const lv = forgeLevel(meta, picked.id);
+    this.addModalText(bx + 174, f.y + 194, picked.name + ' · Lv.' + lv, 'muted', {
+      color: UI.text.muted, wordWrap: { width: f.w - 330, useAdvancedWrap: true },
+    });
+  }
+
+  startTrain(weapon) {
+    if (!weapon) return;
+    const meta = loadSave();
+    const dmg = Math.round(CFG.playerDmg * weapon.dmgMul * forgeMul(meta, weapon.id));
+    const cd = Math.max(120, Math.round(weapon.cd));
+    if (this.trainTimer) { this.trainTimer.remove(); this.trainTimer = null; }
+    if (this.trainStop) { this.trainStop.remove(); this.trainStop = null; }
+    this.trainHits = 0;
+    this.trainTotal = 0;
+    this.trainExpected = Math.max(1, Math.floor(4000 / cd));
+    this.trainText.setText('试挥中… ' + weapon.name + ' · 每 ' + cd + 'ms 一击');
+    this.trainTimer = this.time.addEvent({
+      delay: cd, loop: true, callback: () => {
+        if (!this.trainText) return;
+        this.trainHits += 1;
+        this.trainTotal += dmg;
+        if (this.trainHits >= this.trainExpected) {
+          this.finishTrain();
+          return;
+        }
+        this.trainText.setText('试挥中 · ' + this.trainHits + ' 击 · 总伤 ' + this.trainTotal);
+      },
+    });
+  }
+
+  finishTrain() {
+    if (this.trainTimer) { this.trainTimer.remove(); this.trainTimer = null; }
+    if (this.trainStop) { this.trainStop.remove(); this.trainStop = null; }
+    if (!this.trainText) return;
+    const dps = this.trainTotal / 4;
+    this.trainText.setText('4.0s · ' + this.trainHits + ' 击 · 总伤 ' + this.trainTotal
+      + ' · DPS ' + dps.toFixed(1));
+    try { this.sound.play('bonus', { volume: 0.45 }); } catch (e) {}
+  }
+
+  /* ---------- 批 13：NPC 对话 ---------- */
+  openNpc(id) {
+    const d = npcDialogue(id, loadSave());
+    if (!d) return;
+    const f = this.modalFrame({
+      w: Math.min(560, S.W - 24), h: 200, title: d.name,
+      subtitle: d.role + ' · ESC / 右键关闭',
+    });
+    this.addModalImage(f.x + 54, f.y + 112, d.face, 'faceNinja', 72, 72);
+    this.addModalText(f.x + 102, f.y + 64, d.lines.join('\n'), 'body', {
+      color: UI.text.body, lineSpacing: 6,
+      wordWrap: { width: f.w - 130, useAdvancedWrap: true },
+    });
+    this.addModalButton({
+      x: f.x + f.w - 146, y: f.y + f.h - 34, w: 130, h: 24,
+      label: '结束交谈', variant: 'ghost', onClick: () => this.closeModal(),
     });
   }
 

@@ -5,6 +5,7 @@ import { makeDungeon } from '../systems/dungeon.js';
 import { setMood, stopMusic, toggleMute, isMuted, unlockMusic, musicState, setMuted } from '../systems/music.js';
 import { loadSave, patchSave, resetSave, saveVersion } from '../systems/save.js';
 import { normalizeWeapons, rollWeapon } from '../systems/weapons.js';
+import { applyForgeLevels } from '../systems/forge.js';
 import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../systems/talents.js';
 import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions } from '../systems/options.js';
@@ -143,6 +144,7 @@ export class Play extends Phaser.Scene {
     this.shots = [];          // 敌人射出的弹（会伤害玩家）
     this.bolts = [];          // 玩家射出的弹（会伤害敌人）
     this.W = normalizeWeapons(window.__weaponsData);
+    applyForgeLevels(this.W, this.meta);
     this.weapon = this.W.byId[this.char.weapon] || this.W.byId[this.W.global.startWeapon];
     // 批 7：只有已解锁的武器进掉落池；职业起始武器永远保底，别让空池把掉落打崩
     const unlockedW = this.meta.unlockedWeapons || [];

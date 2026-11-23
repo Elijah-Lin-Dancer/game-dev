@@ -149,6 +149,12 @@ const img = {
   worldTree: join(ROOT, 'assets/01-primary/world/tree-green.png'),
   worldBush: join(ROOT, 'assets/01-primary/world/bush-green.png'),
   caveMouth: join(ROOT, 'assets/01-primary/world/cave-mouth.png'),
+  /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
+  faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
+  faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
+  faceMerchant: join(ROOT, 'assets/01-primary/hub/npc-merchant.png'),
+  forgeAnvil: join(ROOT, 'assets/01-primary/hub/forge-anvil.png'),
+  trainDummy: join(ROOT, 'assets/01-primary/hub/train-dummy.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -187,6 +193,8 @@ const FRAME = {
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
   herb: [16, 16],
   worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
+  faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
+  forgeAnvil: [64, 64], trainDummy: [64, 64],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */

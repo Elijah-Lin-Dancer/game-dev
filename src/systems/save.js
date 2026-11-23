@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 7;
+const VERSION = 8;
 
 const defaults = () => ({
   v: VERSION,
@@ -19,6 +19,10 @@ const defaults = () => ({
   chars: ['ninja'],  // 已解锁角色（批 7 起默认只有忍者，法师/骑士用宝石解锁）
   gem: 0,            // 宝石（批 7）：Boss 掉 1–3、通关 +5，只用于解锁
   unlockedWeapons: ['katana', 'bigsword', 'wand', 'kunai'], // 已解锁武器（bow/hammer 要买）
+  // 批 13：锻造等级。键 = 武器 id，值 = 2..4；缺省/1 都是 Lv.1
+  forge: {},
+  // 批 13：支线图纸。只有拿到对应武器图纸，锻造才能进 Lv.4
+  blueprints: [],
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
   stars: {},
@@ -65,6 +69,23 @@ function sanitizeWeapons(v) {
   const list = WEAPONS.filter((id) => v.includes(id));
   if (!list.includes('katana')) list.unshift('katana');
   return list;
+}
+
+/* 锻造等级：只允许已入库武器，值夹到 1–4；Lv.1 不写，避免空对象膨胀 */
+function sanitizeForge(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  WEAPONS.forEach((id) => {
+    const lv = Math.max(1, Math.min(4, Math.round(num(v[id], 1))));
+    if (lv > 1) out[id] = lv;
+  });
+  return out;
+}
+
+/* 图纸：只允许已入库武器 id，不重复 */
+function sanitizeBlueprints(v) {
+  if (!Array.isArray(v)) return [];
+  return WEAPONS.filter((id) => v.includes(id));
 }
 
 /* 星级表：键必须匹配 "章:关"，值夹到 0–3；坏键直接丢掉，避免存档被垃圾键撑大 */
@@ -120,6 +141,8 @@ function migrate(old) {
     roomsSeen: sanitizeSeen(old.roomsSeen),
     lastChar: ['ninja', 'mage', 'knight'].includes(old.lastChar) ? old.lastChar : 'ninja',
     chars: sanitizeChars(old.chars),
+    forge: sanitizeForge(old.forge),
+    blueprints: sanitizeBlueprints(old.blueprints),
     gem: num(old.gem),
     stars: sanitizeStars(old.stars),
     diffSel: sanitizeDiffSel(old.diffSel),
@@ -159,6 +182,8 @@ export function patchSave(patch) {
   next.cycle = Math.max(1, num(next.cycle, 1));
   next.roomsSeen = sanitizeSeen(next.roomsSeen);
   next.chars = sanitizeChars(next.chars);
+  next.forge = sanitizeForge(next.forge);
+  next.blueprints = sanitizeBlueprints(next.blueprints);
   next.stars = sanitizeStars(next.stars);
   next.diffSel = sanitizeDiffSel(next.diffSel);
   next.tierStars = sanitizeTierStars(next.tierStars);
