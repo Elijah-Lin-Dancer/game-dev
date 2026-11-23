@@ -235,3 +235,18 @@
 | Q-7 | 图鉴 25 怪 / 11 Boss | `markSeen` 全量后 Hall 截图 | 通过；`enemies 25/25`、`bosses 11/11`、`bossRows=11`（`b12b-5-hall.png`） |
 | Q-8 | 单文件版可起终章 | `web/game.html?debug` 起 `final`，读数据/字体/Boss | 通过；1817 KB；`__bossesData` 11 条、`NinjaPixel` 可用、`weaver` 三幕；`errs=[]`（`b12b-6-single.png`） |
 | Q-9 | 12A 火雨回归 | 起 `lava` 战斗房，强制 `rainOn/fireRainT=0` 调 `updateFireRain` | 通过；`burn=3`，火雨 2 圈，落点均在玩家 ±132 内；`errs=[]` |
+
+## S. 九段剧情 / 六张章节卡 / 终章（2026-11-23 追加，批 15）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| S-1 | 首次开始冒险播序章，结束回 Map | Title `choose()` → `story`，读 `id/next`，跳过 / 读完 | 通过；`prologue / {scene:'map'}`，`seen.prologue=1`，Map `mode=chapters` |
+| S-2 | 顺序且只触发一次 | 竹林 / 沙海 / 沉水 / 熔岩逐章打开；同章再开；Hall / Title 二次进入 | 通过；`ch1→ch2→ch3→ch4→ch5` 按 requires；重复不触发 |
+| S-3 | 赤武士战后 `ch2` | `play.win()` 读 `overlayBack`，Enter 回 Map | 通过；`{chapterId:'fort',stage:3,story:'ch2'}`，播 `ch2` 后回 Map |
+| S-4 | 终章 coda 与结局回小屋 | final `win()` → Enter → Story；读完 4 行 + 3 行 coda | 通过；`next={scene:'hall'}`，结束 active `['hall']`，`ended=true / cycle=2`，无自动 cycle2 |
+| S-5 | 后日谈与再燃 | `special:'epilogue'` 结算；Hall `cycle=2 + final + epilogue` | 通过；`epilogue` 播完回 Map；Hall 再进触发 `cycle2`，同次再进不触发 |
+| S-6 | 跳过 | `ESC` 序章、`S` ch1 | 通过；都直接回 Map，`seen` 已写，二次进入不重播 |
+| S-7 | v9→v10 迁移 | 删除 `story` 的 v9 种子，reload | 通过；`v=10`、`story={seen:{},ended:false}` 立即落盘；序章后 `seen.prologue=1` |
+| S-8 | 单文件 | `web/game.html` 1,992,758 B，序章卡 | 通过；9 节点 / 6 卡，`errs=[]` |
+| S-9 | 960 / 640 | 6 卡 + 对话框 + coda + Hall + cycle2 | 通过；内部 640×360，960 为 CSS 1.5×；无溢出 |
+| S-10 | 返回栈 | 章节卡回 Map 后 `back` 到 Title；final 回 Hall | 通过；`replace()` 同场景不重复压栈 |
