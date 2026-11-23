@@ -1,0 +1,43 @@
+{
+  "width": 64,
+  "height": 64,
+  "tileWidth": 64,
+  "tileHeight": 64,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0.1,
+    0.62,
+    0.05
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.36,
+      "pitch": 0.24,
+      "unitsPerPixel": 0.03658480891202693,
+      "depthOrigin": 13.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "pivot": {
+        "x": 32,
+        "y": 32
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "anvil.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames are left-to-right, one row, directions 0..3"
+}

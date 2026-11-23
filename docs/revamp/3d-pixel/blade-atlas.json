@@ -1,0 +1,103 @@
+{
+  "width": 320,
+  "height": 80,
+  "tileWidth": 80,
+  "tileHeight": 80,
+  "directions": 4,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.15,
+    0
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.18,
+      "pitch": 0.1,
+      "unitsPerPixel": 0.046484227794104806,
+      "depthOrigin": 15.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 80
+      },
+      "pivot": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 1,
+      "yaw": 1.7507963267948965,
+      "pitch": 0.1,
+      "unitsPerPixel": 0.046484227794104806,
+      "depthOrigin": 15.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 80,
+        "y": 0,
+        "width": 80,
+        "height": 80
+      },
+      "pivot": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 2,
+      "yaw": 3.3215926535897933,
+      "pitch": 0.1,
+      "unitsPerPixel": 0.046484227794104806,
+      "depthOrigin": 15.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 160,
+        "y": 0,
+        "width": 80,
+        "height": 80
+      },
+      "pivot": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 3,
+      "yaw": 4.892388980384689,
+      "pitch": 0.1,
+      "unitsPerPixel": 0.046484227794104806,
+      "depthOrigin": 15.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 240,
+        "y": 0,
+        "width": 80,
+        "height": 80
+      },
+      "pivot": {
+        "x": 40,
+        "y": 40
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "blade.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames are left-to-right, one row, directions 0..3"
+}

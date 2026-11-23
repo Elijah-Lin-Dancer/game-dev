@@ -1,0 +1,103 @@
+{
+  "width": 384,
+  "height": 96,
+  "tileWidth": 96,
+  "tileHeight": 96,
+  "directions": 4,
+  "fps": 12,
+  "pivot": [
+    0,
+    1.25,
+    0.35
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.35,
+      "pitch": 0.2,
+      "unitsPerPixel": 0.045910348438622024,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 1,
+      "yaw": 1.9207963267948966,
+      "pitch": 0.2,
+      "unitsPerPixel": 0.045910348438622024,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 96,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 2,
+      "yaw": 3.491592653589793,
+      "pitch": 0.2,
+      "unitsPerPixel": 0.045910348438622024,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 192,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 3,
+      "yaw": 5.062388980384689,
+      "pitch": 0.2,
+      "unitsPerPixel": 0.045910348438622024,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 288,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "boss.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames are left-to-right, one row, directions 0..3"
+}

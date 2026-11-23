@@ -124,13 +124,13 @@ NPC 弧光：引路人（守夜人，主线推进）、铁匠（前朝铸剑师�
 | **12B · 终章（已完成）** | 影织者三阶段、终章编排、结局衔接 | `play.js`、`bosses.json`、`chapters.json` | Q1 终章 1 房可进；Q2 三幕可复现；Q3 结局写周目；见 `docs/BATCH12B-FINAL.md` |
 | **G0 · 开放世界雏形（已完成）** | 3 屏、2 气候、采集+1 NPC、`na.world` | `src/scenes/world.js`、`web/data/world.json`、`src/systems/worldSave.js` | W1–W5；见 `docs/G0.md` |
 | **G1 · 草原群系（已完成）** | 6 屏草原、台地/洞穴、晴/雨/雾、11 草药 + 委托、世界 Boss、`na.world v2` | `src/scenes/world.js`、`web/data/world.json`、`src/systems/worldSave.js`、`tools/build.mjs` | G1-1～G1-9；见 `docs/G1.md` |
-| **13 · 小屋** | 出发台/锻造/训练场 + 3 NPC | `hall.js`、`systems/forge.js`、`systems/npc.js` | Q1 锻造落盘生效；Q2 DPS 可读；Q3 对话不挡操作 |
+| **13 · 小屋（已完成）** | 出发台/锻造/训练场 + 3 NPC | `hall.js`、`systems/forge.js`、`systems/npc.js`、`save.js` v8 | Q1 锻造落盘生效；Q2 DPS 可读；Q3 对话不挡操作；见 `docs/BATCH13-HOUSE.md` |
 | **14 · 支线/隐藏/条件** | 13 个额外关的条件判定、入口、奖励 | `side.json`、`stages.js`、`map.js` | R1 条件未达不可进；R2 达成可进；R3 奖励入档 |
 | **15 · 剧情** | 9 段对话 + 6 张过场卡 + 结局 | `story.json`、`scenes/cutscene.js` | S1 顺序且只触发一次；S2 跳过可用；S3 结局回小屋 |
 | **16 · 元进度** | 20 成就 + 第二技能 + 周目词条 | `systems/ach.js`、`chars.json` | T1 成就 toast 与存档；T2 第二技能计费；T3 词条生效 |
 | **17 · 工程化** | PWA、移动端、首屏预算、冒烟脚本 | `manifest.json`、`systems/input.js`、`tools/smoke.mjs` | U1 手机可玩；U2 首屏 <2 MB；U3 冒烟 3 分钟 |
 
-**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ 13 → 14 → 15 → 16 → 17 → G2–G3。
+**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → 14 → 15 → 16 → 17 → G2–G3。
 
 ---
 

@@ -19,6 +19,8 @@
 
 | Fusion Pixel 12px Mono zh-Hans（子集改名 NinjaPixel） | TakWolf | OFL 1.1（已随文件入库） | https://github.com/TakWolf/fusion-pixel-font （release 2026.11.10） | 是（OFL 要求保留协议；已改名，未使用保留字体名） | `Font: Fusion Pixel Font by TakWolf — https://github.com/TakWolf/fusion-pixel-font (SIL OFL 1.1)` | `assets/01-primary/fonts/OFL.txt` |
 
+| 归途小屋 3D 像素件（引路人 / 铁匠 / 商人 / 铁砧 / 木桩） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/hub/ink-studio-LICENSE.txt` |
+
 ## 鸣谢页生成
 
 把「是否需署名」为「是」的行，取「署名模板」列拼成一段文本，直接用于游戏的关于页。

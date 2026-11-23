@@ -2,9 +2,13 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
-当前段：G1 草原群系「远征」完成。`src/scenes/world.js` 重写为 6 屏横向草原（单屏 480×272 / 30×17 格，世界 2880），加入台地 / 洞穴三层、晴 / 小雨 / 雾三种天气、11 丛草药、村医「草药五株」委托与第六屏世界 Boss「苔背巨兽」；`web/data/world.json` 升 v2，`worldSave.js` 升 `na.world v2`（旧 G0 的 field/bamboo/desert 映射到 field-1/3/6），`tokens.js` 补世界色板，`build.mjs` 新增树 / 灌木 / 洞口三张 CC0 裁切，图集 121 切片。构建 `game.0fa069a3.js`（250,730 B）+ `assets.de64aa63.js`（101,418 B），单文件 1,945,038 B；六屏实际 D 连通、台地 W 上 / S 下、洞穴 S 进 / W 出、草药 0→2→4→6 + 交付 `quest=done/tokens=1`、Boss 实际伤害 20→16→8→0 + R 重试、确定性 56→0 击杀 + `boss=done/tokens=3`、旧档迁移与 `na.save` 隔离、640×360 / 单文件 / `errs=[]` 均通过；无头 Chromium 原始 rAF 30 Hz 上限，已如实记录。详见 `docs/G1.md`，截图在 `docs/revamp/g1/`。
+当前段：批 13 归途小屋完成。Hall 改四页签 `武器 / 角色 / 图鉴 / 小屋`；小屋页三张顶卡「出发台 / 锻造坊 / 训练场」+ 三张 NPC 卡「引路人 / 铁匠 / 商人」；锻造 Lv.1–4（1.20 / 1.35 / 1.50，60 / 140 / 260 金币，普通封顶 Lv.3、Lv.4 需图纸），`na.save` 升 v8（`forge / blueprints`），训练场 4 秒 DPS，NPC 弹层 ESC / 右键只关当前层。5 件 64×64 3D 像素件由 ink-studio 离线生成并入图集（121→126 切片），运行时仍不接 splat 渲染器。构建 `game.f2323f2e.js`（265,105 B）+ `assets.cf4685ab.js`（101,724 B），单文件 1,966,839 B；Q1 锻造 300→240 落盘、刷新后 `forge.katana=2`、Play `wdmg()=4`；Q2 训练 `4.0s · 14 击 · 总伤 56 · DPS 14.0`；Q3 引路人 / 铁匠 / 商人关闭后都能继续打开锻造坊；960×540 / 640×360 / 单文件 `errs=[]`。详见 `docs/BATCH13-HOUSE.md`，截图在 `docs/revamp/b13/`，3D 源在 `docs/revamp/b13-3d/`。代码 / 构建 `712d2c3`；文档随本提交，推送待确认。
 
-当前段：G0 开放世界雏形「远征」完成。新增 `src/scenes/world.js`（3 屏横向世界 / 镜头跟随 / 无黑场 / 雨与沙尘 / HUD 与对话面板）、`src/systems/worldSave.js`（独立 `na.world` v1）、`web/data/world.json`（草原 / 竹林 / 沙漠、3 丛草药、村医、采 5 草药委托）；`hall.js` 页眉加东门入口，竹林 5 关全通后开放；`main.js` 场景表追加 `World`，`boot.js` 装载 `worldData`；`tokens.js` 加 `UI.world`；图集 118 切片。构建 `dist/game.6efe7a48.js`（231,951 B）+ `assets.bf95b651.js`（99,414 B），单文件 1,921,123 B。W1 三屏 0→2、W2 小雨 / 沙尘可分、W3 采集 0→2→4→6 与交付 `quest=done/tokens=1`、W4 `errs=[]`、W5 world 50.1 vs Play 50.9 fps 全部通过；960×540 / 640×360、东门进入 / ESC 回小屋、刷新恢复、`na.save` 隔离与单文件冒烟通过。代码 / 构建 `412b7d4`、文档 / 16 张截图 `fc39c3e` 已推送；Pages 已切到 `game.6efe7a48.js`，线上草原 / 沙漠 / 东门进入实测通过，`errs=[]`（4 张线上截图见 `docs/revamp/g0/`）。
+上一段：G1 草原群系「远征」完成。`src/scenes/world.js` 重写为 6 屏横向草原（单屏 480×272 / 30×17 格，世界 2880），加入台地 / 洞穴三层、晴 / 小雨 / 雾三种天气、11 丛草药、村医「草药五株」委托与第六屏世界 Boss「苔背巨兽」；`web/data/world.json` 升 v2，`worldSave.js` 升 `na.world v2`（旧 G0 的 field/bamboo/desert 映射到 field-1/3/6），`tokens.js` 补世界色板，`build.mjs` 新增树 / 灌木 / 洞口三张 CC0 裁切，图集 121 切片。构建 `game.0fa069a3.js`（250,730 B）+ `assets.de64aa63.js`（101,418 B），单文件 1,945,038 B；六屏实际 D 连通、台地 W 上 / S 下、洞穴 S 进 / W 出、草药 0→2→4→6 + 交付 `quest=done/tokens=1`、Boss 实际伤害 20→16→8→0 + R 重试、确定性 56→0 击杀 + `boss=done/tokens=3`、旧档迁移与 `na.save` 隔离、640×360 / 单文件 / `errs=[]` 均通过；无头 Chromium 原始 rAF 30 Hz 上限，已如实记录。详见 `docs/G1.md`，截图在 `docs/revamp/g1/`。
+
+更早：G0 开放世界雏形「远征」完成。新增 `src/scenes/world.js`（3 屏横向世界 / 镜头跟随 / 无黑场 / 雨与沙尘 / HUD 与对话面板）、`src/systems/worldSave.js`（独立 `na.world` v1）、`web/data/world.json`（草原 / 竹林 / 沙漠、3 丛草药、村医、采 5 草药委托）；`hall.js` 页眉加东门入口，竹林 5 关全通后开放；`main.js` 场景表追加 `World`，`boot.js` 装载 `worldData`；`tokens.js` 加 `UI.world`；图集 118 切片。构建 `dist/game.6efe7a48.js`（231,951 B）+ `assets.bf95b651.js`（99,414 B），单文件 1,921,123 B。W1 三屏 0→2、W2 小雨 / 沙尘可分、W3 采集 0→2→4→6 与交付 `quest=done/tokens=1`、W4 `errs=[]`、W5 world 50.1 vs Play 50.9 fps 全部通过；960×540 / 640×360、东门进入 / ESC 回小屋、刷新恢复、`na.save` 隔离与单文件冒烟通过。代码 / 构建 `412b7d4`、文档 / 16 张截图 `fc39c3e` 已推送；Pages 已切到 `game.6efe7a48.js`，线上草原 / 沙漠 / 东门进入实测通过，`errs=[]`（4 张线上截图见 `docs/revamp/g0/`）。
+
+素材策略：后续批 13–17 与 G2–G3 的角色 / Boss / 装备 / 摆件 / 背景主视觉走 `docs/ART_PIPELINE.md` 的 3D 像素离线管线；基础 16px tile 仍用现有 tile / 手绘，不换。工具地址与固定 commit 见该文档。
 
 上一批：P1-C-4 Play HUD / 浮层迁移。`play.js` HUD 文本、房名横幅、引路人对话、事件 / 商店 / 篝火 / 天赋、暂停、死亡结算统一接 `hudText / screenPanel / makeCard`，字号 12 / 24；`tokens.js` 新增 `UI.hud` 三档底色；事件 / 商店 / 篝火 ESC 改为先关面板，不再叠加暂停。构建 `dist/game.86f15d99.js`（211,017 B）+ `assets.5fb07765.js`（98,298 B），单文件 1,898,973 B；HUD / 暂停 / 结算 / 对话 / 事件 / 天赋 / 商店 / 篝火 / 限时计时 960×540 / 640×360 截图、实际 Title→Map→竹林村2→Select→Play、单文件冒烟 `errs=[]`。已推送 `a7a9b6c`（代码 / 构建）、`2313208`（文档 / 截图）；Pages 已切到 `game.86f15d99.js`，线上 Play HUD / 暂停 / 死亡结算实测通过，`errs=[]`。
 
@@ -29,6 +33,7 @@ P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / pr
 已完成的批 8：`src/systems/options.js`（独立 `na.options`，静音/震屏/难度）、`src/scenes/title.js`（标题 + 三菜单 + 设置 + 制作名单 + 篝火）、`play.js` 暂停面板与统一压暗层 `dim()`、`shake()` 开关、困难难度乘区、场景表改为 `Boot→Title→Hall→Select→Play`；验收 Y-1~Y-10 见 `docs/BATCH8-SHELL.md`
 
 已完成：
+- 批 13 归途小屋：四页签、出发台 / 锻造坊 / 训练场、3 NPC、`na.save v8`、5 件 3D 像素件；Q1–Q3、960/640、单文件通过（`docs/BATCH13-HOUSE.md`，构建 `dist/game.f2323f2e.js`）
 - G0 开放世界雏形：`src/scenes/world.js` + `web/data/world.json` + `worldSave.js`；3 屏草原→竹林→沙漠、雨/沙尘、3 丛草药 2 秒采集 / 90 秒重生、村医采 5 交付、独立 `na.world`、Hall 东门门槛入口；W1–W5 全过，960/640 / 单文件 / 刷新恢复 / `na.save` 隔离通过（`docs/G0.md`，构建 `dist/game.6efe7a48.js`）
 - P1-C-4 Play HUD / 浮层：`play.js` HUD 文本、房名横幅、引路人对话、事件 / 商店 / 篝火 / 天赋、暂停、死亡结算迁入 `hudText / screenPanel / makeCard`，字号收敛到 12 / 24；事件 / 商店 / 篝火 ESC 先关面板；960/640 截图、实际入口、单文件冒烟与线上 HUD / 暂停 / 结算通过，`errs=[]`（`docs/P1-C-4.md`，已推送 `a7a9b6c` / `2313208`）
 - P1-C-3 Title / Select / 设置 / 制作名单 / 难度层：`title.js`、`select.js`、`map.js openDiff()` 迁入 `tokens / primitives`，字号收敛到 12 / 24；960/640 截图、锁卡 toast、难度切换与单文件冒烟通过，`errs=[]`（`docs/P1-C-3.md`，已推送 `f34d355` / `e8098fe`，线上验证通过）
@@ -62,8 +67,8 @@ P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / pr
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **G2 五群系**：30 屏 + 10 委托 + 篝火传送 + 雪原 / 火山气候；G1 的 6 屏草原与 `na.world v2` 作为基线
-- 批 13 小屋：出发台/锻造/训练场 + 3 NPC
+- **批 14 的 13 个额外关**：支线 6 / 隐藏 3 / 条件 4 的条件判定、入口、奖励；`side.json`、`stages.js`、`map.js`
+- **G2 五群系**：按 G1 已完成 6 屏 / 1 Boss，剩余 4 群系 24 屏 + 4 世界 Boss；G1 的 6 屏草原与 `na.world v2` 作为基线
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD
 - 叙事层（NPC 对话/周目）与结算页对比历史最好
