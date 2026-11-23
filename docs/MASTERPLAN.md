@@ -122,7 +122,7 @@ NPC 弧光：引路人（守夜人，主线推进）、铁匠（前朝铸剑师�
 | **11 · 三、四章内容** | 沙漠/水素材接入、4 只 Boss、新怪 anchor、流沙/水沟机制 | `tools/build.mjs`、`web/data/*.json` | O1 皮肤可分；O2 流沙/水沟生效；O3 anchor 不飘 |
 | **12A · 五章（已完成）** | 熔岩素材、火雨/灼烧、9 关 ×10 房编排 | `tools/build.mjs`、`web/data/*.json`、`play.js` | P1 10 房关可通关；P3 火雨相对不掉帧；见 `docs/BATCH12A-LAVA.md` |
 | **12B · 终章（已完成）** | 影织者三阶段、终章编排、结局衔接 | `play.js`、`bosses.json`、`chapters.json` | Q1 终章 1 房可进；Q2 三幕可复现；Q3 结局写周目；见 `docs/BATCH12B-FINAL.md` |
-| **G0 · 开放世界雏形** | 3 屏、2 气候、采集+1 NPC、`na.world` | `scenes/world.js`、`world.json`、`worldSave.js` | W1–W5 |
+| **G0 · 开放世界雏形（已完成）** | 3 屏、2 气候、采集+1 NPC、`na.world` | `src/scenes/world.js`、`web/data/world.json`、`src/systems/worldSave.js` | W1–W5；见 `docs/G0.md` |
 | **13 · 小屋** | 出发台/锻造/训练场 + 3 NPC | `hall.js`、`systems/forge.js`、`systems/npc.js` | Q1 锻造落盘生效；Q2 DPS 可读；Q3 对话不挡操作 |
 | **14 · 支线/隐藏/条件** | 13 个额外关的条件判定、入口、奖励 | `side.json`、`stages.js`、`map.js` | R1 条件未达不可进；R2 达成可进；R3 奖励入档 |
 | **15 · 剧情** | 9 段对话 + 6 张过场卡 + 结局 | `story.json`、`scenes/cutscene.js` | S1 顺序且只触发一次；S2 跳过可用；S3 结局回小屋 |
