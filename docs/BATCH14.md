@@ -53,6 +53,7 @@
 | R-07 | 火盆与门锁 | `forge` 3 个火盆房：未点燃时当前房门锁 `visible=true`，点燃后 1/3→2/3→3/3，门锁逐房放行；HUD `火盆 0/3 → 1/3`；3 处点满后 Boss 方向门全部打开 |
 | R-08 | v8→v9 迁移 | v8 种子 `forge.katana=2`、`blueprints=['bigsword']`、`stars.bamboo:1=2` 保留；`v=9`、`resources=0`、`noHit/noRest={}`、`titles/flags=[]/{}` |
 | R-09 | 960 / 640 / 单文件 | 特殊覆盖层 960×540、640×360 无溢出；单文件 1,970,730 B 内 13/13 开卡、`forge` 火盆点火、首通 +40 宝石 + `fireEnchant` 入档，`errs=[]` |
+| R-10 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 入口 `game.7697c789.js` + `assets.76948dad.js`；13/13 全锁、13/13 全开；`forge` 点火 `0/3→1/3`；首次通关 +40 宝石 + `fireEnchant` 入档；`errs=[]`。首次加载约 30–35 秒（CDN 资源），加载完成后交互正常 |
 
 截图：
 
@@ -64,6 +65,8 @@
 - `docs/revamp/b14/b14-brazier-unlit-960.png`：未点火盆、HUD `火盆 0/3`
 - `docs/revamp/b14/b14-brazier-lit-960.png`：点燃后 `火盆 1/3`
 - `docs/revamp/b14/b14-single-960.png`：单文件特殊覆盖层
+- `docs/revamp/b14/b14-online-locked-960.png`：Pages 线上 13 卡全锁
+- `docs/revamp/b14/b14-online-specials-960.png`：Pages 线上 13 卡全开
 
 ## 5. 已知边界
 
@@ -82,4 +85,5 @@
 - 单文件：`web/game.html` 1,970,730 B
 - 入口：`index.html` → `game.7697c789.js` + `assets.76948dad.js`
 - 代码 / 构建本地提交：`6945e64`
+- 线上入口：`https://elijah-lin-dancer.github.io/game-dev/`；Pages 构建 `38940e2`，入口 `game.7697c789.js` + `assets.76948dad.js`
 - 本地 / 单文件全程 `errs=[]`；本轮未接新的 3D 素材，保留批 13 的 126 切片图集。
