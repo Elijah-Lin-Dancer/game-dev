@@ -1,7 +1,7 @@
 # 批 13：归途小屋（出发台 / 锻造坊 / 训练场 + 3 NPC）
 
 日期：2026-11-23
-状态：已推送 `712d2c3`（代码 / 构建）+ `4582ce6`（文档 / 截图）到 `origin/main`；Pages 已切到 `game.f2323f2e.js` + `assets.cf4685ab.js`，线上小屋 / 锻造 / 训练 / NPC 实测通过，`errs=[]`。运行时仍不接 ink-studio，3D 件只作为离线 PNG 进图集。
+状态：已推送 `712d2c3`（代码 / 构建）+ `4582ce6`（文档 / 截图）+ `51f7f39`（线上补验）到 `origin/main`；Pages 已切到 `game.f2323f2e.js` + `assets.cf4685ab.js`，线上小屋 / 锻造 / 训练 / NPC 实测通过，`errs=[]`。运行时仍不接 ink-studio，3D 件只作为离线 PNG 进图集。
 
 ## 1. 交付内容
 
