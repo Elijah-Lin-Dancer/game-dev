@@ -118,7 +118,7 @@ export function progress(save) {
 /* ---------- 特殊关卡（支线 / 隐藏 / 条件） ----------
  * 特殊关与主线分开记：键统一为 sp_<id>:1，不计入主线 ★ 与章节解锁。
  * 这里只做规格、条件判定与清关记录；timer / noCoinPickup / fists 已由 Play 消费，
- * braziers / noHitStage / resources / 多武器槽仍待接入。
+ * braziers / noHitStage / resources 已在批 14 接入；多武器槽仍待接入。
  */
 const SPECIAL_TYPES = [
   ['side', '支线'], ['hidden', '隐藏'], ['conditional', '条件'],
@@ -128,8 +128,8 @@ const SPECIAL_THEME = {
   kunai: 'field', fists: 'fort', poor: 'desert', speedrun: 'desert',
 };
 const GATE_LABEL = {
-  starsInChapter: '本章星级', beat: '击败 Boss', resources: '累计金币',
-  noHitStage: '无伤挑战', braziers: '火盆挑战', clear: '通关',
+  starsInChapter: '本章星级', beat: '击败 Boss', resources: '累计资源',
+  noHitStage: '无伤挑战', noRestInStage: '未用篝火通关', braziers: '火盆目标', clear: '通关',
   stars: '主线星级', fullStarsChapter: '全关三星', weapon: '解锁武器',
   coins: '累计金币',
 };
@@ -146,6 +146,7 @@ function specialRaw() {
         chapter: String(e.chapter || ''), rooms: Math.max(1, Math.round(num(e.rooms, 5))),
         gates: e.gates || {}, reward: e.reward || {}, bossPool: Array.isArray(e.bossPool) ? e.bossPool.map(String) : [],
         diff: num(e.diff, 0), rule: String(e.rule || ''), seconds: num(e.seconds, 0),
+        braziers: Math.max(0, Math.round(num(e.braziers, 0))),
         loadout: e.loadout || null,
       });
     });
@@ -189,13 +190,15 @@ function bossSeen(save, id) {
   return !!seen[id] || !!seen[SPECIAL_SEEN_BOSS[id]];
 }
 
-/* 条件是否达成。规则条件（noRest/noHit/braziers）没有独立 gate 时，用本章通关作为入口。 */
+/* 条件是否达成。noRest/noHit 是真实通关记录；braziers 是关内目标，不参与入口 gate。 */
 export function specialGateOk(save, s) {
   if (!s) return false;
   const g = s.gates || {};
   if (g.starsInChapter && s.chapter && chapterStars(save, s.chapter) < num(g.starsInChapter)) return false;
   if (g.beat && !bossSeen(save, String(g.beat))) return false;
-  if (g.resources && num(save && save.coins) < num(g.resources)) return false;
+  if (g.resources && num(save && save.resources) < num(g.resources)) return false;
+  if (g.noHitStage && !Object.keys((save && save.noHit) || {}).length) return false;
+  if (g.noRestInStage && !Object.keys((save && save.noRest) || {}).some((k) => k.indexOf('fort:') === 0)) return false;
   if (g.clear) {
     const id = String(g.clear);
     if (specials().some((x) => x.id === id)) { if (!specialCleared(save, id)) return false; }
@@ -207,8 +210,8 @@ export function specialGateOk(save, s) {
   if (g.coins && num(save && save.coins) < num(g.coins)) return false;
 
   // 只有规则、没有显式解锁条件的支线：本章通关即可进
-  const ruleOnly = !g.starsInChapter && !g.beat && !g.resources && !g.clear
-    && !g.stars && !g.fullStarsChapter && !g.weapon && !g.coins;
+  const ruleOnly = !g.starsInChapter && !g.beat && !g.resources && !g.noHitStage && !g.noRestInStage
+    && !g.clear && !g.stars && !g.fullStarsChapter && !g.weapon && !g.coins;
   if (ruleOnly && s.chapter && !chapterClear(save, s.chapter)) return false;
   return true;
 }
@@ -243,6 +246,7 @@ export function specialRuleLabel(s) {
   if (!s) return '';
   if (s.rule === 'timer') { const sec = Math.max(1, Math.round(num(s.seconds, 300))); return '限时 ' + sec + ' 秒'; }
   if (s.rule === 'noCoinPickup') return '本关不掉金币';
+  if (s.braziers) return '火盆 ×' + s.braziers + ' · 未点满锁门';
   const weapons = s.loadout && s.loadout.weapons;
   if (Array.isArray(weapons)) {
     if (!weapons.length) return '赤手空拳';
@@ -251,13 +255,45 @@ export function specialRuleLabel(s) {
   return '';
 }
 
+const REWARD_FLAG_LABEL = {
+  merchant: '商人线报',
+  skillDiscount: '第二技能折扣',
+  fireEnchant: '火焰附魔',
+  epilogue: '灰烬之后',
+};
+
+function weaponName(id) {
+  const list = (window.__weaponsData && window.__weaponsData.list) || [];
+  const w = list.find((x) => x.id === id);
+  return w ? w.name : id;
+}
+
+/* 首通奖励文案：宝石 / 图纸 / 称号 / 支线标记 */
+export function specialRewardLabel(s) {
+  const r = (s && s.reward) || {};
+  const parts = [];
+  if (r.gem) parts.push('+' + r.gem + ' 宝石');
+  if (r.blueprint) parts.push('图纸 · ' + weaponName(r.blueprint));
+  if (r.title === 'poor') parts.push('称号「贫者」');
+  if (r.flag && REWARD_FLAG_LABEL[r.flag]) parts.push(REWARD_FLAG_LABEL[r.flag]);
+  return parts.length ? parts.join(' · ') : '无首通奖励';
+}
+
 export function specialGateLabel(s, save) {
   if (!s) return '';
   const g = s.gates || {};
   const names = [];
   if (g.starsInChapter) names.push((GATE_LABEL.starsInChapter) + ' ' + chapterStars(save, s.chapter) + '/' + num(g.starsInChapter));
   if (g.beat) names.push(GATE_LABEL.beat + ' ' + String(g.beat));
-  if (g.resources) names.push(GATE_LABEL.resources + ' ' + num(save && save.coins) + '/' + num(g.resources));
+  if (g.resources) names.push(GATE_LABEL.resources + ' ' + num(save && save.resources) + '/' + num(g.resources));
+  if (g.noHitStage) {
+    const n = Object.keys((save && save.noHit) || {}).length;
+    names.push(GATE_LABEL.noHitStage + ' ' + n + '/1');
+  }
+  if (g.noRestInStage) {
+    const n = Object.keys((save && save.noRest) || {}).filter((k) => k.indexOf('fort:') === 0).length;
+    names.push(GATE_LABEL.noRestInStage + ' ' + n + '/1');
+  }
   if (g.clear) {
     const id = String(g.clear);
     const sp = specialById(id);
@@ -267,7 +303,6 @@ export function specialGateLabel(s, save) {
   if (g.fullStarsChapter) names.push(GATE_LABEL.fullStarsChapter + ' ' + ((chapterById(g.fullStarsChapter) || {}).name || g.fullStarsChapter));
   if (g.weapon) names.push(GATE_LABEL.weapon + ' ' + String(g.weapon));
   if (g.coins) names.push(GATE_LABEL.coins + ' ' + num(save && save.coins) + '/' + num(g.coins));
-  if (g.noHitStage) names.push(GATE_LABEL.noHitStage);
   if (g.braziers) names.push(GATE_LABEL.braziers + ' ×' + num(g.braziers));
   if (!names.length) names.push('无前置条件');
   return names.join(' · ');

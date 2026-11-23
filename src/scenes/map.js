@@ -7,7 +7,7 @@
 import { FONT, S } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
-import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel, specialRuleLabel } from '../systems/stages.js';
+import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel, specialRuleLabel, specialRewardLabel } from '../systems/stages.js';
 import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
@@ -676,7 +676,7 @@ export class MapScene extends Phaser.Scene {
     }
     const s = picked.s;
     const cleared = specialCleared(this.meta, s.id);
-    const reward = (s.reward && s.reward.gem) ? ('首通 +' + s.reward.gem + ' 宝石') : '无首通宝石';
+    const reward = specialRewardLabel(s);
     const rule = specialRuleLabel(s).replace(/kunai/g, '苦无');
     const base = s.chapter ? (' · ' + (chapterById(s.chapter) || {}).name) : '';
     const gate = picked.open ? '条件已达成' : ('条件未达成 · ' + this.gateLabel(s));

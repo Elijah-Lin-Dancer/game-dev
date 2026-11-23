@@ -251,7 +251,8 @@
    },
    "rooms": 3,
    "reward": {
-    "gem": 25
+    "gem": 25,
+    "blueprint": "bigsword"
    },
    "name": "旧堡地窖"
   },
@@ -263,7 +264,8 @@
    },
    "rooms": 5,
    "reward": {
-    "gem": 30
+    "gem": 30,
+    "flag": "merchant"
    },
    "name": "商队遗骸"
   },
@@ -275,7 +277,8 @@
    },
    "rooms": 4,
    "reward": {
-    "gem": 35
+    "gem": 35,
+    "flag": "skillDiscount"
    },
    "name": "沉船货舱"
   },
@@ -283,13 +286,15 @@
    "id": "forge",
    "chapter": "lava",
    "gates": {
-    "braziers": 3
+    "clear": "lava"
    },
    "rooms": 4,
    "reward": {
-    "gem": 40
+    "gem": 40,
+    "flag": "fireEnchant"
    },
-   "name": "熔炉核心"
+   "name": "熔炉核心",
+   "braziers": 3
   },
   {
    "id": "epilogue",
@@ -357,7 +362,10 @@
      "kunai"
     ]
    },
-   "name": "苦无试炼"
+   "name": "苦无试炼",
+   "reward": {
+    "gem": 15
+   }
   },
   {
    "id": "fists",
@@ -368,7 +376,10 @@
    "loadout": {
     "weapons": []
    },
-   "name": "赤手空拳"
+   "name": "赤手空拳",
+   "reward": {
+    "gem": 20
+   }
   },
   {
    "id": "poor",
@@ -377,7 +388,10 @@
    },
    "rooms": 6,
    "rule": "noCoinPickup",
-   "name": "贫者之路"
+   "name": "贫者之路",
+   "reward": {
+    "title": "poor"
+   }
   },
   {
    "id": "speedrun",
@@ -387,7 +401,10 @@
    "rooms": 5,
    "rule": "timer",
    "seconds": 300,
-   "name": "商队速递"
+   "name": "商队速递",
+   "reward": {
+    "gem": 25
+   }
   }
  ]
 }

@@ -10,7 +10,7 @@ import { normalizeTalents, rollTalents, mergeMods, RARITY_NAME } from '../system
 import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions } from '../systems/options.js';
 import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
-import { stageSpec, specialSpec, starsOf, starRating } from '../systems/stages.js';
+import { stageSpec, specialSpec, starsOf, starRating, specialRewardLabel } from '../systems/stages.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
 
@@ -88,6 +88,10 @@ export class Play extends Phaser.Scene {
     this.stageMul = this.spec ? this.spec.diff : 1;
     this.usedRest = false;
     this.hitsTaken = 0;
+    // 熔炉核心：本关 3 处火盆，当前房未点燃则锁门；点满后 Boss 门才开
+    this.brazierTotal = this.spec && this.spec.special && this.spec.special.id === 'forge'
+      ? Math.max(0, Math.round(Number(this.spec.special.braziers) || 0)) : 0;
+    this.braziersLit = 0;
     this.chapterTheme = this.spec ? this.spec.chapter.theme : null;
     this.cycle = this.meta.cycle;
     this.talking = false;
@@ -109,8 +113,10 @@ export class Play extends Phaser.Scene {
     this.kills = 0;
     this.coins = 0;
     this.gems = 0;        // 本局宝石：Boss 1–3、通关 +5，结算时写进存档
+    this.resourceCount = 0; // 本局拾取的资源：强化道具 / 钥匙 / 回血
     this.dead = false;
     this.won = false;
+    this.committed = false; // 同一 Scene 实例会被复用，重开/换关必须复位
     this.iframe = 0;
     this.lastHurtAt = -9999;
     this.atkAt = -9999;
@@ -826,7 +832,9 @@ export class Play extends Phaser.Scene {
     Object.entries(this.doorLocks).forEach(([dir, lock]) => {
       if (!lock) return;
       const gateShut = this.room.type === 'gate' && !this.room.gateOpen;
-      const open = this.room.cleared || (alive === 0 && !gateShut);
+      // 熔炉核心：当前房有火盆且未点燃，门先锁住；点完才恢复常规门锁
+      const brazierShut = this.brazierTotal > 0 && !this.room.isBoss && !this.room.brazierUsed;
+      const open = !brazierShut && (this.room.cleared || (alive === 0 && !gateShut));
       lock.setVisible(!open);
       (lock.cells || []).forEach(([x, y]) => {
         if (open) this.walls.delete(x + ',' + y);
@@ -1144,6 +1152,17 @@ export class Play extends Phaser.Scene {
     // Boss 房不放引路人/商店/石龛等可交互物，避免终章 1 房关的 Boss 与 NPC 同场
     if (room.isBoss) return;
 
+    // 熔炉核心：前 3 间各放一处火盆；本房未点燃时门锁住，点完才放行
+    if (this.brazierTotal && room.idx < this.brazierTotal) {
+      const spot = this.findFreeSpot(150);
+      const p = put('brazier', 'brazier', spot.x, spot.y, 'campfire', true);
+      p.spr.setScale(3).play('campfire-burn');
+      p.isBrazier = true;
+      p.room = room;
+      p.used = !!room.brazierUsed;
+      p.spr.setTint(p.used ? 0xffd479 : 0x8f8a80);
+    }
+
     // 第一间一定有引路人（开局就把规则讲清楚）
     if (room.idx === 0) {
       const spot = this.findFreeSpot(120);
@@ -1218,6 +1237,7 @@ export class Play extends Phaser.Scene {
       rest: ui.restHint || 'E 烤火',
       shelf: ui.shopHint || 'E 看货',
       gate: 'E 拉机关',
+      brazier: 'E 点燃火盆',
       event: ui.eventHint || 'E 查看',
     };
     let label = HINT[p.kind] || ui.eventHint || 'E 查看';
@@ -1225,6 +1245,7 @@ export class Play extends Phaser.Scene {
     if (p.used && p.kind === 'chest') label = ui.chestUsedHint || 'E 空箱子';
     if (p.used && p.kind === 'rest') label = ui.restUsedHint || '火快灭了';
     if (p.used && p.kind === 'gate') label = '机关已启';
+    if (p.used && p.kind === 'brazier') label = '火盆已燃';
     this.promptT.setText(label).setPosition(p.spr.x, p.spr.y - 40).setVisible(true);
   }
 
@@ -1243,6 +1264,7 @@ export class Play extends Phaser.Scene {
     const p = this.nearestProp(56);
     if (!p) return;
     if (p.kind === 'gate') { this.pullGate(p); return; }
+    if (p.kind === 'brazier') { this.lightBrazier(p); return; }
     if (p.kind === 'npc') {
       const npc = (this.story.npc || {})[p.type] || { name: '陌生人', lines: ['……'] };
       const seen = this.meta && this.meta.kills > 0;
@@ -1258,6 +1280,21 @@ export class Play extends Phaser.Scene {
       this.openShop(p);
     } else {
       this.openEvent(p);
+    }
+  }
+
+  lightBrazier(p) {
+    if (!p || p.kind !== 'brazier' || p.used) return;
+    p.used = true;
+    if (p.room) p.room.brazierUsed = true;
+    this.braziersLit = Math.min(this.brazierTotal, this.braziersLit + 1);
+    p.spr.setTint(0xffd479).setAlpha(1);
+    this.sfx.bonus.play({ rate: 1.1, volume: 0.75 });
+    playAct(this, 'upgrade', p.spr.x, p.spr.y - 4);
+    this.floatText(p.spr.x, p.spr.y - 34, '火盆 ' + this.braziersLit + '/' + this.brazierTotal, '#ffd479');
+    this.refreshDoorLocks();
+    if (this.braziersLit >= this.brazierTotal) {
+      this.floatText(this.player.x, this.player.y - 28, '熔炉已燃', '#ffb060');
     }
   }
 
@@ -4040,13 +4077,18 @@ export class Play extends Phaser.Scene {
         this.meta = patchSave({ stars: map });
         const reward = Math.max(0, Number(this.spec.special.reward && this.spec.special.reward.gem) || 0);
         const first = prev === 0;
+        if (first) this.applySpecialReward(this.spec.special.reward);
         if (first && reward) this.gems += reward;
         this.commitRun(false);
         const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
         this.starMarks = marks;
+        const rewardText = specialRewardLabel(this.spec.special);
+        const rewardLine = first
+          ? (rewardText === '无首通奖励' ? rewardText : '首通奖励 ' + rewardText)
+          : '奖励已领取';
         this.showOverlay(
           this.spec.chapterName + ' 完成' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
-          marks + ' · ' + (first ? '首通奖励 +' + reward + ' 宝石' : '奖励已领取')
+          marks + ' · ' + rewardLine
             + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins,
           '点击 / Enter 回地图',
           { special: this.spec.special.id },
@@ -4107,6 +4149,28 @@ export class Play extends Phaser.Scene {
       '击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems + ' · 剩 ' + this.hp + ' 血');
   }
 
+  /* 特殊关首通的非宝石奖励：图纸 / 称号 / 支线标记，统一走 patchSave 的白名单清洗 */
+  applySpecialReward(reward) {
+    if (!reward) return;
+    const patch = {};
+    if (reward.blueprint) {
+      const list = (this.meta.blueprints || []).slice();
+      if (!list.includes(reward.blueprint)) list.push(reward.blueprint);
+      patch.blueprints = list;
+    }
+    if (reward.title) {
+      const list = (this.meta.titles || []).slice();
+      if (!list.includes(reward.title)) list.push(reward.title);
+      patch.titles = list;
+    }
+    if (reward.flag) {
+      const flags = Object.assign({}, this.meta.flags || {});
+      flags[reward.flag] = 1;
+      patch.flags = flags;
+    }
+    if (Object.keys(patch).length) this.meta = patchSave(patch);
+  }
+
   /* 终章收束：星火炸开 + 白闪，粒子压在结算压暗层之上 */
   finalFx() {
     this.cameras.main.flash(620, 255, 240, 210);
@@ -4157,14 +4221,21 @@ export class Play extends Phaser.Scene {
     this.committed = true;
     const m = this.meta || loadSave();
     const depth = Math.max(m.bestRoom, this.room.idx + 1);
+    const marks = {};
+    if (this.spec && this.won) {
+      if (this.hitsTaken === 0) marks.noHit = Object.assign({}, m.noHit || {}, { [this.spec.key]: 1 });
+      if (!this.usedRest) marks.noRest = Object.assign({}, m.noRest || {}, { [this.spec.key]: 1 });
+    }
     this.meta = patchSave({
       coins: m.coins + this.coins,
       kills: m.kills + this.kills,
+      resources: (m.resources || 0) + this.resourceCount,
       bestRoom: depth,
       // 章节关不涨周目：只有终章通关（或无章节的老模式）才 +1
       wins: m.wins + (cleared && (!this.spec || this.spec.chapterId === 'final') ? 1 : 0),
       cycle: m.cycle + (cleared && (!this.spec || this.spec.chapterId === 'final') ? 1 : 0),
       gem: (m.gem || 0) + this.gems,
+      ...marks,
     });
     this.updateHud();
   }
@@ -4481,6 +4552,7 @@ export class Play extends Phaser.Scene {
           this.sfx.coin.play({ rate: Phaser.Math.FloatBetween(0.95, 1.1) });
         } else if (it.kind === 'upg') {
           this.upg[it.up] += 1;
+          this.resourceCount += 1;
           this.sfx.bonus.play({ rate: 1.15, volume: 0.8 });
           this.floatText(this.player.x, this.player.y - 22, UPG_NAME[it.up] + ' +1', '#ffd479');
         } else if (it.kind === 'weapon') {
@@ -4498,11 +4570,13 @@ export class Play extends Phaser.Scene {
           continue;
         } else if (it.kind === 'key') {
           this.keyCount += 1;
+          this.resourceCount += 1;
           this.sfx.bonus.play({ rate: 1.25, volume: 0.75 });
           playAct(this, 'pickup', it.spr.x, it.spr.y);
           this.floatText(this.player.x, this.player.y - 22, '钥匙 +1', '#ffd479');
         } else {
           this.hp = Math.min(this.maxHp(), this.hp + CFG.healAmount);
+          this.resourceCount += 1;
           this.sfx.coin.play({ rate: 0.8 });
         }
         it.spr.destroy();
@@ -4578,6 +4652,7 @@ export class Play extends Phaser.Scene {
     let wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音';
     if (this.fistMode) wantHint = 'WASD 移动 · 空格 出拳 · Q 技能 · 本关赤手空拳';
     if (this.noCoinRule && !this.fistMode) wantHint += ' · 本关不掉金币';
+    if (this.brazierTotal) wantHint += ' · 火盆 ' + this.braziersLit + '/' + this.brazierTotal;
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
     this.hearts.forEach((h, i) => {
       const left = Math.max(0, Math.min(4, Math.min(this.hp, this.maxHp()) - i * 4));

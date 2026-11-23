@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 8;
+const VERSION = 9;
 
 const defaults = () => ({
   v: VERSION,
@@ -23,6 +23,14 @@ const defaults = () => ({
   forge: {},
   // 批 13：支线图纸。只有拿到对应武器图纸，锻造才能进 Lv.4
   blueprints: [],
+  // 批 14：累计拾取的资源（强化道具 / 钥匙 / 回血），用于商队遗骸等条件
+  resources: 0,
+  // 批 14：某关无伤 / 未用休整房通关记录；键为 "章:关" 或 "sp_<id>:1"
+  noHit: {},
+  noRest: {},
+  // 批 14：称号与支线奖励标记
+  titles: [],
+  flags: {},
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
   stars: {},
@@ -88,6 +96,30 @@ function sanitizeBlueprints(v) {
   return WEAPONS.filter((id) => v.includes(id));
 }
 
+/* 关卡记录：键必须是 "章:关" 或 "sp_<id>:1"，只存 1；旧档没有就空对象 */
+function sanitizeStageMarks(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  Object.keys(v).slice(0, 260).forEach((k) => {
+    if (/^[a-z][a-z0-9_-]{0,24}:\d{1,2}$/i.test(k) && v[k]) out[k] = 1;
+  });
+  return out;
+}
+
+const TITLES = ['poor'];
+function sanitizeTitles(v) {
+  if (!Array.isArray(v)) return [];
+  return TITLES.filter((id) => v.includes(id));
+}
+
+const FLAGS = ['merchant', 'skillDiscount', 'fireEnchant', 'epilogue'];
+function sanitizeFlags(v) {
+  const out = {};
+  if (!v || typeof v !== 'object') return out;
+  FLAGS.forEach((k) => { if (v[k]) out[k] = 1; });
+  return out;
+}
+
 /* 星级表：键必须匹配 "章:关"，值夹到 0–3；坏键直接丢掉，避免存档被垃圾键撑大 */
 function sanitizeStars(v) {
   const out = {};
@@ -143,6 +175,11 @@ function migrate(old) {
     chars: sanitizeChars(old.chars),
     forge: sanitizeForge(old.forge),
     blueprints: sanitizeBlueprints(old.blueprints),
+    resources: Math.floor(num(old.resources)),
+    noHit: sanitizeStageMarks(old.noHit),
+    noRest: sanitizeStageMarks(old.noRest),
+    titles: sanitizeTitles(old.titles),
+    flags: sanitizeFlags(old.flags),
     gem: num(old.gem),
     stars: sanitizeStars(old.stars),
     diffSel: sanitizeDiffSel(old.diffSel),
@@ -184,6 +221,11 @@ export function patchSave(patch) {
   next.chars = sanitizeChars(next.chars);
   next.forge = sanitizeForge(next.forge);
   next.blueprints = sanitizeBlueprints(next.blueprints);
+  next.resources = Math.floor(num(next.resources));
+  next.noHit = sanitizeStageMarks(next.noHit);
+  next.noRest = sanitizeStageMarks(next.noRest);
+  next.titles = sanitizeTitles(next.titles);
+  next.flags = sanitizeFlags(next.flags);
   next.stars = sanitizeStars(next.stars);
   next.diffSel = sanitizeDiffSel(next.diffSel);
   next.tierStars = sanitizeTierStars(next.tierStars);
