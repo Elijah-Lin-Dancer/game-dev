@@ -2,6 +2,8 @@
 
 目标：以 Ninja Adventure 为主美术，做《归途：星火之章》这款 Web App 形态的俯视小游戏；技术栈与分辨率已冻结，正在验证核心玩法。
 
+当前段：G1 草原群系「远征」完成。`src/scenes/world.js` 重写为 6 屏横向草原（单屏 480×272 / 30×17 格，世界 2880），加入台地 / 洞穴三层、晴 / 小雨 / 雾三种天气、11 丛草药、村医「草药五株」委托与第六屏世界 Boss「苔背巨兽」；`web/data/world.json` 升 v2，`worldSave.js` 升 `na.world v2`（旧 G0 的 field/bamboo/desert 映射到 field-1/3/6），`tokens.js` 补世界色板，`build.mjs` 新增树 / 灌木 / 洞口三张 CC0 裁切，图集 121 切片。构建 `game.0fa069a3.js`（250,730 B）+ `assets.de64aa63.js`（101,418 B），单文件 1,945,038 B；六屏实际 D 连通、台地 W 上 / S 下、洞穴 S 进 / W 出、草药 0→2→4→6 + 交付 `quest=done/tokens=1`、Boss 实际伤害 20→16→8→0 + R 重试、确定性 56→0 击杀 + `boss=done/tokens=3`、旧档迁移与 `na.save` 隔离、640×360 / 单文件 / `errs=[]` 均通过；无头 Chromium 原始 rAF 30 Hz 上限，已如实记录。详见 `docs/G1.md`，截图在 `docs/revamp/g1/`。
+
 当前段：G0 开放世界雏形「远征」完成。新增 `src/scenes/world.js`（3 屏横向世界 / 镜头跟随 / 无黑场 / 雨与沙尘 / HUD 与对话面板）、`src/systems/worldSave.js`（独立 `na.world` v1）、`web/data/world.json`（草原 / 竹林 / 沙漠、3 丛草药、村医、采 5 草药委托）；`hall.js` 页眉加东门入口，竹林 5 关全通后开放；`main.js` 场景表追加 `World`，`boot.js` 装载 `worldData`；`tokens.js` 加 `UI.world`；图集 118 切片。构建 `dist/game.6efe7a48.js`（231,951 B）+ `assets.bf95b651.js`（99,414 B），单文件 1,921,123 B。W1 三屏 0→2、W2 小雨 / 沙尘可分、W3 采集 0→2→4→6 与交付 `quest=done/tokens=1`、W4 `errs=[]`、W5 world 50.1 vs Play 50.9 fps 全部通过；960×540 / 640×360、东门进入 / ESC 回小屋、刷新恢复、`na.save` 隔离与单文件冒烟通过。代码 / 构建 `412b7d4`、文档 / 16 张截图 `fc39c3e` 已推送；Pages 已切到 `game.6efe7a48.js`，线上草原 / 沙漠 / 东门进入实测通过，`errs=[]`（4 张线上截图见 `docs/revamp/g0/`）。
 
 上一批：P1-C-4 Play HUD / 浮层迁移。`play.js` HUD 文本、房名横幅、引路人对话、事件 / 商店 / 篝火 / 天赋、暂停、死亡结算统一接 `hudText / screenPanel / makeCard`，字号 12 / 24；`tokens.js` 新增 `UI.hud` 三档底色；事件 / 商店 / 篝火 ESC 改为先关面板，不再叠加暂停。构建 `dist/game.86f15d99.js`（211,017 B）+ `assets.5fb07765.js`（98,298 B），单文件 1,898,973 B；HUD / 暂停 / 结算 / 对话 / 事件 / 天赋 / 商店 / 篝火 / 限时计时 960×540 / 640×360 截图、实际 Title→Map→竹林村2→Select→Play、单文件冒烟 `errs=[]`。已推送 `a7a9b6c`（代码 / 构建）、`2313208`（文档 / 截图）；Pages 已切到 `game.86f15d99.js`，线上 Play HUD / 暂停 / 死亡结算实测通过，`errs=[]`。
@@ -60,7 +62,7 @@ P1-C-1 视觉基础层 + 特殊覆盖层完成并推送。新增 `tokens.js / pr
 - P1 手感待主测（见 docs/PLAYTEST-1.md 六问）
 
 下一步：
-- **G1 草原群系**：6 屏铺满 + 障碍 / 采集 / 1 个世界 Boss；G0 的 3 屏与独立 `na.world` 作为基线
+- **G2 五群系**：30 屏 + 10 委托 + 篝火传送 + 雪原 / 火山气候；G1 的 6 屏草原与 `na.world v2` 作为基线
 - 批 13 小屋：出发台/锻造/训练场 + 3 NPC
 - 按章节拆图集与房间预加载（真·懒加载）
 - 中文字体接入 HUD

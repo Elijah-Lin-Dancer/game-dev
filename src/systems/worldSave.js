@@ -1,20 +1,23 @@
-/* G0 开放世界独立存档：只记远征进度，不碰主线 na.save
+/* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
- * 设计边界：
- *   - 只存跨场景/跨刷新需要保留的少量字段：到过哪些屏、草药数量、村医委托状态；
- *   - 位置、采集读条、天气粒子都是场景态，不进存档；
- *   - 读坏档不抛错，保留 na.world.broken 方便排查。
+ * G1 v2：
+ *   - 六屏草原（field-1 … field-6），旧 G0 的 field/bamboo/desert 映射到 field-1/field-3/field-6；
+ *   - 新增 boss: none / done；战斗中的 HP、Boss 血量、坐标都是场景态，不进档；
+ *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 1;
-const SCREENS = ['field', 'bamboo', 'desert'];
+const VERSION = 2;
+const SCREENS = ['field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6'];
+const LEGACY_SCREEN = { field: 'field-1', bamboo: 'field-3', desert: 'field-6' };
 const QUESTS = ['none', 'active', 'done'];
+const BOSSES = ['none', 'done'];
 
 const defaults = () => ({
   v: VERSION,
   visited: [],
   herbs: 0,
   quest: 'none',
+  boss: 'none',
   tokens: 0,
   updatedAt: 0,
 });
@@ -23,7 +26,8 @@ const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0
 
 function sanitizeVisited(v) {
   if (!Array.isArray(v)) return [];
-  return SCREENS.filter((id) => v.includes(id));
+  const mapped = v.map((id) => LEGACY_SCREEN[id] || id);
+  return SCREENS.filter((id) => mapped.includes(id));
 }
 
 function migrate(old) {
@@ -34,6 +38,7 @@ function migrate(old) {
     visited: sanitizeVisited(old.visited),
     herbs: Math.min(99, Math.round(num(old.herbs))),
     quest: QUESTS.includes(old.quest) ? old.quest : 'none',
+    boss: BOSSES.includes(old.boss) ? old.boss : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),
     updatedAt: num(old.updatedAt),
     v: VERSION,
@@ -61,6 +66,7 @@ export function patchWorldSave(patch) {
   next.visited = sanitizeVisited(next.visited);
   next.herbs = Math.min(99, Math.round(num(next.herbs)));
   next.quest = QUESTS.includes(next.quest) ? next.quest : 'none';
+  next.boss = BOSSES.includes(next.boss) ? next.boss : 'none';
   next.tokens = Math.min(99, Math.round(num(next.tokens)));
   return writeWorldSave(next);
 }

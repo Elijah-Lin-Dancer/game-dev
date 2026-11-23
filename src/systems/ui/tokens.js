@@ -65,16 +65,28 @@ const UI = {
     bgSoft: '#0a0f1299',
     bgClear: '#0a0f1266',
   },
-  /* G0 开放世界的三屏地表与两种气候；场景只引用令牌，不在 world.js 里散落色值 */
+  /* 开放世界地表 / 气候 / 台地 / 洞穴；场景只引用令牌，不在 world.js 里散落色值 */
   world: {
+    backdrop: 0x111a13,
     field: 0x6f9858,
+    fieldLight: 0x86aa67,
+    fieldDark: 0x4d6743,
     bamboo: 0x4f7656,
     desert: 0xc9a968,
     rain: 0xbfe6ff,
     dust: 0xe0b070,
     dustVeil: 0x8a5a2a,
+    fog: 0xd7e6d0,
+    fogVeil: 0x607060,
+    cave: 0x30382e,
+    caveVeil: 0x08100d,
+    plateau: 0x7da35d,
+    plateauEdge: 0x3f5434,
     herb: 0x9fe0a0,
     herbGold: 0xffe9b0,
+    boss: 0xff8a7a,
+    hp: 0x86d27a,
+    hpLow: 0xff8a7a,
   },
   typeColor(type) {
     return { side: UI.color.side, hidden: UI.color.hidden, conditional: UI.color.conditional }[type] || UI.color.neutral;

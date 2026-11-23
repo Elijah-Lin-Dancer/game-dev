@@ -145,6 +145,10 @@ const img = {
   dust: join(ASSET, 'FX/Particle/Snow.png'),
   /* G0 开放世界：一丛草药，16×16 单帧 */
   herb: join(ASSET, 'Items/Food/TeaLeaf.png'),
+  /* G1 草原：从 NinjaAdventure / CC0 tileset 裁出的独立摆件 */
+  worldTree: join(ROOT, 'assets/01-primary/world/tree-green.png'),
+  worldBush: join(ROOT, 'assets/01-primary/world/bush-green.png'),
+  caveMouth: join(ROOT, 'assets/01-primary/world/cave-mouth.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -182,6 +186,7 @@ const FRAME = {
   faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
   herb: [16, 16],
+  worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
