@@ -257,7 +257,7 @@
 
 | 编号 | 判据 | 验证方式 | 结果 |
 |---|---|---|---|
-| T-1 | 20 成就与 v11 | 37 个星级键（35 主线关 ×3 + 额外）/ 11 Boss / 220 杀 / noHit / noRest / `sp_` 星 / cycle2 / story ended；Hall 成就页读 `ach` | 通过；20 键全部为 1，标题「成就 20/20」；`save.v=11` |
+| T-1 | 20 成就与 v11 | 35 个主线关星级键 / 11 Boss / 220 杀 / noHit / noRest / `sp_` 星 / cycle2 / story ended；Hall 成就页读 `ach` | 通过；20 键全部为 1，标题「成就 20/20」；`save.v=11` |
 | T-2 | 成就 toast 与落盘 | 无成就档、cycle2；Play 内 `kills=1` 后 `gameOver()` | 通过；`newAch=['first_blood','cycle2']`，顶部 2 条 toast，`ach` 入档 |
 | T-3 | 第二技能计费 | 全角色档 Hall 角色页；`buy('skill2','ninja',25)`；折扣档读价 | 通过；`gem 120→95`、`skills2=['ninja']`；`skillDiscount` 下 25→20 / 35→28 / 45→36 |
 | T-4 | X 与三套效果 | `ninja` 按 `X`；`mage` 霜环；`knight` 盾冲路径 | 通过；3 枚苦无；霜环 `hp6→2 / stunT=1200`；盾冲前移 110、路径 `hp7→3 / kb120`；`X 影返 9s` |
@@ -266,5 +266,6 @@
 | T-7 | 960 / 640 | Hall 角色 / 成就、Play X、toast、详情 | 通过；640×360 内部逻辑，底栏与按钮不溢出；960 为 CSS 1.5× |
 | T-8 | 单文件 | `web/game.html` 2,006,522 B | 通过；9 剧情节点 / 3 角色 `skill2` / 成就页，`errs=[]` |
 | T-9 | v10→v11 | 删除 `ach/skills2` 的 v10 种子，reload + Hall | 通过；`v=11`、字段补齐并立即落盘 |
+| T-10 | Pages 线上 20/20 / 购买 / X / toast | 线上 Playwright 960×540，`--no-proxy-server`；预置 20 成就档 → Hall；购买忍者第二技能；`cycle=2` 开 Play 按 `X`；无成就档 `kills=1` 结算 | 通过；`ach` 20 键全部 `1`、标题「成就 20/20」；`gem 120→95 / skills2=['ninja']`；`cycle=2` 首房 3 只带词缀、`X 影返 9s`；`newAch=['first_blood','cycle2']`；`errs=[]`（`b16-online-*.png`） |
 
-证据：`docs/revamp/b16/` 11 张；详见 `docs/BATCH16-PROGRESSION.md`。
+证据：`docs/revamp/b16/` 15 张（本地 11 + 线上 4）；详见 `docs/BATCH16-PROGRESSION.md`。
