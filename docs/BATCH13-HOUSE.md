@@ -1,7 +1,7 @@
 # 批 13：归途小屋（出发台 / 锻造坊 / 训练场 + 3 NPC）
 
 日期：2026-11-23
-状态：本地验收完成；代码 / 构建提交 `712d2c3`，文档 / 截图随本提交；推送待确认。运行时仍不接 ink-studio，3D 件只作为离线 PNG 进图集。
+状态：已推送 `712d2c3`（代码 / 构建）+ `4582ce6`（文档 / 截图）到 `origin/main`；Pages 已切到 `game.f2323f2e.js` + `assets.cf4685ab.js`，线上小屋 / 锻造 / 训练 / NPC 实测通过，`errs=[]`。运行时仍不接 ink-studio，3D 件只作为离线 PNG 进图集。
 
 ## 1. 交付内容
 
@@ -62,7 +62,19 @@
 - 3D 件在 48 / 72 px 显示尺寸下剪影可读：引路人的灯笼、铁匠的锤、商人的兜帽、铁砧、木桩的靶心均可辨认。
 - 3D 源图集保留 4 向（NPC）与单向（摆件），但 Hall 只用正面裁切；不在运行时加载 11.2 MB 浏览器 bundle。
 
-## 5. 构建
+## 5. Pages 线上（2026-11-23）
+
+- 推送：`38041fb..4582ce6` 到 `main`；远端 head `4582ce6a4a03c4f9900fe84de79c0181229d1263`。
+- Pages 入口：`game.f2323f2e.js` + `assets.cf4685ab.js`；线上实际加载命中这两个文件。
+- 线上 Playwright 种子 v8 档（300 金币、全武器）：
+  - Hall 第 4 页签：`小屋 / 出发台 / 锻造坊 / 训练场 / 引路人 / 铁匠 / 商人` 全部出现；
+  - 锻造 300→240，`forge.katana=2`；
+  - 训练 `4.0s · 14 击 · 总伤 56 · DPS 14.0`；
+  - 引路人打开 / ESC 关闭后再开锻造坊成功；
+  - `errs=[]`。
+- 截图：`docs/revamp/b13/b13-online-hub-960.png`、`b13-online-forge-960.png`、`b13-online-train-dps-960.png`、`b13-online-npc-960.png`。
+
+## 6. 构建
 
 | 项 | 值 |
 |---|---|
@@ -75,18 +87,21 @@
 
 单文件冒烟：`web/game.html` 启动 Title → Hall，按 4 进入小屋，`小屋 / 出发台 / 锻造坊 / 训练场 / 引路人 / 铁匠 / 商人` 全部出现，`errs=[]`。
 
-## 6. 截图
+## 7. 截图
 
 - 小屋：`docs/revamp/b13/b13-hub-960.png`、`b13-hub-640.png`
 - 锻造：`docs/revamp/b13/b13-forge-960.png`、`b13-forge-lv2-960.png`、`b13-forge-640.png`
 - 训练：`docs/revamp/b13/b13-train-960.png`、`b13-train-dps-960.png`、`b13-train-640.png`
 - NPC：`docs/revamp/b13/b13-npc-960.png`、`b13-npc-640.png`、`b13-npc-smith-960.png`、`b13-npc-merchant-960.png`
 - 单文件：`docs/revamp/b13/b13-single-960.png`
+- 线上：`docs/revamp/b13/b13-online-hub-960.png`、`b13-online-forge-960.png`、`b13-online-train-dps-960.png`、`b13-online-npc-960.png`
 - 3D 源：`docs/revamp/b13-3d/hub-contact-sheet.png` 及 5 组 `*-atlas.png/json`
 
-## 7. 已知限制 / 下一步
+共 17 张（13 张本地 / 单文件 + 4 张线上）。
+
+## 8. 已知限制 / 下一步
 
 - Lv.4 图纸只有字段、锁定态和测试密钥；正式图纸掉落尚未接入（批 14 支线 / 批 15 剧情）。
 - 3D NPC 目前是静态正面头像，不进 Play 行走帧；后续剧情头像 / 过场可复用同源图集。
 - 训练 DPS 是新档基准 UI，不参与战斗结算；实际伤害仍以 Play `wdmg()` 为准。
-- 本轮未跑 Pages 线上；推送后再补线上脚本哈希与 `?debug=1` 冒烟。
+- Pages 线上已补验，入口哈希与交互见第 5 节；G1 世界场景的线上冒烟另见 `docs/G1.md`。
