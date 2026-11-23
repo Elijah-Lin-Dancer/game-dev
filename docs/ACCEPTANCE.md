@@ -250,3 +250,5 @@
 | S-8 | 单文件 | `web/game.html` 1,992,758 B，序章卡 | 通过；9 节点 / 6 卡，`errs=[]` |
 | S-9 | 960 / 640 | 6 卡 + 对话框 + coda + Hall + cycle2 | 通过；内部 640×360，960 为 CSS 1.5×；无溢出 |
 | S-10 | 返回栈 | 章节卡回 Map 后 `back` 到 Title；final 回 Hall | 通过；`replace()` 同场景不重复压栈 |
+
+| S-11 | Pages 线上入口与剧情 | 线上 Playwright 960×540；`storyData` 9 / 6；序章卡 → 跳过 → Map；final 种子 → `win()` → final 卡 / coda / Hall | 通过；入口 `game.6c0b3f26.js` + `assets.dbc51cb0.js`；`prologue` 跳过写 `seen=1`；final 后 `active=['hall'] / ended=true / cycle=2`；`errs=[]`（`b15-online-*.png`） |

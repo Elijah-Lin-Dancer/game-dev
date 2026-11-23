@@ -123,6 +123,7 @@ story: { seen: {}, ended: false }
 | S10 | 单文件 | 通过；`web/game.html` 1,992,758 B，`storyData` 已内嵌，9 节点 / 6 卡；序章卡正常，`errs=[]` |
 | S11 | 960 / 640 | 通过；6 张卡、对话框、终章 coda、Hall、cycle2 均有 960×540 / 640×360 截图；内部 640×360 布局，960 为 1.5× CSS 渲染 |
 | S12 | 返回栈 | 通过；章节卡结束回 Map 后 `back` 可经章节层回 Title；final 结束直接 Hall，不把 Story 留在栈 |
+| S13 | Pages 线上 | 通过；`https://elijah-lin-dancer.github.io/game-dev/` 入口切到 `game.6c0b3f26.js` + `assets.dbc51cb0.js`；线上 `storyData` 9 节点 / 6 卡，序章卡 → 跳过 → Map，终章 final → coda → Hall，`errs=[]`（截图 `b15-online-*.png`） |
 
 ### 6.1 构建与文件
 
@@ -149,6 +150,11 @@ story: { seen: {}, ended: false }
 - `docs/revamp/b15/b15-final-hall-960.png` / `-640.png`：结局回小屋
 - `docs/revamp/b15/b15-cycle2-960.png` / `-640.png`：二周目再燃
 - `docs/revamp/b15/b15-single-960.png`：单文件序章卡
+- `docs/revamp/b15/b15-online-prologue-960.png`：Pages 序章卡
+- `docs/revamp/b15/b15-online-prologue-dialog-960.png`：Pages 打字机对话
+- `docs/revamp/b15/b15-online-final-960.png`：Pages 终章卡
+- `docs/revamp/b15/b15-online-coda-960.png`：Pages 终章 coda
+- `docs/revamp/b15/b15-online-hall-960.png`：Pages 结局回小屋
 
 ## 8. 已知边界
 
