@@ -53,6 +53,21 @@ export function back(data = {}) {
   return start(from, stack[stack.length - 1], data);
 }
 
+/* 把栈顶替换成另一个场景：过场卡结束接 Select / Map 时用，
+ * 不把过场本身留在返回路径里。 */
+export function replace(sceneKey, data = {}) {
+  if (!sceneKey) return false;
+  const from = stack[stack.length - 1] || null;
+  // 回到刚才来的场景（章节卡 / 序章 / 再燃）：只弹出过场，不重复压栈。
+  if (stack.length >= 2 && stack[stack.length - 2] === sceneKey) {
+    stack.pop();
+    return start(from, sceneKey, data);
+  }
+  if (stack.length) stack.pop();
+  stack.push(sceneKey);
+  return start(from, sceneKey, data);
+}
+
 export function current() {
   return stack[stack.length - 1] || null;
 }
@@ -83,6 +98,6 @@ export function clearOverlays() {
 }
 
 export const NAV = {
-  initNav, reset, push, back, current, depth, path,
+  initNav, reset, push, back, replace, current, depth, path,
   openOverlay, closeOverlay, topOverlay, clearOverlays,
 };

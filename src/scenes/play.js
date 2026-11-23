@@ -11,6 +11,8 @@ import { normalizeChars, pickChar } from '../systems/chars.js';
 import { loadOptions } from '../systems/options.js';
 import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
 import { stageSpec, specialSpec, starsOf, starRating, specialRewardLabel } from '../systems/stages.js';
+import { storyAfterBoss, storyCanTrigger } from '../systems/story.js';
+import { NAV } from '../systems/nav.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
 
@@ -4086,12 +4088,15 @@ export class Play extends Phaser.Scene {
         const rewardLine = first
           ? (rewardText === '无首通奖励' ? rewardText : '首通奖励 ' + rewardText)
           : '奖励已领取';
+        const backSpec = { special: this.spec.special.id };
+        const storySpec = storyAfterBoss(this.spec, this.bossId);
+        if (storySpec && storyCanTrigger(this.meta, storySpec)) backSpec.story = storySpec;
         this.showOverlay(
           this.spec.chapterName + ' 完成' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
           marks + ' · ' + rewardLine
             + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins,
           '点击 / Enter 回地图',
-          { special: this.spec.special.id },
+          backSpec,
         );
         return;
       }
@@ -4123,11 +4128,14 @@ export class Play extends Phaser.Scene {
         const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
         this.starMarks = marks;
         const cyc = this.meta.cycle || 1;
+        const backFinal = { chapterId: this.spec.chapterId, stage: this.spec.index };
+        const storyFinal = storyAfterBoss(this.spec, this.bossId);
+        if (storyFinal && storyCanTrigger(this.meta, storyFinal)) backFinal.story = storyFinal;
         this.showOverlay(
-          '星火归位' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
-          marks + ' · 影织者散去 · 村子回暖 · 第 ' + cyc + ' 周目',
+          '星火之巅 完成' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
+          marks + ' · 影织者散去 · 第 ' + cyc + ' 周目',
           '点击 / Enter 回地图（下一周目）',
-          { chapterId: this.spec.chapterId, stage: this.spec.index },
+          backFinal,
         );
         return;
       }
@@ -4135,11 +4143,14 @@ export class Play extends Phaser.Scene {
       this.commitRun(false);
       const marks = '★'.repeat(stars) + '☆'.repeat(3 - stars);
       this.starMarks = marks;
+      const backChapter = { chapterId: this.spec.chapterId, stage: this.spec.index };
+      const storyChapter = storyAfterBoss(this.spec, this.bossId);
+      if (storyChapter && storyCanTrigger(this.meta, storyChapter)) backChapter.story = storyChapter;
       this.showOverlay(
         this.spec.chapterName + ' ' + this.spec.index + ' 关 通关' + (this.tier !== 'normal' ? ' · ' + this.tierName : ''),
         marks + ' · 击杀 ' + this.kills + ' · 金币 ' + this.coins + ' · 宝石 +' + this.gems,
         '点击 / Enter 回地图',
-        { chapterId: this.spec.chapterId, stage: this.spec.index },
+        backChapter,
       );
       return;
     }
@@ -4359,7 +4370,7 @@ export class Play extends Phaser.Scene {
     this.input.keyboard.on('keydown-K', () => this.attack());
     this.input.keyboard.on('keydown-R', () => { if ((this.dead || this.won) && !this.spec) this.restart(); });
     this.input.keyboard.on('keydown-ENTER', () => {
-      if (this.spec && (this.dead || this.won)) this.scene.start('map', this.overlayBack);
+      if (this.spec && (this.dead || this.won)) { NAV.reset('map'); this.scene.start('map', this.overlayBack); }
     });
     this.input.keyboard.on('keydown-M', () => {
       const m = toggleMute();
@@ -4378,7 +4389,7 @@ export class Play extends Phaser.Scene {
     this.input.on('pointerdown', (p) => {
       if (this.talking) { this.dlgAdvance(); return; }
       if (this.panelOpen) return;
-      if (this.dead || this.won) { if (this.spec) this.scene.start('map', this.overlayBack); else this.restart(); return; }
+      if (this.dead || this.won) { if (this.spec) { NAV.reset('map'); this.scene.start('map', this.overlayBack); } else this.restart(); return; }
       this.press = { x: p.x, y: p.y, t: this.time.now };
       this.stick = { active: true, ox: p.x, oy: p.y, dx: 0, dy: 0 };
     });

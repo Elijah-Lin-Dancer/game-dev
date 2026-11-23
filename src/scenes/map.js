@@ -9,6 +9,7 @@ import { loadSave, patchSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 import { chapters, chapterById, stageSpec, stageUnlocked, chapterUnlocked, progress, specials, specialCleared, specialGateOk, specialGateLabel, specialRuleLabel, specialRewardLabel } from '../systems/stages.js';
 import { TIERS, tierMeta, tierStarsOf, tierUnlocked, selectedTier, tierClearCount } from '../systems/difficulty.js';
+import { chapterStory, storyCanTrigger } from '../systems/story.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
 
@@ -56,6 +57,7 @@ export class MapScene extends Phaser.Scene {
     this.si = Math.max(1, (data && data.stage) || 1);
     this.mode = (data && (data.chapterId || data.stage)) ? 'stages' : 'chapters';
     this.pendingSpecial = (data && data.special) || null;
+    this.pendingStory = (data && data.story) || null;
     this.tier = selectedTier(this.meta, this.list[this.ci].id);
     this.content = [];
     this.buildBackdrop();
@@ -67,6 +69,18 @@ export class MapScene extends Phaser.Scene {
       const id = this.pendingSpecial;
       this.pendingSpecial = null;
       this.openSpecial(id);
+    }
+    if (this.pendingStory) {
+      const id = this.pendingStory;
+      this.pendingStory = null;
+      this.openStory(id, {
+        scene: id === 'final' ? 'hall' : 'map',
+        data: id === 'final' ? {} : {
+          chapterId: data && data.chapterId,
+          stage: data && data.stage,
+          special: data && data.special,
+        },
+      });
     }
   }
 
@@ -193,6 +207,15 @@ export class MapScene extends Phaser.Scene {
     this.mode = 'stages';
     this.sfx();
     this.render();
+    const story = chapterStory(c.id);
+    if (story && this.openStory(story, { scene: 'map', data: { chapterId: c.id } })) return;
+  }
+
+  /* 剧情节点：顺序与一次性触发由 story 系统判定；next 里带着回来后的落点。 */
+  openStory(id, next) {
+    if (!id || !storyCanTrigger(this.meta, id)) return false;
+    NAV.push('story', { id, next });
+    return true;
   }
 
   markChapters() {

@@ -13,6 +13,7 @@ import { FONT, S, TILE, CFG } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
 import { chapterById, starsOf } from '../systems/stages.js';
 import { NAV } from '../systems/nav.js';
+import { storyForHall } from '../systems/story.js';
 import {
   FORGE_LEVELS, FORGE_MAX, FORGE_BLUEPRINT_MAX,
   forgeLevel, forgeNext, forgeMul, forgeBonus, hasBlueprint,
@@ -77,6 +78,9 @@ export class Hall extends Phaser.Scene {
     this.buildFoot();
     this.render();
     this.bindKeys();
+
+    const story = storyForHall(this.meta);
+    if (story) this.time.delayedCall(80, () => NAV.push('story', { id: story, next: { scene: 'hall' } }));
   }
 
   /* ---------- 底子 ---------- */

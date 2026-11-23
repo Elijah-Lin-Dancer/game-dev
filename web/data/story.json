@@ -1,5 +1,5 @@
 {
-  "v": 2,
+  "v": 3,
   "npc": {
     "guide": {
       "name": "引路人",
@@ -35,8 +35,13 @@
     }
   },
   "rooms": {
-    "battle": { "name": "通道" },
-    "elite": { "name": "精英房", "text": "这一间的东西比别处硬，掉的东西也更好。" },
+    "battle": {
+      "name": "通道"
+    },
+    "elite": {
+      "name": "精英房",
+      "text": "这一间的东西比别处硬，掉的东西也更好。"
+    },
     "treasure": {
       "name": "藏宝室",
       "text": "一只旧箱子锁着，锁孔不大，认得的钥匙只有一种。",
@@ -48,14 +53,19 @@
       "name": "行商",
       "text": "他把三件货摆在地上，价钱写在木牌上，不还价。"
     },
-    "shrine": { "name": "石龛", "text": "石龛旁边的地上有旧脚印，不止一个人在这儿停过。" },
+    "shrine": {
+      "name": "石龛",
+      "text": "石龛旁边的地上有旧脚印，不止一个人在这儿停过。"
+    },
     "rest": {
       "name": "篝火",
       "text": "有人在墙边生过火，柴还是热的。",
       "pay": "付 2 金币",
       "spent": "火快灭了，坐不下了"
     },
-    "boss": { "name": "深处" }
+    "boss": {
+      "name": "深处"
+    }
   },
   "ui": {
     "talkHint": "E 交谈",
@@ -67,5 +77,383 @@
     "restUsedHint": "火快灭了",
     "leave": "离开",
     "cycle": "第 {n} 周目"
+  },
+  "story": {
+    "v": 1,
+    "order": [
+      "prologue",
+      "ch1",
+      "ch2",
+      "ch3",
+      "ch4",
+      "ch5",
+      "final",
+      "epilogue",
+      "cycle2"
+    ],
+    "nodes": [
+      {
+        "id": "prologue",
+        "no": "00",
+        "label": "序章 · 火熄",
+        "chapter": "序章",
+        "title": "火 熄",
+        "subtitle": "星火不是被偷走的。",
+        "card": true,
+        "art": "hall",
+        "glyph": "火",
+        "tone": "#ffb86b",
+        "artPortrait": "faceGuide",
+        "requires": null,
+        "lines": [
+          "雪落在灶台上，像一层不肯化的灰。",
+          "村口的老火盆灭了。没有人记得它最后一次亮是什么时候。",
+          "引路人坐在门槛上，膝头放着一盏空灯。他在等一个不会回来的人。"
+        ],
+        "dialog": [
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "你终于来了。别先问我等了多久——先摸摸自己的胸口。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "……是空的。"
+          },
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "影织者拿走了星火。没有它，村子活不过第七夜。"
+          },
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "去竹林。带回首块碎片。记住：火里若有声音叫你名字，别答应。"
+          }
+        ]
+      },
+      {
+        "id": "ch1",
+        "no": "01",
+        "label": "第一章 · 竹林",
+        "chapter": "第一章",
+        "title": "霜 竹",
+        "subtitle": "每一盏灯，都在替一个人守夜。",
+        "card": true,
+        "art": "field",
+        "glyph": "竹",
+        "tone": "#9fe0a0",
+        "artPortrait": "villager",
+        "requires": "prologue",
+        "lines": [
+          "竹叶上没有露水，只有霜。",
+          "村医屋檐下挂着五盏灯，四盏已经灭了。",
+          "第五盏灯里，坐着一个不是人的东西。"
+        ],
+        "dialog": [
+          {
+            "who": "doctor",
+            "name": "村医",
+            "text": "你来得太晚。阿禾已经不进药了，他在等一口火。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "火？"
+          },
+          {
+            "who": "doctor",
+            "name": "村医",
+            "text": "星火碎成五块。第一块在旧堡，赤武士把它缝进了自己的胸口。"
+          },
+          {
+            "who": "doctor",
+            "name": "村医",
+            "text": "他以前是守村人。现在……他连自己的名字都不肯说。"
+          }
+        ]
+      },
+      {
+        "id": "ch2",
+        "no": "02",
+        "label": "第二章 · 赤武士",
+        "chapter": "第二章",
+        "title": "刀 下",
+        "subtitle": "刀落之后，门才开。",
+        "card": false,
+        "art": "fort",
+        "glyph": "刀",
+        "tone": "#ff9a7a",
+        "artPortrait": "rsamIdle",
+        "requires": "ch1",
+        "lines": [],
+        "dialog": [
+          {
+            "who": "samurai",
+            "name": "赤武士",
+            "text": "刀落的时候，你听见了吗？不是铁，是有人在里面敲骨头。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "你守的不是碎片。你在守一扇门。"
+          },
+          {
+            "who": "samurai",
+            "name": "赤武士",
+            "text": "门后是上一个我。影织者没有偷火——它只是把火从祭坛上放了出来。"
+          },
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "别听他。把裂缝补上，村子就能活。你只要再走一遍。"
+          }
+        ]
+      },
+      {
+        "id": "ch3",
+        "no": "03",
+        "label": "第三章 · 沙海",
+        "chapter": "第三章",
+        "title": "无 旗",
+        "subtitle": "活下来的人，往往最像凶手。",
+        "card": true,
+        "art": "desert",
+        "glyph": "沙",
+        "tone": "#ffd479",
+        "artPortrait": "faceMerchant",
+        "requires": "ch2",
+        "lines": [
+          "商队的旗还在，旗下面没有人。",
+          "风把脚印吹成一条直线，直得像一句谎。",
+          "唯一的活人正数着死人的钱，数得很慢。"
+        ],
+        "dialog": [
+          {
+            "who": "merchant",
+            "name": "商人",
+            "text": "别看我。我活着，是因为我把他们卖了个好价钱。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "卖给谁？"
+          },
+          {
+            "who": "merchant",
+            "name": "商人",
+            "text": "一个没有脸的影子。它说只要我把碎片带出沙海，我女儿就能回来。"
+          },
+          {
+            "who": "merchant",
+            "name": "商人",
+            "text": "现在你知道了。要么杀我，要么帮我把她找回来。"
+          }
+        ]
+      },
+      {
+        "id": "ch4",
+        "no": "04",
+        "label": "第四章 · 沉水",
+        "chapter": "第四章",
+        "title": "熄 神",
+        "subtitle": "第一堆火，烧死了第一个守火人。",
+        "card": true,
+        "art": "water",
+        "glyph": "水",
+        "tone": "#9fe0ff",
+        "artPortrait": "spiritIdle",
+        "requires": "ch3",
+        "lines": [
+          "水下的钟还在响，一声比一声近。",
+          "神殿门上刻着一句话：不要把火还给火。",
+          "门后，一尊被烧瞎了眼睛的神，正在等你。"
+        ],
+        "dialog": [
+          {
+            "who": "god",
+            "name": "沉水古神",
+            "text": "你身上有它的味道。甜的，热的，像刚死的人。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "星火不是村子的吗？"
+          },
+          {
+            "who": "god",
+            "name": "沉水古神",
+            "text": "村子？我是第一座村子。火从我心里长出来，又把我烧成了这样。"
+          },
+          {
+            "who": "god",
+            "name": "沉水古神",
+            "text": "孩子，别把它带回去。让它留在这里，和我一起烂掉。"
+          }
+        ]
+      },
+      {
+        "id": "ch5",
+        "no": "05",
+        "label": "第五章 · 熔岩",
+        "chapter": "第五章",
+        "title": "铸 我",
+        "subtitle": "每一代归途者，都要先看见自己怎么死。",
+        "card": true,
+        "art": "lava",
+        "glyph": "炉",
+        "tone": "#ff8a5a",
+        "artPortrait": "faceSmith",
+        "requires": "ch4",
+        "lines": [
+          "铁匠铺的炉子烧了三天三夜，锅里没有铁，只有一张脸。",
+          "那张脸和你一模一样，只是没有眼睛。",
+          "铁匠把钳子递给你，说：轮到你了。"
+        ],
+        "dialog": [
+          {
+            "who": "smith",
+            "name": "铁匠",
+            "text": "我骗了你。我不是铁匠。我是前朝的铸剑师，也是给星火造笼子的人。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "笼子？"
+          },
+          {
+            "who": "smith",
+            "name": "铁匠",
+            "text": "影织者不是贼。它是第一个拒绝回炉的归途者。引路人把它叫怪物，因为这样你就不会问。"
+          },
+          {
+            "who": "smith",
+            "name": "铁匠",
+            "text": "你手里的每一块碎片，都是上一个你。"
+          }
+        ]
+      },
+      {
+        "id": "final",
+        "no": "06",
+        "label": "终章 · 星火",
+        "chapter": "终章",
+        "title": "九 世",
+        "subtitle": "这一次，换你选。",
+        "card": true,
+        "art": "sky",
+        "glyph": "星",
+        "tone": "#d8c0ff",
+        "artPortrait": "faceNinjaClear",
+        "requires": "ch5",
+        "lines": [
+          "天穹上没有星星。每一颗都被钉在祭坛上，像一排不肯闭的眼。",
+          "影织者站在火里，长得和你一模一样。",
+          "它说：听他的，你就成为下一颗星星。"
+        ],
+        "dialog": [
+          {
+            "who": "weaver",
+            "name": "影织者",
+            "text": "他们把火叫作希望，是因为火会烧死人，而死人不会说话。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "你是我？"
+          },
+          {
+            "who": "weaver",
+            "name": "影织者",
+            "text": "我是你第一次说不的那个版本。引路人把我缝进天穹，让我替村子守一个不肯醒的梦。"
+          },
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "别碰它！把碎片放回祭坛——只要火归位，村子就能活。"
+          }
+        ],
+        "coda": [
+          "你没有把火放回祭坛。",
+          "你把它举过头顶。火在天穹裂成千万点，落向每一扇还亮着的窗。",
+          "第七夜没有来。来的是一场很轻的雨。"
+        ]
+      },
+      {
+        "id": "epilogue",
+        "no": "07",
+        "label": "后日谈 · 灰烬之后",
+        "chapter": "后日谈",
+        "title": "余 温",
+        "subtitle": "火的最后一种用法，是不再点燃。",
+        "card": false,
+        "art": "hall",
+        "glyph": "烬",
+        "tone": "#c8b090",
+        "artPortrait": "faceSmith",
+        "requires": "final",
+        "lines": [],
+        "dialog": [
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "火分了。每家窗里都有一小簇。村子暖了，可我再听不见火里说话。"
+          },
+          {
+            "who": "smith",
+            "name": "铁匠",
+            "text": "我的炉子冷了。很好。终于没有下一把剑要打。"
+          },
+          {
+            "who": "merchant",
+            "name": "商人",
+            "text": "我女儿回来了。她不记得我。可她看见火会笑。"
+          },
+          {
+            "who": "letter",
+            "name": "信",
+            "text": "铁匠读完信。信上只有一句：如果你读到这里，说明你终于没有再点那把火。"
+          }
+        ]
+      },
+      {
+        "id": "cycle2",
+        "no": "08",
+        "label": "周目 · 再燃",
+        "chapter": "周目",
+        "title": "再 燃",
+        "subtitle": "这一次，没有人替你点灯。",
+        "card": false,
+        "art": "field",
+        "glyph": "灯",
+        "tone": "#ffe9b0",
+        "artPortrait": "campfire",
+        "requires": "epilogue",
+        "lines": [],
+        "dialog": [
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "你走后，村子第一次下了雨。没有火，也没有人冻死。"
+          },
+          {
+            "who": "you",
+            "name": "你",
+            "text": "你是谁？"
+          },
+          {
+            "who": "guide",
+            "name": "引路人",
+            "text": "下一个守夜人。引路人退休了。"
+          },
+          {
+            "who": "narrator",
+            "name": "风",
+            "text": "远处，五片土地依次亮起不属于星火的灯。"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -10,6 +10,7 @@ import { S } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { loadOptions, patchOptions } from '../systems/options.js';
 import { NAV } from '../systems/nav.js';
+import { storyForTitle } from '../systems/story.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText, makeButton } from '../systems/ui/primitives.js';
 
@@ -142,7 +143,11 @@ export class Title extends Phaser.Scene {
     if (this.credits) { this.closeCredits(); return; }
     if (this.setting) { this.toggleSetting(); return; }
     this.sfxUi();
-    if (this.idx === 0) NAV.push('map');
+    if (this.idx === 0) {
+      const story = storyForTitle(this.meta);
+      if (story) NAV.push('story', { id: story, next: { scene: 'map' } });
+      else NAV.push('map');
+    }
     else if (this.idx === 1) NAV.push('hall');
     else if (this.idx === 2) this.openSettings();
     else this.openCredits();

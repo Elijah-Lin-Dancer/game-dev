@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 9;
+const VERSION = 10;
 
 const defaults = () => ({
   v: VERSION,
@@ -31,6 +31,8 @@ const defaults = () => ({
   // 批 14：称号与支线奖励标记
   titles: [],
   flags: {},
+  // 批 15：九段剧情的一次性 seen；ended 由终章节点写入
+  story: { seen: {}, ended: false },
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
   stars: {},
@@ -120,6 +122,18 @@ function sanitizeFlags(v) {
   return out;
 }
 
+/* 剧情 seen：只允许九个正式节点，坏键丢弃；final 一旦见过即视为 ended。 */
+const STORY_IDS = ['prologue', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'final', 'epilogue', 'cycle2'];
+function sanitizeStory(v) {
+  const out = { seen: {}, ended: false };
+  if (!v || typeof v !== 'object') return out;
+  if (v.seen && typeof v.seen === 'object') {
+    STORY_IDS.forEach((k) => { if (v.seen[k]) out.seen[k] = 1; });
+  }
+  out.ended = !!(v.ended || out.seen.final);
+  return out;
+}
+
 /* 星级表：键必须匹配 "章:关"，值夹到 0–3；坏键直接丢掉，避免存档被垃圾键撑大 */
 function sanitizeStars(v) {
   const out = {};
@@ -180,6 +194,7 @@ function migrate(old) {
     noRest: sanitizeStageMarks(old.noRest),
     titles: sanitizeTitles(old.titles),
     flags: sanitizeFlags(old.flags),
+    story: sanitizeStory(old.story),
     gem: num(old.gem),
     stars: sanitizeStars(old.stars),
     diffSel: sanitizeDiffSel(old.diffSel),
@@ -200,7 +215,10 @@ export function loadSave() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaults();
     const parsed = JSON.parse(raw);
-    return migrate(parsed);
+    const next = migrate(parsed);
+    // 老档升级后立刻落盘，避免每次读取都重新迁移。
+    if (Number(parsed.v) !== VERSION) writeSave(next);
+    return next;
   } catch (e) {
     try { localStorage.setItem(KEY + '.broken', String(localStorage.getItem(KEY))); } catch (_) {}
     return defaults();
@@ -226,6 +244,7 @@ export function patchSave(patch) {
   next.noRest = sanitizeStageMarks(next.noRest);
   next.titles = sanitizeTitles(next.titles);
   next.flags = sanitizeFlags(next.flags);
+  next.story = sanitizeStory(next.story);
   next.stars = sanitizeStars(next.stars);
   next.diffSel = sanitizeDiffSel(next.diffSel);
   next.tierStars = sanitizeTierStars(next.tierStars);

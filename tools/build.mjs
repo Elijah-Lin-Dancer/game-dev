@@ -136,6 +136,7 @@ const img = {
   walkKnight: join(ASSET, 'Actor/Characters/Knight/SeparateAnim/Walk.png'),
   idleKnight: join(ASSET, 'Actor/Characters/Knight/SeparateAnim/Idle.png'),
   faceNinja: join(ASSET, 'Actor/Characters/BlueNinja/Faceset.png'),
+  faceNinjaClear: join(ROOT, 'assets/01-primary/hub/face-ninja-clear.png'),
   faceMage: join(ASSET, 'Actor/Characters/SorcererBlack/Faceset.png'),
   faceKnight: join(ASSET, 'Actor/Characters/Knight/Faceset.png'),
   /* 批 6 场景：石砖地面、地板贴花、光柱、灰尘粒子 */
@@ -189,7 +190,7 @@ const FRAME = {
   rsamIdle: [96, 48], rsamWalk: [96, 48], rsamAtkL: [96, 96], rsamAtkR: [96, 96],
   rsamChgL: [96, 96], rsamChgR: [96, 96],
   walkMage: [16, 16], idleMage: [16, 16], walkKnight: [16, 16], idleKnight: [16, 16],
-  faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
+  faceNinja: [38, 38], faceNinjaClear: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
   herb: [16, 16],
   worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
@@ -333,7 +334,8 @@ writeFileSync(join(ROOT, 'index.html'), pagesHtml);
 let singleSize = 0;
 if (single) {
   const singleAssets = { pack: b64(join(ROOT, 'web/atlas/core.png'), 'image/png'), packMeta: PACK_META,
-    balanceUrl: './data/balance.json', gameData: BALANCE, weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
+    balanceUrl: './data/balance.json', gameData: BALANCE, storyData: STORY, storyUrl: './data/story.json',
+    weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
     talentsUrl: './data/talents.json', talentsData: TALENTS,
     charsUrl: './data/chars.json', charsData: CHARS, chaptersData: CHAPTERS,
     enemiesData: ENEMIES, bossesData: BOSSES, worldData: WORLD,
