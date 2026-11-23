@@ -3,6 +3,7 @@
  */
 const ORDER = ['ninja', 'mage', 'knight'];
 const SKILL_IDS = ['dash', 'fireball', 'guard'];
+const SKILL2_IDS = ['shadowFan', 'frostRing', 'shieldCharge'];
 
 const int = (v, d, lo) => (Number.isFinite(+v) ? Math.max(lo, Math.round(+v)) : d);
 
@@ -13,6 +14,8 @@ export function normalizeChars(list) {
     if (!c || !ORDER.includes(c.id)) return;
     if (out.some((x) => x.id === c.id)) return;
     const s = c.skill || {};
+    const s2 = c.skill2 || {};
+    const s2id = SKILL2_IDS.includes(s2.id) ? s2.id : 'shadowFan';
     out.push({
       id: c.id,
       name: String(c.name || c.id),
@@ -41,6 +44,25 @@ export function normalizeChars(list) {
         takenMul: Number.isFinite(+s.takenMul) ? Math.min(1, Math.max(0.1, +s.takenMul)) : 0.5,
         push: int(s.push, 96, 0),
       },
+      skill2: {
+        id: s2id,
+        name: String(s2.name || (s2id === 'frostRing' ? '霜环' : s2id === 'shieldCharge' ? '盾冲' : '影返')),
+        cd: int(s2.cd, 9000, 1000),
+        cost: int(s2.cost, 25, 0),
+        desc: String(s2.desc || ''),
+        short: String(s2.short || s2.desc || ''),
+        count: int(s2.count, 3, 1),
+        spread: Number.isFinite(+s2.spread) ? Math.max(0, Math.min(1, +s2.spread)) : 0.22,
+        speed: int(s2.speed, 420, 60),
+        dmg: int(s2.dmg, 4, 1),
+        pierce: int(s2.pierce, 1, 0),
+        life: int(s2.life, 700, 100),
+        radius: int(s2.radius, 96, 0),
+        duration: int(s2.duration, 1200, 0),
+        distance: int(s2.distance, 110, 0),
+        push: int(s2.push, 120, 0),
+        invuln: int(s2.invuln, 300, 0),
+      },
     });
   });
   ORDER.forEach((id) => {
@@ -48,6 +70,7 @@ export function normalizeChars(list) {
       out.push({
         id, name: id, tag: '', skin: id, hp: 20, dmg: 3, speed: 96, weapon: 'katana',
         face: 'faceNinja', desc: '', skill: { id: 'dash', name: '技能', cd: 8000, desc: '' },
+        skill2: { id: 'shadowFan', name: '影返', cd: 9000, cost: 25, desc: '', count: 3, spread: 0.22, speed: 420, dmg: 4, pierce: 1, life: 700, radius: 96, duration: 1200, push: 120, invuln: 300 },
       });
     }
   });

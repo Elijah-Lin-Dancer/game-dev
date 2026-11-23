@@ -53,7 +53,7 @@ const CFG = {
   /* 批 10：巨浣熊（跃扑 + 抓击；半血后更急） */
   racoonBoss: { pounceWindup: 440, pounceAir: 340, pounceRadius: 74, pounceDmg: 4,
     swipeWindup: 300, swipeHit: 160, swipeReach: 64, swipeDmg: 3, at: 0.5, speedMul: 1.25 },
-  cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1 },
+  cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1, affixAtCycle: 2, affixChance: 0.55 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },
   /* 批 11：天狗（飞行扇射 + 俯冲）/ 魂灵（瞬移环形弹）/ 恶魔独眼（冲撞 + 震地 + 召唤） */

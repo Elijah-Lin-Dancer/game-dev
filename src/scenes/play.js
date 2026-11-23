@@ -12,6 +12,7 @@ import { loadOptions } from '../systems/options.js';
 import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems/difficulty.js';
 import { stageSpec, specialSpec, starsOf, starRating, specialRewardLabel } from '../systems/stages.js';
 import { storyAfterBoss, storyCanTrigger } from '../systems/story.js';
+import { evaluateAchievements } from '../systems/ach.js';
 import { NAV } from '../systems/nav.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
@@ -78,6 +79,9 @@ export class Play extends Phaser.Scene {
     this.charId = this.char.id;
     patchSave({ lastChar: this.char.id });
     this.skillAt = -9999;
+    this.skill2At = -9999;
+    this.skill2Unlocked = (this.meta.skills2 || []).indexOf(this.char.id) >= 0;
+    this.newAch = [];
     this.guardUntil = 0;
     this.skillInvulnUntil = 0;
     this.guardAura = null;
@@ -357,12 +361,19 @@ export class Play extends Phaser.Scene {
         dustCount: () => (this.dust ? this.dust.getAliveParticleCount() : 0),
         dust: (on) => { if (this.dust) { on ? this.dust.start() : this.dust.stop(); } return !!on; },
         fxChild: (i, on) => { if (!this.roomFx) return false; const c = this.roomFx.getAt ? this.roomFx.getAt(i) : null; if (!c) return false; c.setVisible(!!on); return true; },
-        chars: () => this.chars.map((c) => [c.id, c.hp, c.dmg, c.speed, c.weapon, c.skill.id]),
+        chars: () => this.chars.map((c) => [c.id, c.hp, c.dmg, c.speed, c.weapon, c.skill.id, c.skill2 && c.skill2.id]),
         skill: () => this.castSkill(),
         skillState: () => ({
           id: this.char.skill.id,
           left: Math.max(0, Math.round(this.char.skill.cd - (this.time.now - this.skillAt))),
           guard: Math.max(0, Math.round(this.guardUntil - this.time.now)),
+          invuln: Math.max(0, Math.round(this.skillInvulnUntil - this.time.now)),
+        }),
+        skill2: () => this.castSkill2(),
+        skill2State: () => ({
+          id: this.char.skill2 && this.char.skill2.id,
+          unlocked: !!this.skill2Unlocked,
+          left: this.char.skill2 ? Math.max(0, Math.round(this.char.skill2.cd - (this.time.now - this.skill2At))) : 0,
           invuln: Math.max(0, Math.round(this.skillInvulnUntil - this.time.now)),
         }),
         pickChar: (id) => this.scene.restart({ char: id }),
@@ -857,24 +868,58 @@ export class Play extends Phaser.Scene {
     // 非战斗房直接算清场：门锁不拦路，玩家可以安心翻箱
     if (t === 'shop' || t === 'shrine' || t === 'rest') { room.cleared = true; return; }
 
+    let firstFo = true;
+    const spawn = (kind, dist) => {
+      const e = this.spawnFoe(kind, dist);
+      if (e) { this.applyCycleAffix(e, firstFo); firstFo = false; }
+      return e;
+    };
     if (t === 'elite') {
       const e = this.spawnFoe(this.pickKind(Math.max(1, room.idx)), 240);
-      this.makeElite(e);
-      for (let i = 0; i < 2; i++) this.spawnFoe(this.pickKind(room.idx), 170);
+      if (e) this.makeElite(e);
+      for (let i = 0; i < 2; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
     if (t === 'treasure') {
       // 宝箱有 2 个守卫：想开箱子先清场（清完宝箱本体仍锁着，等钥匙）
-      for (let i = 0; i < 2; i++) this.spawnFoe(this.pickKind(room.idx), 150);
+      for (let i = 0; i < 2; i++) spawn(this.pickKind(room.idx), 150);
       return;
     }
     if (t === 'gate') {
       // 机关房：3 个守卫 + 一尊机关石像；石像不拉，门不开
-      for (let i = 0; i < 3; i++) this.spawnFoe(this.pickKind(room.idx), 170);
+      for (let i = 0; i < 3; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
     const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
-    for (let i = 0; i < n; i++) this.spawnFoe(this.pickKind(room.idx), 200);
+    for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
+  }
+
+  /* 批 16：二周目普通怪词缀。只在房间生成时调用，不污染召唤物 / 分裂小号。 */
+  applyCycleAffix(e, force) {
+    const C = CFG.cycle;
+    if (!e || e.type !== 'foe' || this.cycle < (C.affixAtCycle || 2)) return false;
+    if (e.elite || e.mini || e.affix) return false;
+    if (!force && Math.random() >= (C.affixChance || 0.55)) return false;
+    const AFFIX = ['enrage', 'swift', 'shield', 'split'];
+    const affix = AFFIX[Phaser.Math.Between(0, AFFIX.length - 1)];
+    const A = (CFG.elite && CFG.elite.affix && CFG.elite.affix[affix]) || {};
+    const NAME = { enrage: '狂暴', swift: '迅捷', shield: '护盾', split: '分裂' };
+    const COLOR = { enrage: 0xff9a7a, swift: 0xffe08a, shield: 0x9fd8ff, split: 0x9be27a };
+    e.affix = affix;
+    e.cycleAffix = true;
+    if (affix === 'enrage') {
+      e.maxHp = e.hp = Math.max(1, Math.round(e.hp * 1.15));
+      e.dmg = Math.max(1, Math.round(e.dmg * (A.dmg || 1.25)));
+      e.speed = Math.round(e.speed * (A.speed || 1.08));
+    } else if (affix === 'swift') {
+      e.speed = Math.round(e.speed * (A.speed || 1.18));
+      e.windupMul = A.windup || 0.7;
+    } else if (affix === 'shield') {
+      e.shield = 1;
+    }
+    e.spr.setTint(COLOR[affix]);
+    if (force) this.floatText(e.spr.x, e.spr.y - 30, '周目 · ' + NAME[affix], '#ffe9b0');
+    return true;
   }
 
   /* 精英：任意怪带 1 个词缀（狂暴/护盾/分裂/迅捷），外观放大 + 染色 + 脚下光环 */
@@ -941,7 +986,7 @@ export class Play extends Phaser.Scene {
       speed: cfg.speed, dmg: cfg.dmg * (1 + (this.stageMul - 1) * 0.4), half: cfg.half || 12,
       stuckT: 0, slideT: 0, slide: new Phaser.Math.Vector2(),
       phase: 'walk', phaseT: 0, cdT: 0, mini: false,
-      shield: 0, invuln: false, affix: '', windupMul: 1, baseScale: 2,
+      shield: 0, invuln: false, affix: '', cycleAffix: false, stunT: 0, windupMul: 1, baseScale: 2,
     };
     if (kind === 'owl') { e.phase = 'hover'; e.phaseT = cfg.hoverMs; }
     if (kind === 'mush') { e.phase = 'walk'; e.cdT = cfg.poisonCd; }
@@ -1672,6 +1717,90 @@ export class Play extends Phaser.Scene {
     if (K.id === 'dash') return this.skillDash(K);
     if (K.id === 'fireball') return this.skillFireball(K);
     if (K.id === 'guard') return this.skillGuard(K);
+  }
+
+  /* 批 16：第二技能。Q 是主技能，X 是已购买的第二技能；两套冷却独立。 */
+  castSkill2() {
+    if (this.paused || this.talking || this.panelOpen || this.dead || this.won) return;
+    const K = this.char.skill2;
+    if (!K) return;
+    if (!this.skill2Unlocked) {
+      this.floatText(this.player.x, this.player.y - 30, '尚未掌握第二技能', '#8fa0a8');
+      return;
+    }
+    if (this.time.now - this.skill2At < K.cd) {
+      const left = Math.ceil((K.cd - (this.time.now - this.skill2At)) / 1000);
+      this.floatText(this.player.x, this.player.y - 30, '二技能冷却 ' + left + 's', '#8fa0a8');
+      return;
+    }
+    this.skill2At = this.time.now;
+    if (K.id === 'shadowFan') return this.skillShadowFan(K);
+    if (K.id === 'frostRing') return this.skillFrostRing(K);
+    if (K.id === 'shieldCharge') return this.skillShieldCharge(K);
+  }
+
+  /* 忍者 · 影返：向前方扇形掷出 3 枚苦无 */
+  skillShadowFan(K) {
+    const v = VEC[this.facing] || [0, 1];
+    const base = Math.atan2(v[1], v[0]);
+    const n = Math.max(1, K.count || 3);
+    for (let i = 0; i < n; i++) {
+      const angle = base + (i - (n - 1) / 2) * K.spread;
+      const dx = Math.cos(angle), dy = Math.sin(angle);
+      const spr = this.add.sprite(this.player.x + dx * 14, this.player.y + dy * 12, 'kunaiProj', 0)
+        .setScale(2.2).setRotation(angle).setDepth(612);
+      this.bolts.push({
+        spr, vx: dx * K.speed, vy: dy * K.speed,
+        life: K.life, dmg: K.dmg, pierce: K.pierce, knock: 70, hits: [],
+      });
+    }
+    this.shake(60, 0.004);
+    this.sfx.ui.play({ rate: 1.4, volume: 0.4 });
+    playAct(this, 'pickup', this.player.x, this.player.y);
+    this.floatText(this.player.x, this.player.y - 32, '影返', '#9fd8ff');
+  }
+
+  /* 法师 · 霜环：冻结身边的普通敌人并造成伤害 */
+  skillFrostRing(K) {
+    const ring = this.add.circle(this.player.x, this.player.y, K.radius, 0x9fe0ff, 0.28)
+      .setDepth(505).setStrokeStyle(2, 0xd8f4ff, 0.9);
+    this.tweens.add({ targets: ring, alpha: 0, scale: 1.22, duration: 360, onComplete: () => ring.destroy() });
+    this.enemies.forEach((e) => {
+      if (e.hp <= 0) return;
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, e.spr.x, e.spr.y) > K.radius + e.half) return;
+      this.damageFoe(e, K.dmg, 0, 0);
+      if (e.type !== 'boss' && e.hp > 0) {
+        e.stunT = K.duration;
+        e.spr.setTint(0x9fe0ff);
+      }
+    });
+    this.shake(80, 0.005);
+    this.sfx.magic.play({ rate: 0.65, volume: 0.5 });
+    this.floatText(this.player.x, this.player.y - 34, '霜环', '#9fe0ff');
+  }
+
+  /* 骑士 · 盾冲：向前冲锋，撞开并击伤路径上的敌人 */
+  skillShieldCharge(K) {
+    const v = VEC[this.facing] || [0, 1];
+    const sx = this.player.x, sy = this.player.y;
+    const steps = 6;
+    for (let i = 0; i < steps; i++) {
+      this.moveActor(this.player, (v[0] * K.distance) / steps, (v[1] * K.distance) / steps, 10);
+    }
+    const ex = this.player.x, ey = this.player.y;
+    const dx = ex - sx, dy = ey - sy, len2 = dx * dx + dy * dy || 1;
+    this.skillInvulnUntil = this.time.now + K.invuln;
+    this.enemies.forEach((e) => {
+      if (e.hp <= 0) return;
+      // 撞的是路径，不是终点：贴边的小怪也要吃到盾冲
+      const t = Math.max(0, Math.min(1, ((e.spr.x - sx) * dx + (e.spr.y - sy) * dy) / len2));
+      const px = sx + dx * t, py = sy + dy * t;
+      if (Phaser.Math.Distance.Between(px, py, e.spr.x, e.spr.y) > 38 + e.half) return;
+      this.damageFoe(e, K.dmg, v[0] * K.push, v[1] * K.push);
+    });
+    this.shake(100, 0.007);
+    this.sfx.hurt.play({ rate: 0.6, volume: 0.35 });
+    this.floatText(this.player.x, this.player.y - 34, '盾冲', '#ffe08a');
   }
 
   /* 忍者：向前瞬移，落地 0.4s 无敌（无敌期间不受碰撞/弹体伤害） */
@@ -3064,6 +3193,15 @@ export class Play extends Phaser.Scene {
 
   /* ---------- 小怪行为：四种脾气 ---------- */
   updateFoe(e, dt) {
+    if (e.stunT > 0) {
+      e.stunT -= dt;
+      if (e.stunT <= 0) {
+        e.stunT = 0;
+        if (e.affix) e.spr.setTint({ enrage: 0xff9a7a, swift: 0xffe08a, shield: 0x9fd8ff, split: 0x9be27a }[e.affix] || 0xffffff);
+        else e.spr.clearTint();
+      }
+      return;
+    }
     e.cdT -= dt;
     if (e.windupMul && e.windupMul < 1) e.cdT -= dt * (1 / e.windupMul - 1);   // 迅捷：出手更勤
     if (e.kind === 'cyclope') return this.updateCyclope(e, dt);
@@ -3843,7 +3981,7 @@ export class Play extends Phaser.Scene {
       this.floatText(spot.x, spot.y - 14, '分裂', '#9be27a');
     }
     // 精英"分裂"词缀：死后裂 2 只 30% 血的小号
-    if (e.elite && e.affix === 'split' && !e.mini) {
+    if ((e.elite || e.cycleAffix) && e.affix === 'split' && !e.mini) {
       for (let i = 0; i < 2; i++) {
         const off = i === 0 ? -18 : 18;
         const at = { x: spot.x + off, y: spot.y };
@@ -3851,6 +3989,7 @@ export class Play extends Phaser.Scene {
         if (!mini) continue;
         mini.mini = true;
         mini.elite = false;
+        mini.cycleAffix = false;
         mini.affix = null;
         mini.hp = mini.maxHp = Math.max(1, Math.round(e.maxHp * 0.3));
         mini.spr.setScale(1.3).clearTint();
@@ -4224,6 +4363,33 @@ export class Play extends Phaser.Scene {
       color: UI.text.muted, origin: [0.5, 0], background: null, depth: 901,
     });
     this.overlay = [panel.container, t1, t2, t3];
+    this.showAchToasts();
+  }
+
+  /* 结算后新解锁的成就：顶部右侧逐条浮出，不挡结算按钮 */
+  showAchToasts() {
+    if (this.achToastShown) return;
+    this.achToastShown = true;
+    const list = this.newAch || [];
+    const shown = list.slice(0, 6);
+    shown.forEach((a, i) => {
+      const t = hudText(this, S.W - 12, 58 + i * 20, '成就 · ' + a.name, 'body', {
+        color: '#ffe9b0', origin: [1, 0], background: UI.hud.bgSoft,
+        padding: { x: 6, y: 3 }, depth: 940,
+      });
+      t.setAlpha(0);
+      this.tweens.add({ targets: t, alpha: 1, duration: 220, delay: 160 + i * 120 });
+      this.time.delayedCall(2100 + i * 160, () => {
+        this.tweens.add({ targets: t, alpha: 0, duration: 260, onComplete: () => t.destroy() });
+      });
+    });
+    if (list.length > shown.length) {
+      const t = hudText(this, S.W - 12, 58 + shown.length * 20, '成就 +' + (list.length - shown.length) + ' 条', 'body', {
+        color: '#ffe9b0', origin: [1, 0], background: UI.hud.bgSoft,
+        padding: { x: 6, y: 3 }, depth: 940,
+      });
+      this.time.delayedCall(2400, () => t.destroy());
+    }
   }
 
   /* 一局结束才写盘：金币与击杀累加，最深取大值，通关次数单独计 */
@@ -4248,6 +4414,10 @@ export class Play extends Phaser.Scene {
       gem: (m.gem || 0) + this.gems,
       ...marks,
     });
+    const A = evaluateAchievements(this.meta);
+    this.meta = A.meta;
+    this.newAch = A.unlocked;
+    this.achToastShown = false;
     this.updateHud();
   }
 
@@ -4295,6 +4465,9 @@ export class Play extends Phaser.Scene {
     });
     this.skillText = hudText(this, 10, S.H - 46, '', 'body', {
       color: UI.text.info, background: UI.hud.bgSoft, padding: { x: 5, y: 3 }, depth: 800,
+    });
+    this.skill2Text = hudText(this, 10, S.H - 68, '', 'body', {
+      color: UI.text.muted, background: UI.hud.bgSoft, padding: { x: 5, y: 3 }, depth: 800,
     });
     this.upgText = hudText(this, S.W - 10, 36, '', 'body', {
       color: UI.text.gold, origin: [1, 0], background: UI.hud.bgClear,
@@ -4366,6 +4539,7 @@ export class Play extends Phaser.Scene {
       this.interact();
     });
     this.input.keyboard.on('keydown-Q', () => this.castSkill());
+    this.input.keyboard.on('keydown-X', () => this.castSkill2());
     this.input.keyboard.on('keydown-J', () => this.attack());
     this.input.keyboard.on('keydown-K', () => this.attack());
     this.input.keyboard.on('keydown-R', () => { if ((this.dead || this.won) && !this.spec) this.restart(); });
@@ -4656,12 +4830,24 @@ export class Play extends Phaser.Scene {
       this.skillText.setText('Q ' + K.name + cdTxt);
       this.skillText.setColor(left > 0 ? UI.text.muted : UI.text.info);
     }
+    if (this.skill2Text) {
+      const K2 = this.char.skill2;
+      if (!K2 || !this.skill2Unlocked) {
+        this.skill2Text.setText('X 第二技能 · 未掌握');
+        this.skill2Text.setColor(UI.text.muted);
+      } else {
+        const left2 = Math.max(0, K2.cd - (this.time.now - this.skill2At));
+        const cd2 = left2 > 0 ? ' ' + Math.ceil(left2 / 1000) + 's' : '';
+        this.skill2Text.setText('X ' + K2.name + cd2);
+        this.skill2Text.setColor(left2 > 0 ? UI.text.muted : UI.text.gold);
+      }
+    }
     if (this.guardAura) {
       this.guardAura.setVisible(this.time.now < this.guardUntil);
       this.guardAura.setPosition(this.player.x, this.player.y + 6);
     }
-    let wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · 拾取武器自动换装 · M 静音';
-    if (this.fistMode) wantHint = 'WASD 移动 · 空格 出拳 · Q 技能 · 本关赤手空拳';
+    let wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能 · X 二技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · X 二技能 · 拾取武器自动换装 · M 静音';
+    if (this.fistMode) wantHint = 'WASD 移动 · 空格 出拳 · Q 技能 · X 二技能 · 本关赤手空拳';
     if (this.noCoinRule && !this.fistMode) wantHint += ' · 本关不掉金币';
     if (this.brazierTotal) wantHint += ' · 火盆 ' + this.braziersLit + '/' + this.brazierTotal;
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
@@ -4697,7 +4883,7 @@ export class Play extends Phaser.Scene {
     }
 
     window.__state = {
-      hp: this.hp, kills: this.kills, coins: this.coins, gems: this.gems, weapon: this.weapon.id,
+      hp: this.hp, kills: this.kills, coins: this.coins, gems: this.gems, weapon: this.weapon.id, cycle: this.cycle,
       room: this.roomKey, roomType: this.room.type || 'battle', keys: this.keyCount,
       slowUntil: Math.round(this.slowUntil || 0), zones: (this.zones || []).length,
       bossKind: this.bossKind || '', bossId: this.bossId || '',
@@ -4708,7 +4894,7 @@ export class Play extends Phaser.Scene {
       cleared: this.room.cleared, isBoss: this.room.isBoss,
       doors: Object.keys(this.room.doors), entry: this.entry,
       enemies: this.enemiesAlive(), drops: this.drops.length,
-      enemyList: this.enemies.filter((e) => e.hp > 0).map((e) => [Math.round(e.spr.x), Math.round(e.spr.y), e.kind || e.type, e.affix || '']),
+      enemyList: this.enemies.filter((e) => e.hp > 0).map((e) => [Math.round(e.spr.x), Math.round(e.spr.y), e.kind || e.type, e.affix || '', !!e.cycleAffix]),
       bossHp: (this.enemies.find((e) => e.type === 'boss') || {}).hp,
       bossPhase: (this.enemies.find((e) => e.type === 'boss') || {}).phase,
       bossPhase2: !!(this.enemies.find((e) => e.type === 'boss') || {}).phase2,

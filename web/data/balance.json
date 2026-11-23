@@ -89,7 +89,9 @@
   "cycle": {
     "hpMul": 0.15,
     "bossMul": 0.2,
-    "legacyPower": 1
+    "legacyPower": 1,
+    "affixAtCycle": 2,
+    "affixChance": 0.55
   },
   "feel": {
     "stopLight": 42,

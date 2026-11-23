@@ -3,7 +3,7 @@
  * 读坏了不抛错、不崩游戏：解析失败就当新档，并且保留坏档副本供排查。
  */
 const KEY = 'na.save';
-const VERSION = 10;
+const VERSION = 11;
 
 const defaults = () => ({
   v: VERSION,
@@ -33,6 +33,9 @@ const defaults = () => ({
   flags: {},
   // 批 15：九段剧情的一次性 seen；ended 由终章节点写入
   story: { seen: {}, ended: false },
+  // 批 16：成就记录（id → 1）；第二技能按角色 id 解锁
+  ach: {},
+  skills2: [],
   seen: { enemies: {}, weapons: {}, bosses: {}, rooms: {} }, // 图鉴点亮记录
   // 批 9：章节星级。键 = "章:关"（关从 1 起），值 0–3；0/缺省都算没打过
   stars: {},
@@ -106,6 +109,13 @@ function sanitizeStageMarks(v) {
     if (/^[a-z][a-z0-9_-]{0,24}:\d{1,2}$/i.test(k) && v[k]) out[k] = 1;
   });
   return out;
+}
+
+/* 第二技能：只允许三个角色，去重；旧档没有就空。 */
+const SKILL2_CHARS = ['ninja', 'mage', 'knight'];
+function sanitizeSkills2(v) {
+  if (!Array.isArray(v)) return [];
+  return SKILL2_CHARS.filter((id) => v.includes(id));
 }
 
 const TITLES = ['poor'];
@@ -195,6 +205,8 @@ function migrate(old) {
     titles: sanitizeTitles(old.titles),
     flags: sanitizeFlags(old.flags),
     story: sanitizeStory(old.story),
+    ach: sanitizeMarks(old.ach),
+    skills2: sanitizeSkills2(old.skills2),
     gem: num(old.gem),
     stars: sanitizeStars(old.stars),
     diffSel: sanitizeDiffSel(old.diffSel),
@@ -245,6 +257,8 @@ export function patchSave(patch) {
   next.titles = sanitizeTitles(next.titles);
   next.flags = sanitizeFlags(next.flags);
   next.story = sanitizeStory(next.story);
+  next.ach = sanitizeMarks(next.ach);
+  next.skills2 = sanitizeSkills2(next.skills2);
   next.stars = sanitizeStars(next.stars);
   next.diffSel = sanitizeDiffSel(next.diffSel);
   next.tierStars = sanitizeTierStars(next.tierStars);

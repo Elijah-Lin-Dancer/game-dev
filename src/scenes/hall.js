@@ -19,10 +19,11 @@ import {
   forgeLevel, forgeNext, forgeMul, forgeBonus, hasBlueprint,
 } from '../systems/forge.js';
 import { NPCS, npcDialogue } from '../systems/npc.js';
+import { ACHIEVEMENTS, achDone, achProgress, evaluateAchievements } from '../systems/ach.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makeCard, makeButton, makeText, makePanel } from '../systems/ui/primitives.js';
 
-const TABS = ['武器', '角色', '图鉴', '小屋'];
+const TABS = ['武器', '角色', '图鉴', '小屋', '成就'];
 const RARITY = {
   common: { name: '普通', color: 0x9aa0a6, hex: '#9aa0a6' },
   fine: { name: '精良', color: 0x7cb342, hex: '#7cb342' },
@@ -62,6 +63,8 @@ export class Hall extends Phaser.Scene {
   create() {
     this.tab = 0;
     this.meta = loadSave();
+    const A0 = evaluateAchievements(this.meta);
+    this.meta = A0.meta;
     this.rows = [];
     this.modalOpen = false;
     this.modalObjs = [];
@@ -139,8 +142,8 @@ export class Hall extends Phaser.Scene {
   }
 
   buildTabs() {
-    const gap = 104;
-    const start = S.W / 2 - gap * 1.5;
+    const gap = S.W < 800 ? 88 : 104;
+    const start = S.W / 2 - gap * ((TABS.length - 1) / 2);
     this.tabs = TABS.map((name, i) => this.add.text(start + i * gap, 44, name, {
       fontFamily: FONT, fontSize: '12px', color: UI.text.muted,
     }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true })
@@ -148,7 +151,7 @@ export class Hall extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.add.text(S.W / 2, S.H - 16, '1–4 / ← → 切页 · Enter 出发 · 东门远征 · ESC 返回', {
+    this.add.text(S.W / 2, S.H - 16, '1–5 / ← → 切页 · Enter 出发 · 东门远征 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: UI.text.foot,
     }).setOrigin(0.5, 0);
   }
@@ -157,7 +160,7 @@ export class Hall extends Phaser.Scene {
     const guard = (fn) => () => { if (!this.modalOpen) fn(); };
     this.input.keyboard.on('keydown-LEFT', guard(() => this.switchTab(-1)));
     this.input.keyboard.on('keydown-RIGHT', guard(() => this.switchTab(1)));
-    ['ONE', 'TWO', 'THREE', 'FOUR'].forEach((k, i) => {
+    ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'].forEach((k, i) => {
       this.input.keyboard.on('keydown-' + k, guard(() => { this.tab = i; this.render(); }));
     });
     this.input.keyboard.on('keydown-ENTER', () => {
@@ -210,7 +213,8 @@ export class Hall extends Phaser.Scene {
     if (this.tab === 0) this.renderWeapons();
     else if (this.tab === 1) this.renderChars();
     else if (this.tab === 2) this.renderGallery();
-    else this.renderHub();
+    else if (this.tab === 3) this.renderHub();
+    else this.renderAchievements();
   }
 
   keep(obj) { this.body.push(obj); return obj; }
@@ -282,11 +286,18 @@ export class Hall extends Phaser.Scene {
   }
 
   /* 角色页：数据驱动，定位 / 三属性 / 初始武器 / 技能全部上墙 */
+  /* 第二技能价格：基础 25/35/45；商队线报 skillDiscount 打 8 折，仍向下取整到整宝石。 */
+  skill2Price(s2) {
+    const base = Math.max(0, Number(s2 && s2.cost) || 0);
+    const off = this.meta && this.meta.flags && this.meta.flags.skillDiscount ? 0.8 : 1;
+    return Math.max(1, Math.round(base * off));
+  }
+
   renderChars() {
     const list = charList();
     const unlocked = this.meta.chars || ['ninja'];
     const CW = this.colW(3, 8);
-    const CH = 242;
+    const CH = 264;
     list.forEach((data, i) => {
       const x = 12 + i * (CW + 8);
       const y = 72;
@@ -320,23 +331,42 @@ export class Hall extends Phaser.Scene {
         color: on ? UI.text.info : UI.text.muted,
       });
       card.add(skill);
-      const skillDesc = makeText(this, 10, 162, (data.skill && data.skill.desc) || '', 'muted', {
+      const skillDesc = makeText(this, 10, 160, (data.skill && data.skill.desc) || '', 'muted', {
         color: on ? UI.text.muted : UI.text.body,
-        lineSpacing: 2, wordWrap: { width: CW - 20, useAdvancedWrap: true },
+        lineSpacing: 0, wordWrap: { width: CW - 20, useAdvancedWrap: true },
       });
       card.add(skillDesc);
-      card.add(makeText(this, 10, 200, '装备 护符 / 饰品', 'muted', {
-        color: on ? UI.text.muted : UI.text.locked,
+      const s2 = data.skill2 || {};
+      const owned2 = (this.meta.skills2 || []).indexOf(data.id) >= 0;
+      card.add(makeText(this, 10, 192, '【第二技能 · ' + (s2.name || '未解锁') + '】', 'body', {
+        color: on ? (owned2 ? UI.text.gold : UI.text.info) : UI.text.muted,
+      }));
+      const s2Desc = on ? (s2.short || s2.desc || '') : '解锁角色后可见第二技能';
+      const s2Price = this.skill2Price(s2);
+      card.add(makeText(this, 10, 208, s2Desc, 'muted', {
+        color: on ? UI.text.muted : UI.text.body,
+        lineSpacing: 0, wordWrap: { width: CW - 20, useAdvancedWrap: true },
       }));
       let buy = null;
       if (on) {
-        card.add(makeText(this, CW - 10, 220, '可选', 'body', {
-          color: UI.text.info, origin: [1, 0],
-        }));
+        if (owned2) {
+          card.add(makeText(this, CW - 10, 242, '已掌握 · X 施放', 'body', {
+            color: UI.text.gold, origin: [1, 0],
+          }));
+        } else {
+          const price2 = s2Price;
+          buy = makeButton(this, {
+            x: x + CW - 108, y: y + 240, w: 98, h: 20,
+            label: '二技能 ' + price2 + ' 宝石', variant: 'ghost', depth: 2,
+            onClick: () => this.buy('skill2', data.id, price2),
+          });
+          this.keep(buy.container);
+          this.keep(buy.hit);
+        }
       } else {
         const price = priceOf(data);
         buy = makeButton(this, {
-          x: x + CW - 108, y: y + 220, w: 98, h: 20,
+          x: x + CW - 108, y: y + 240, w: 98, h: 20,
           label: '解锁 ' + price + ' 宝石', variant: 'ghost', depth: 2,
           onClick: () => this.buy('char', data.id, price),
         });
@@ -404,6 +434,57 @@ export class Hall extends Phaser.Scene {
       this.keep(this.add.text(rx, 76 + i * 18, (got ? '● ' : '○ ') + (got ? ROOM_NAME[k] : '???'), {
         fontFamily: FONT, fontSize: '12px', color: got ? '#d8e8d0' : '#5f6a60',
       }));
+    });
+  }
+
+  /* ---------- 批 16：成就页 ---------- */
+  renderAchievements() {
+    const meta = this.meta;
+    const done = ACHIEVEMENTS.filter((a) => achDone(meta, a.id)).length;
+    this.keep(this.add.text(12, 64, '成就 ' + done + '/' + ACHIEVEMENTS.length
+      + ' · 条件自动记录 · 点击条目查看', {
+      fontFamily: FONT, fontSize: '12px', color: '#ffe9b0',
+    }));
+    const CW = this.colW(4, 6);
+    const CH = 45;
+    ACHIEVEMENTS.forEach((a, i) => {
+      const x = 12 + (i % 4) * (CW + 6);
+      const y = 88 + Math.floor(i / 4) * 47;
+      const got = achDone(meta, a.id);
+      const card = makeCard(this, {
+        x, y, w: CW, h: CH, accent: a.accent,
+        state: got ? 'default' : 'locked', onClick: () => this.openAchDetail(a),
+      });
+      this.keep(card.container);
+      this.keep(card.hit);
+      card.add(makeText(this, 8, 5, a.name, 'body', {
+        color: got ? UI.text.heading : UI.text.nameLocked,
+      }));
+      card.add(makeText(this, CW - 8, 5, got ? '已达成' : '未达成', 'body', {
+        color: got ? UI.text.info : UI.text.muted, origin: [1, 0],
+      }));
+      card.add(makeText(this, 8, 21, a.desc, 'muted', {
+        color: got ? UI.text.body : UI.text.locked,
+        lineSpacing: 1, wordWrap: { width: CW - 16, useAdvancedWrap: true },
+      }));
+    });
+  }
+
+  openAchDetail(a) {
+    const meta = loadSave();
+    this.meta = meta;
+    const got = achDone(meta, a.id);
+    const f = this.modalFrame({
+      w: Math.min(420, S.W - 24), h: 150,
+      title: '成就 · ' + a.name,
+      subtitle: (got ? '已达成' : '未达成') + ' · ESC / 右键关闭',
+    });
+    this.addModalText(f.x + 20, f.y + 56, a.desc, 'body', {
+      color: UI.text.body, lineSpacing: 6,
+      wordWrap: { width: f.w - 40, useAdvancedWrap: true },
+    });
+    this.addModalText(f.x + 20, f.y + 98, '进度  ' + achProgress(meta, a), 'gold', {
+      color: got ? UI.text.info : UI.text.muted,
     });
   }
 
@@ -751,6 +832,10 @@ export class Hall extends Phaser.Scene {
       const list = (this.meta.unlockedWeapons || []).slice();
       if (list.indexOf(id) < 0) list.push(id);
       this.meta = patchSave({ gem: this.meta.gem - price, unlockedWeapons: list });
+    } else if (kind === 'skill2') {
+      const list = (this.meta.skills2 || []).slice();
+      if (list.indexOf(id) < 0) list.push(id);
+      this.meta = patchSave({ gem: this.meta.gem - price, skills2: list });
     } else {
       const list = (this.meta.chars || []).slice();
       if (list.indexOf(id) < 0) list.push(id);

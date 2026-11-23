@@ -26,7 +26,21 @@
     "slots": [
       "charm",
       "relic"
-    ]
+    ],
+    "skill2": {
+      "id": "shadowFan",
+      "name": "影返",
+      "cd": 9000,
+      "cost": 25,
+      "desc": "向前方扇形投出 3 枚苦无，每枚 4 伤，穿透 1 个目标",
+      "count": 3,
+      "spread": 0.22,
+      "speed": 420,
+      "dmg": 4,
+      "pierce": 1,
+      "life": 700,
+      "short": "扇形 3 苦无 · 各 4 伤 · 穿透 1"
+    }
   },
   {
     "id": "mage",
@@ -59,7 +73,18 @@
     "slots": [
       "charm",
       "relic"
-    ]
+    ],
+    "skill2": {
+      "id": "frostRing",
+      "name": "霜环",
+      "cd": 10000,
+      "cost": 35,
+      "desc": "冻结身边敌人 1.2 秒，并造成 4 伤",
+      "radius": 96,
+      "duration": 1200,
+      "dmg": 4,
+      "short": "冻结身边敌人 1.2s · 4 伤"
+    }
   },
   {
     "id": "knight",
@@ -89,6 +114,18 @@
     "slots": [
       "charm",
       "relic"
-    ]
+    ],
+    "skill2": {
+      "id": "shieldCharge",
+      "name": "盾冲",
+      "cd": 9000,
+      "cost": 45,
+      "desc": "向前冲锋 110px，撞开并击伤路径上的敌人",
+      "distance": 110,
+      "dmg": 4,
+      "push": 120,
+      "invuln": 300,
+      "short": "前冲 110px · 击伤击退"
+    }
   }
 ]
