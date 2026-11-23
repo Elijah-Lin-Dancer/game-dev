@@ -252,3 +252,19 @@
 | S-10 | 返回栈 | 章节卡回 Map 后 `back` 到 Title；final 回 Hall | 通过；`replace()` 同场景不重复压栈 |
 
 | S-11 | Pages 线上入口与剧情 | 线上 Playwright 960×540；`storyData` 9 / 6；序章卡 → 跳过 → Map；final 种子 → `win()` → final 卡 / coda / Hall | 通过；入口 `game.6c0b3f26.js` + `assets.dbc51cb0.js`；`prologue` 跳过写 `seen=1`；final 后 `active=['hall'] / ended=true / cycle=2`；`errs=[]`（`b15-online-*.png`） |
+
+## T. 批 16 元进度：成就 / 第二技能 / 周目词条（2026-11-23 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| T-1 | 20 成就与 v11 | 37 个星级键（35 主线关 ×3 + 额外）/ 11 Boss / 220 杀 / noHit / noRest / `sp_` 星 / cycle2 / story ended；Hall 成就页读 `ach` | 通过；20 键全部为 1，标题「成就 20/20」；`save.v=11` |
+| T-2 | 成就 toast 与落盘 | 无成就档、cycle2；Play 内 `kills=1` 后 `gameOver()` | 通过；`newAch=['first_blood','cycle2']`，顶部 2 条 toast，`ach` 入档 |
+| T-3 | 第二技能计费 | 全角色档 Hall 角色页；`buy('skill2','ninja',25)`；折扣档读价 | 通过；`gem 120→95`、`skills2=['ninja']`；`skillDiscount` 下 25→20 / 35→28 / 45→36 |
+| T-4 | X 与三套效果 | `ninja` 按 `X`；`mage` 霜环；`knight` 盾冲路径 | 通过；3 枚苦无；霜环 `hp6→2 / stunT=1200`；盾冲前移 110、路径 `hp7→3 / kb120`；`X 影返 9s` |
+| T-5 | 周目词条 | `cycle=2` 起 Play，读 `__state.enemyList` | 通过；首房 4 只中 2 只 `cycleAffix=true`，首个必带；`cycle=1` 为 0 |
+| T-6 | 分裂不与词缀串联 | 手工 `split/cycleAffix` 普通怪 `damageFoe(99)` | 通过；裂 2 只，`mini=true / affix=null / cycleAffix=false` |
+| T-7 | 960 / 640 | Hall 角色 / 成就、Play X、toast、详情 | 通过；640×360 内部逻辑，底栏与按钮不溢出；960 为 CSS 1.5× |
+| T-8 | 单文件 | `web/game.html` 2,006,522 B | 通过；9 剧情节点 / 3 角色 `skill2` / 成就页，`errs=[]` |
+| T-9 | v10→v11 | 删除 `ach/skills2` 的 v10 种子，reload + Hall | 通过；`v=11`、字段补齐并立即落盘 |
+
+证据：`docs/revamp/b16/` 11 张；详见 `docs/BATCH16-PROGRESSION.md`。
