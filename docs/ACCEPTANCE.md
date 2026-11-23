@@ -269,3 +269,18 @@
 | T-10 | Pages 线上 20/20 / 购买 / X / toast | 线上 Playwright 960×540，`--no-proxy-server`；预置 20 成就档 → Hall；购买忍者第二技能；`cycle=2` 开 Play 按 `X`；无成就档 `kills=1` 结算 | 通过；`ach` 20 键全部 `1`、标题「成就 20/20」；`gem 120→95 / skills2=['ninja']`；`cycle=2` 首房 3 只带词缀、`X 影返 9s`；`newAch=['first_blood','cycle2']`；`errs=[]`（`b16-online-*.png`） |
 
 证据：`docs/revamp/b16/` 15 张（本地 11 + 线上 4）；详见 `docs/BATCH16-PROGRESSION.md`。
+
+## V. 批 17 工程化：PWA / 移动端 / 首屏预算 / 冒烟（2026-11-23 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| V-1 | PWA manifest 与图标 | 本地 HTTP 请求 `manifest.json`；解析字段 / 图标 | 通过；200 application/json，3 图标，standalone，`Page.getAppManifest` 无 error |
+| V-2 | SW 安装与离线 | 首次加载 → `serviceWorker.ready` → 在线 reload → `setOffline(true)` 再 reload | 通过；active / controller、12 条缓存；离线 Title / story 9 / chars 3，`errs=[]` |
+| V-3 | 首屏预算 | `npm run build` 求和 + 2 MiB 断言 | 通过；1,905,859 B（1,861 KB / 1.82 MiB），gzip 751 KB |
+| V-4 | 触屏动作键 | 844×390 hasTouch；点攻 / Q / X / E / II | 通过；5 键可见，攻触发 `atkAt`，`press=null / stick=false`，Q 冷却 8s，X 未掌握、E 无报错，II 打开暂停 |
+| V-5 | 竖屏窄屏 | 390×844 hasTouch；HUD 信息条与按钮 | 通过；内部 360×779，`fitInfo()` 缩放不裁切，5 键在右下可达 |
+| V-6 | 桌面回归 | 960×540 / 640×360 无 `hasTouch` | 通过；`touchCtl=false`，键盘 HUD 与批 16 一致，`errs=[]` |
+| V-7 | 单文件 | `file:///.../web/game.html?debug=1` | 通过；story 9、chars 3、`touchCtl=false`，`errs=[]` |
+| V-8 | 冒烟脚本 | `npm run smoke` | 通过；9 项 PASS，`SMOKE OK` |
+
+证据：`docs/revamp/b17/` 7 张；详见 `docs/BATCH17-ENGINEERING.md`。

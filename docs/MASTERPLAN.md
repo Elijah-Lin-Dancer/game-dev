@@ -132,9 +132,9 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 | **14 · 支线/隐藏/条件（已完成）** | 13 个额外关的条件判定、入口、奖励；`chapters.json` 的 `side / hidden / conditional` 三组是实际数据源 | `web/data/chapters.json`、`stages.js`、`map.js`、`play.js`、`save.js` v9 | R1 条件未达不可进；R2 达成可进；R3 奖励入档；R4 火盆锁门；见 `docs/BATCH14.md` |
 | **15 · 剧情（已完成）** | 9 段对话 + 6 张过场卡 + 终章 coda + 后日谈 / 再燃；`story.json` v3、`save.js` v10 | `web/data/story.json`、`systems/story.js`、`scenes/story.js`、`save.js`、`nav.js` | S1 顺序且只触发一次；S2 跳过可用；S3 结局回小屋；见 `docs/BATCH15-STORY.md` |
 | **16 · 元进度（已完成）** | 20 成就 + 第二技能 + 周目词条 | `systems/ach.js`、`chars.json` | T1 成就 toast 与存档；T2 第二技能计费；T3 词条生效；见 `docs/BATCH16-PROGRESSION.md` |
-| **17 · 工程化** | PWA、移动端、首屏预算、冒烟脚本 | `manifest.json`、`systems/input.js`、`tools/smoke.mjs` | U1 手机可玩；U2 首屏 <2 MB；U3 冒烟 3 分钟 |
+| **17 · 工程化（已完成）** | PWA、移动端、首屏预算、冒烟脚本 | `manifest.json`、`sw.js`、`systems/input.js`、`tools/smoke.mjs` | U1 Play 触控可玩；U2 首屏 1,905,859 B <2 MiB；U3 `npm run smoke` 9 项 / 约 10s；见 `docs/BATCH17-ENGINEERING.md` |
 
-**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → 17 → G2–G3。
+**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → G2–G3。
 
 ---
 
