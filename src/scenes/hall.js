@@ -11,6 +11,7 @@
  */
 import { FONT, S, TILE } from '../core/config.js';
 import { loadSave, patchSave } from '../systems/save.js';
+import { chapterById, starsOf } from '../systems/stages.js';
 import { NAV } from '../systems/nav.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makeCard, makeButton, makeText } from '../systems/ui/primitives.js';
@@ -58,6 +59,7 @@ export class Hall extends Phaser.Scene {
     this.rows = [];
     this.buildBackdrop();
     this.buildHeader();
+    this.buildWorldEntry();
     this.buildTabs();
     this.buildFoot();
     this.render();
@@ -92,6 +94,29 @@ export class Hall extends Phaser.Scene {
     }).setOrigin(0, 0);
   }
 
+  /* G0 东门：竹林村 5 关全通后才开放；锁着也能点，给明确原因而不是静默禁用。 */
+  buildWorldEntry() {
+    const c = chapterById('bamboo');
+    const cleared = !!c && Array.from({ length: c.stages }, (_, i) => i + 1)
+      .every((i) => starsOf(this.meta, 'bamboo', i) >= 1);
+    this.worldOpen = cleared;
+    this.worldBtn = makeButton(this, {
+      x: S.W - 104, y: 33, w: 92, h: 20,
+      label: cleared ? '东门 · 远征' : '东门 · 未开放',
+      variant: 'ghost', state: 'normal', depth: 1,
+      onClick: () => this.enterWorld(),
+    });
+  }
+
+  enterWorld() {
+    try { this.sound.play('ui', { volume: 0.35 }); } catch (e) {}
+    if (!this.worldOpen) {
+      this.toast('竹林村 5 关全通后开放东门');
+      return;
+    }
+    NAV.push('world');
+  }
+
   buildTabs() {
     this.tabs = TABS.map((name, i) => this.add.text(S.W / 2 - 120 + i * 120, 44, name, {
       fontFamily: FONT, fontSize: '12px', color: UI.text.muted,
@@ -100,7 +125,7 @@ export class Hall extends Phaser.Scene {
   }
 
   buildFoot() {
-    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · 点击条目解锁 · Enter / 空格 出发 · ESC 返回', {
+    this.add.text(S.W / 2, S.H - 16, '1/2/3 或 ← → 切页 · Enter 出发 · 东门远征 · ESC 返回', {
       fontFamily: FONT, fontSize: '12px', color: UI.text.foot,
     }).setOrigin(0.5, 0);
   }

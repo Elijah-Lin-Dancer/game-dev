@@ -38,6 +38,7 @@ export class Boot extends Phaser.Scene {
     window.__chaptersData = A.chaptersData;
     window.__enemiesData = A.enemiesData;
     window.__bossesData = A.bossesData;
+    window.__worldData = A.worldData;
     if (location.search.indexOf('debug') >= 0) window.__balance = { source: 'embedded', applied };
     this.unpackAtlas(A.packMeta);
     Object.entries(DIRS).forEach(([dir, col]) => {
@@ -223,8 +224,10 @@ export class Boot extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('boss', { start: 0, end: 4 }),
       frameRate: 7, repeat: -1,
     });
+    const w = /(?:\?|&)world(?:=1|=true)?(?:&|$)/.test(location.search);
     const m = /(?:\?|&)char=([a-z]+)/.exec(location.search);
-    if (m && ['ninja', 'mage', 'knight'].includes(m[1])) this.scene.start('play', { char: m[1] });
+    if (w) this.scene.start('world');
+    else if (m && ['ninja', 'mage', 'knight'].includes(m[1])) this.scene.start('play', { char: m[1] });
     else this.scene.start('title');
   }
 }

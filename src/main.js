@@ -6,6 +6,7 @@ import { Select } from './scenes/select.js';
 import { Hall } from './scenes/hall.js';
 import { Title } from './scenes/title.js';
 import { MapScene } from './scenes/map.js';
+import { World } from './scenes/world.js';
 import { resetSave } from './systems/save.js';
 import { initNav, NAV } from './systems/nav.js';
 
@@ -40,7 +41,7 @@ window.addEventListener('load', () => {
       roundPixels: true,
       scale: { mode: Phaser.Scale.NONE, width: S.W, height: S.H },
       audio: { disableWebAudio: true },
-      scene: [Boot, Title, Hall, MapScene, Select, Play],
+      scene: [Boot, Title, Hall, MapScene, Select, Play, World],
     });
 
     window.__game = game;

@@ -143,6 +143,8 @@ const img = {
   floorDetail: join(ASSET, 'Backgrounds/Tilesets/TilesetFloorDetail.png'),
   ray: join(ASSET, 'FX/Environment/Raylight.png'),
   dust: join(ASSET, 'FX/Particle/Snow.png'),
+  /* G0 开放世界：一丛草药，16×16 单帧 */
+  herb: join(ASSET, 'Items/Food/TeaLeaf.png'),
 };
 /* 每张切片的帧尺寸（拆帧语义不变，只换打包方式） */
 const FRAME = {
@@ -179,6 +181,7 @@ const FRAME = {
   walkMage: [16, 16], idleMage: [16, 16], walkKnight: [16, 16], idleKnight: [16, 16],
   faceNinja: [38, 38], faceMage: [38, 38], faceKnight: [38, 38],
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
+  herb: [16, 16],
 };
 const SFX_DIR = join(ROOT, 'web/audio/sfx');
 /* 音乐按情绪懒加载（不进 assets.js，走 HTMLAudio 流式），key 即 mood */
@@ -244,6 +247,7 @@ const CHARS = JSON.parse(readFileSync(join(ROOT, 'web/data/chars.json'), 'utf8')
 const CHAPTERS = JSON.parse(readFileSync(join(ROOT, 'web/data/chapters.json'), 'utf8'));
 const ENEMIES = JSON.parse(readFileSync(join(ROOT, 'web/data/enemies.json'), 'utf8'));
 const BOSSES = JSON.parse(readFileSync(join(ROOT, 'web/data/bosses.json'), 'utf8'));
+const WORLD = JSON.parse(readFileSync(join(ROOT, 'web/data/world.json'), 'utf8'));
 
 function assetsJs(packUrl, dataUrl) {
   const out = { pack: packUrl, packMeta: PACK_META, music: MUSIC,
@@ -251,7 +255,7 @@ function assetsJs(packUrl, dataUrl) {
     weaponsUrl: dataUrl.replace('balance', 'weapons'), weaponsData: WEAPONS,
     talentsUrl: dataUrl.replace('balance', 'talents'), talentsData: TALENTS,
     charsUrl: dataUrl.replace('balance', 'chars'), charsData: CHARS,
-    chaptersData: CHAPTERS, enemiesData: ENEMIES, bossesData: BOSSES };
+    chaptersData: CHAPTERS, enemiesData: ENEMIES, bossesData: BOSSES, worldData: WORLD };
   out.sfx = {};
   for (const [k, p] of Object.entries(sfx)) out.sfx[k] = b64(p, 'audio/mpeg');
   return `window.ASSET_DATA = ${JSON.stringify(out)};\n`;
@@ -319,7 +323,7 @@ if (single) {
     balanceUrl: './data/balance.json', gameData: BALANCE, weaponsData: WEAPONS, weaponsUrl: './data/weapons.json',
     talentsUrl: './data/talents.json', talentsData: TALENTS,
     charsUrl: './data/chars.json', charsData: CHARS, chaptersData: CHAPTERS,
-    enemiesData: ENEMIES, bossesData: BOSSES,
+    enemiesData: ENEMIES, bossesData: BOSSES, worldData: WORLD,
     music: { dungeon: './audio/music/dungeon.mp3', fight: './audio/music/fight.mp3',
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };

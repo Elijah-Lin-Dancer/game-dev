@@ -65,6 +65,17 @@ const UI = {
     bgSoft: '#0a0f1299',
     bgClear: '#0a0f1266',
   },
+  /* G0 开放世界的三屏地表与两种气候；场景只引用令牌，不在 world.js 里散落色值 */
+  world: {
+    field: 0x6f9858,
+    bamboo: 0x4f7656,
+    desert: 0xc9a968,
+    rain: 0xbfe6ff,
+    dust: 0xe0b070,
+    dustVeil: 0x8a5a2a,
+    herb: 0x9fe0a0,
+    herbGold: 0xffe9b0,
+  },
   typeColor(type) {
     return { side: UI.color.side, hidden: UI.color.hidden, conditional: UI.color.conditional }[type] || UI.color.neutral;
   },
