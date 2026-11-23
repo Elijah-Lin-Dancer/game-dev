@@ -141,14 +141,21 @@
 
 已知边界：计时在 960×540 与 640×360 下验证（640 截图见 `p1-special-timer-640.png`），更窄 / 超宽视口尚未逐项验证；`noCoinPickup` 只验证直接 `dropItem`，未逐房间核对宝箱 / 商店 / 击杀的全部金币来源；`fists` 只验证近身 beast 与武器拦截，全部怪物碰撞、Boss、拳击音画与关卡平衡未逐项验证。
 
-## 8. 未接规则
+## 8. 未接规则（P1 时点，批 14 已覆盖前三项）
 
-以下字段目前只参与条件 / 展示，尚未改变实际玩法，不能按「已完成」对外描述：
+以下字段在 P1 时只参与条件 / 展示；批 14 已补 `braziers / noHitStage / resources`，保留此节作为历史边界：
 
-- `braziers`：熔炉核心没有火盆目标与点火交互。
-- `noHitStage`：只作为入口条件，没有独立的无伤失败 / 记录。
-- `resources`：商队遗骸以累计金币代理，不是本局资源。
-- `loadout` 非空只强制第一把武器，未做多武器槽。
-- 特殊星级统一一条 `sp_<id>:1`，不区分普通 / 噩梦 / 地狱；是否拆三档待拍板。
+- `braziers`：P1 时熔炉核心没有火盆目标与点火交互；批 14 已改为关内 3 火盆 + 当前房未点燃锁门。
+- `noHitStage`：P1 时只作为入口条件；批 14 已写 `save.noHit` 真实通关记录。
+- `resources`：P1 时商队遗骸读累计金币；批 14 已改为 `save.resources`，由本局 `upg / key / heart` 拾取累加。
+- `loadout` 非空只强制第一把武器，未做多武器槽（仍未做）。
+- 特殊星级统一一条 `sp_<id>:1`，不区分普通 / 噩梦 / 地狱；是否拆三档待拍板（仍未做）。
 
-下一步建议：先评估 `braziers / noHitStage` 是否需要独立房间机制与失败记录，再决定 `resources` 是否值得做成本局资源；特殊关三档星级与 `loadout` 多武器槽需要先定口径再动代码。
+## 9. 批 14 补接（2026-11-23）
+
+- `save` v9：`resources / noHit / noRest / titles / flags`。
+- `Play.commitRun()` 在通关时写 `noHit[stageKey] / noRest[stageKey]`；无伤 = `hitsTaken===0`，无休整 = `!usedRest`。
+- `Play` 新增 `resourceCount`，拾取 `upg / key / heart` 各 +1；不把金币算成资源。
+- `forge` 4 房：前 3 房各 1 个火盆，当前房未点燃时门锁住，点燃后放行；HUD `火盆 n/3`。
+- 首通奖励：`cellar` 图纸「巨剑」、`caravan` 商人线报、`ship` 第二技能折扣、`forge` 火焰附魔、`poor` 称号「贫者」；条件关补宝石。
+- 验收见 `docs/BATCH14.md`；13/13 条件锁 / 开、260 宝石总奖励、v8→v9、960 / 640 / 单文件均通过。
