@@ -10,7 +10,7 @@
 - **首屏预算**：关键文件合计 **1,905,859 B（1,861 KB / 1.82 MiB）**，低于 2 MiB；gzip 约 **751 KB**。音乐 3.11 MB 仍懒加载，不计入。
 - **移动端**：新增 `src/systems/input.js`，Play 在触屏设备上创建 5 个半透明动作键（攻 / Q / X / E / II），保留拖拽摇杆；桌面不显示、键盘路径不变。
 - **冒烟**：新增 `tools/smoke.mjs`，`npm run smoke` 自带静态 server 和 Chromium，约 10 秒跑完 9 项检查。
-- 本地 960 / 640 / 844×390 / 390×844 / 单文件 / 离线全部通过；线上 Pages 验收见回填记录。
+- 本地 960 / 640 / 844×390 / 390×844 / 单文件 / 离线全部通过；线上 Pages 的 PWA 离线、844×390 触控与暂停面板也通过，`errs=[]`。
 
 ## 2. PWA
 
@@ -132,7 +132,7 @@ SMOKE OK
 | V-7 | 单文件 | `file:///.../web/game.html?debug=1` | 通过；story 9、chars 3、`touchCtl=false`，`errs=[]` |
 | V-8 | 冒烟脚本 | `npm run smoke` | 通过；9 项 PASS，`SMOKE OK` |
 
-截图 7 张：`b17-pwa-offline-960`、`b17-mobile-play-844x390`、`b17-mobile-pause-844x390`、`b17-mobile-portrait-390x844`、`b17-play-960`、`b17-play-640`、`b17-single-960`。
+截图 10 张（本地 7 + 线上 3）：`b17-pwa-offline-960`、`b17-mobile-play-844x390`、`b17-mobile-pause-844x390`、`b17-mobile-portrait-390x844`、`b17-play-960`、`b17-play-640`、`b17-single-960`；线上 `b17-online-pwa-960`、`b17-online-mobile-844x390`、`b17-online-mobile-pause-844x390`。
 
 ## 7. 构建产物
 
@@ -144,7 +144,18 @@ SMOKE OK
 - `manifest.json` **762 B**
 - 图集 127 切片 **181,563 B**；字体 **133,460 B**
 
-## 8. 已知限制
+## 8. 线上 Pages
+
+推送 `79ab465..1ea5f72` 到 `origin/main` 后，Pages 入口切到 `game.55c34185.js` + `assets.97721d4f.js`（`index.html` 200，`last-modified` 已更新）。线上 Playwright 960×540（`--no-proxy-server`）：
+
+- manifest `200 application/json; charset=utf-8`，`name=归途：星火之章`、`short_name=归途`、`display=standalone`、3 图标。
+- Service Worker scope `https://elijah-lin-dancer.github.io/game-dev/`，active `activated`，controller `true`，缓存键 `na-b17-af1d3b6e` / 12 条。
+- 在线 reload 后断网再 reload：Title 可进，`storyData=9`、`charsData=3`、`errs=[]`。
+- 844×390 hasTouch：`touchCtl=true`，内部 779×360 / CSS 844×390；点攻触发 `atkAt`，`press=null`、`stick.active=false`，HUD 为触屏文案；点 II 打开暂停面板，`paused=true`。
+
+线上截图：`docs/revamp/b17/b17-online-pwa-960.png`、`b17-online-mobile-844x390.png`、`b17-online-mobile-pause-844x390.png`。
+
+## 9. 已知限制
 
 - 移动端动作键只覆盖 Play；开放世界仍用点按移动 / 攻击按钮，采集与对话需要再点目标，未做统一虚拟键位。
 - 不弹 `beforeinstallprompt` 自定义安装提示；浏览器菜单手动「添加到主屏幕」。

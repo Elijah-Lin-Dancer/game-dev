@@ -283,4 +283,6 @@
 | V-7 | 单文件 | `file:///.../web/game.html?debug=1` | 通过；story 9、chars 3、`touchCtl=false`，`errs=[]` |
 | V-8 | 冒烟脚本 | `npm run smoke` | 通过；9 项 PASS，`SMOKE OK` |
 
-证据：`docs/revamp/b17/` 7 张；详见 `docs/BATCH17-ENGINEERING.md`。
+| V-9 | Pages 线上 PWA / 移动端 | 线上 Playwright 960×540；manifest、SW scope / 缓存、断网 reload；844×390 hasTouch 点攻 / II | 通过；manifest 200 / 3 图标 / standalone；SW scope `.../game-dev/`、active、controller、`na-b17-af1d3b6e` / 12 条；断网 Title / story 9 / chars 3；`touchCtl=true`、攻 `atkAt`、`press=null / stick=false`、暂停面板；`errs=[]`（`b17-online-*.png`） |
+
+证据：`docs/revamp/b17/` 10 张（本地 7 + 线上 3）；详见 `docs/BATCH17-ENGINEERING.md`。
