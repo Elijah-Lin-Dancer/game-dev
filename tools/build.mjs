@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, statSy
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -302,13 +303,67 @@ const assetsName = `assets.${sha(assetsCode)}.js`;
 writeFileSync(join(ROOT, 'dist', gameName), code);
 writeFileSync(join(ROOT, 'dist', assetsName), assetsCode);
 
+/* ---------- PWA：service worker 预缓存首屏；index.html 走网络优先 ---------- */
+const swVersion = `na-b17-${sha(assetsName + gameName)}`;
+const swCode = `/* 自动生成：批 17 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
+const CACHE = '${swVersion}';
+const CORE = [
+  './',
+  './index.html',
+  './manifest.json',
+  './web/vendor/phaser.min.js',
+  './web/fonts/game.woff2',
+  './web/atlas/core.png',
+  './web/icons/icon-180.png',
+  './web/icons/icon-192.png',
+  './web/icons/icon-512.png',
+  './web/icons/icon-maskable-512.png',
+  './dist/${assetsName}',
+  './dist/${gameName}',
+];
+const isAsset = (path) => path.endsWith('/manifest.json') || path.includes('/dist/') || path.includes('/web/');
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil(caches.keys().then((keys) => Promise.all(
+    keys.filter((key) => key.indexOf('na-b17-') === 0 && key !== CACHE).map((key) => caches.delete(key)),
+  )).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+  if (url.pathname.indexOf('/web/audio/') >= 0) return; // 音乐/音效懒加载，不占离线首屏缓存
+  if (req.mode === 'navigate') {
+    event.respondWith(fetch(req).then((res) => {
+      if (res.ok) caches.open(CACHE).then((cache) => cache.put('./index.html', res.clone()));
+      return res;
+    }).catch(() => caches.match('./index.html')));
+    return;
+  }
+  if (!isAsset(url.pathname)) return;
+  event.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+    if (res.ok) caches.open(CACHE).then((cache) => cache.put(req, res.clone()));
+    return res;
+  })));
+});
+`;
+writeFileSync(join(ROOT, 'sw.js'), swCode);
+
 const phaser = readFileSync(join(ROOT, 'web/vendor/phaser.min.js'), 'utf8');
 
-const head = (title, fontUrl) => `<html lang="zh-CN">
+const head = (title, fontUrl, pwa = true) => `<!doctype html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#2f3b2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+${pwa ? '<link rel="manifest" href="./manifest.json">\n<link rel="apple-touch-icon" href="./web/icons/icon-180.png">\n<link rel="icon" type="image/png" href="./web/icons/icon-192.png">' : '<link rel="icon" href="data:,">'}
 <title>${title}</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0d1017; overflow: hidden; }
@@ -343,7 +398,7 @@ if (single) {
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
-  const singleHtml = `${head('归途：星火之章 · 单文件版', b64(FONT_OUT, 'font/woff2'))}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
+  const singleHtml = `${head('归途：星火之章 · 单文件版', b64(FONT_OUT, 'font/woff2'), false)}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
 <script>${code}</script>
 </body>
@@ -353,6 +408,24 @@ if (single) {
   singleSize = statSync(join(ROOT, 'web/game.html')).size;
 }
 
+const indexBytes = statSync(join(ROOT, 'index.html')).size;
+const manifestBytes = statSync(join(ROOT, 'manifest.json')).size;
+const firstBytes = indexBytes + manifestBytes
+  + statSync(join(ROOT, 'web/vendor/phaser.min.js')).size
+  + FONT_SIZE + statSync(join(ROOT, 'web/atlas/core.png')).size
+  + statSync(join(ROOT, 'dist', assetsName)).size + statSync(join(ROOT, 'dist', gameName)).size;
+const firstGzip = gzipSync(readFileSync(join(ROOT, 'index.html'))).length
+  + gzipSync(readFileSync(join(ROOT, 'manifest.json'))).length
+  + gzipSync(readFileSync(join(ROOT, 'web/vendor/phaser.min.js'))).length
+  + gzipSync(readFileSync(join(ROOT, 'web/fonts/game.woff2'))).length
+  + gzipSync(readFileSync(join(ROOT, 'web/atlas/core.png'))).length
+  + gzipSync(readFileSync(join(ROOT, 'dist', assetsName))).length
+  + gzipSync(readFileSync(join(ROOT, 'dist', gameName))).length;
+console.log(`首屏预算       ${kb(firstBytes)} / 2.00 MB（gzip ${kb(firstGzip)}）`);
+if (firstBytes > 2 * 1024 * 1024) {
+  console.error('首屏预算超限：关键文件合计超过 2 MB');
+  process.exitCode = 1;
+}
 console.log(`已生成 index.html`);
 console.log(`  引擎(单独缓存) ${kb(statSync(join(ROOT, 'web/vendor/phaser.min.js')).size)}  → web/vendor/phaser.min.js`);
 console.log(`  字体           ${kb(FONT_SIZE)}  → web/fonts/game.woff2（NinjaPixel，子集）`);
@@ -361,4 +434,5 @@ console.log(`  素材数据       ${kb(statSync(join(ROOT, 'dist', assetsName)).
 console.log(`  游戏逻辑       ${kb(statSync(join(ROOT, 'dist', gameName)).size)}  → dist/${gameName}`);
 const audioSize = Object.keys(MUSIC).reduce((n, k) => n + statSync(join(ROOT, MUSIC[k].replace('./', ''))).size, 0);
 console.log(`  音乐(懒加载)   ${(audioSize / 1048576).toFixed(2)} MB  → ${Object.keys(MUSIC).length} 首 mood（不进 assets.js）`);
+if (single) console.log(`  PWA            sw.js（${swVersion}）+ manifest.json`);
 if (single) console.log(`  单文件自测     ${kb(singleSize)}  → web/game.html`);

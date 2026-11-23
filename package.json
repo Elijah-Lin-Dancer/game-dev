@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "build:single": "node tools/build.mjs --single",
-    "dev": "node tools/build.mjs --serve"
+    "dev": "node tools/build.mjs --serve",
+    "smoke": "node tools/smoke.mjs"
   },
   "dependencies": {
     "esbuild": "^0.24.2"

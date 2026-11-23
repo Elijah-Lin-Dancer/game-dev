@@ -1,0 +1,32 @@
+{
+  "name": "归途：星火之章",
+  "short_name": "归途",
+  "description": "俯视像素动作小游戏：穿过五片土地，把星火撒进每一扇窗。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0d1017",
+  "theme_color": "#2f3b2a",
+  "icons": [
+    {
+      "src": "./web/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./web/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./web/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { normalizeTier, difficultyMods, tierMeta, tierStarsOf } from '../systems
 import { stageSpec, specialSpec, starsOf, starRating, specialRewardLabel } from '../systems/stages.js';
 import { storyAfterBoss, storyCanTrigger } from '../systems/story.js';
 import { evaluateAchievements } from '../systems/ach.js';
+import { TouchControls, isTouchDevice } from '../systems/input.js';
 import { NAV } from '../systems/nav.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
@@ -4120,7 +4121,8 @@ export class Play extends Phaser.Scene {
       card.add(label);
       return { card, label };
     });
-    const hint = hudText(this, S.W / 2, (S.H - ph) / 2 + 144, 'ESC / Enter 继续 · H 回小屋', 'caption', {
+    const hint = hudText(this, S.W / 2, (S.H - ph) / 2 + 144,
+      this.touchCtl ? '点按上方卡片 · 继续 / 回小屋' : 'ESC / Enter 继续 · H 回小屋', 'caption', {
       color: UI.text.muted, origin: [0.5, 0], background: null, depth: 921,
     });
     this.pausePanel = { container: panel.container, title, rows, hint };
@@ -4493,9 +4495,11 @@ export class Play extends Phaser.Scene {
       padding: { x: 4, y: 2 }, depth: 850,
     }).setVisible(false);
     this.fitHint();
+    this.fitInfo();
     this.scale.on('resize', (gs) => {
       this.hint.setPosition(10, gs.height - 20);
       this.fitHint();
+      this.fitInfo();
     });
   }
 
@@ -4514,6 +4518,13 @@ export class Play extends Phaser.Scene {
   fitHint() {
     const w = this.scale.width || S.W;
     this.hint.setScale(this.hint.width > w - 20 ? (w - 20) / this.hint.width : 1);
+  }
+
+  /* 竖屏 360 宽时信息条比屏幕还长：先缩字，不裁内容 */
+  fitInfo() {
+    if (!this.info) return;
+    const w = this.scale.width || S.W;
+    this.info.setScale(this.info.width > w - 16 ? (w - 16) / this.info.width : 1);
   }
 
   bindInput() {
@@ -4561,8 +4572,9 @@ export class Play extends Phaser.Scene {
 
     this.ring = this.add.graphics().setScrollFactor(0).setDepth(700);
     this.input.on('pointerdown', (p) => {
+      if (this.touchCtl && this.touchCtl.hitTest(p.x, p.y)) return;
       if (this.talking) { this.dlgAdvance(); return; }
-      if (this.panelOpen) return;
+      if (this.panelOpen || this.paused) return;
       if (this.dead || this.won) { if (this.spec) { NAV.reset('map'); this.scene.start('map', this.overlayBack); } else this.restart(); return; }
       this.press = { x: p.x, y: p.y, t: this.time.now };
       this.stick = { active: true, ox: p.x, oy: p.y, dx: 0, dy: 0 };
@@ -4582,7 +4594,7 @@ export class Play extends Phaser.Scene {
       }
     });
     const release = (p) => {
-      if (this.press && !this.dead && !this.won) {
+      if (this.press && !this.dead && !this.won && !this.paused) {
         const dt = this.time.now - this.press.t;
         const moved = Phaser.Math.Distance.Between(p.x, p.y, this.press.x, this.press.y);
         if (dt < 320 && moved < 26) this.attack();
@@ -4594,6 +4606,27 @@ export class Play extends Phaser.Scene {
     this.input.on('pointerup', release);
     this.input.on('pointerupoutside', release);
     this.input.addPointer(1);
+
+    if (isTouchDevice()) {
+      this.touchCtl = new TouchControls(this, {
+        attack: () => {
+          if (!this.talking && !this.panelOpen && !this.dead && !this.won) this.attack();
+        },
+        skill: () => {
+          if (!this.talking && !this.panelOpen && !this.dead && !this.won) this.castSkill();
+        },
+        skill2: () => {
+          if (!this.talking && !this.panelOpen && !this.dead && !this.won) this.castSkill2();
+        },
+        interact: () => {
+          if (!this.talking && !this.panelOpen && !this.dead && !this.won) this.interact();
+        },
+        pause: () => this.togglePause(),
+      });
+      this.events.once('shutdown', () => {
+        if (this.touchCtl) { this.touchCtl.destroy(); this.touchCtl = null; }
+      });
+    }
   }
 
   /* 顿帧入口：表现层（fx.js）通过它把世界、补间、动画一起冻住 */
@@ -4601,6 +4634,7 @@ export class Play extends Phaser.Scene {
 
   /* ---------- 主循环 ---------- */
   update(_t, dtRaw) {
+    if (this.touchCtl) this.touchCtl.setEnabled(!this.paused && !this.talking && !this.panelOpen && !this.dead && !this.won);
     if (this.paused) return;
     // 卡帧保护：浏览器切后台/追帧时 delta 会飙到几百毫秒，不夹住会把无敌帧一帧烧完
     const dt = Math.min(dtRaw, 50);
@@ -4846,8 +4880,12 @@ export class Play extends Phaser.Scene {
       this.guardAura.setVisible(this.time.now < this.guardUntil);
       this.guardAura.setPosition(this.player.x, this.player.y + 6);
     }
-    let wantHint = isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能 · X 二技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · X 二技能 · 拾取武器自动换装 · M 静音';
-    if (this.fistMode) wantHint = 'WASD 移动 · 空格 出拳 · Q 技能 · X 二技能 · 本关赤手空拳';
+    let wantHint = this.touchCtl
+      ? '拖拽移动 · 右下按键 攻击 / Q / X / E'
+      : (isMuted() ? '已静音 · 按 M 恢复 · 空格 攻击 · Q 技能 · X 二技能' : 'WASD 移动 · 空格 攻击 · Q 技能 · X 二技能 · 拾取武器自动换装 · M 静音');
+    if (this.fistMode) wantHint = this.touchCtl
+      ? '拖拽移动 · 右下按键出拳 / Q / X · 本关赤手空拳'
+      : 'WASD 移动 · 空格 出拳 · Q 技能 · X 二技能 · 本关赤手空拳';
     if (this.noCoinRule && !this.fistMode) wantHint += ' · 本关不掉金币';
     if (this.brazierTotal) wantHint += ' · 火盆 ' + this.braziersLit + '/' + this.brazierTotal;
     if (this.hint && this.hint.text !== wantHint) { this.hint.setText(wantHint); this.fitHint(); }
@@ -4860,6 +4898,7 @@ export class Play extends Phaser.Scene {
       this.roomLabel() + ' · 击杀 ' + this.kills
       + ' · 金币 ' + this.coins + ' · 宝石 ' + this.gems + ' · 钥匙 ' + this.keyCount + ' · HP ' + this.hp + '/' + this.maxHp()
     );
+    this.fitInfo();
     this.updateTimerHud();
 
     // 精英光环跟着走，怪物死了就藏起来（sprite 由清尸循环销毁）
