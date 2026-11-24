@@ -1,5 +1,5 @@
-/* 自动生成：批 17 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
-const CACHE = 'na-b17-af1d3b6e';
+/* 自动生成：批 18 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
+const CACHE = 'na-b18-80e8cc33';
 const CORE = [
   './',
   './index.html',
@@ -11,8 +11,8 @@ const CORE = [
   './web/icons/icon-192.png',
   './web/icons/icon-512.png',
   './web/icons/icon-maskable-512.png',
-  './dist/assets.97721d4f.js',
-  './dist/game.55c34185.js',
+  './dist/assets.a8c2948a.js',
+  './dist/game.d2e34f5f.js',
 ];
 const isAsset = (path) => path.endsWith('/manifest.json') || path.includes('/dist/') || path.includes('/web/');
 self.addEventListener('install', (event) => {
@@ -20,7 +20,7 @@ self.addEventListener('install', (event) => {
 });
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((key) => key.indexOf('na-b17-') === 0 && key !== CACHE).map((key) => caches.delete(key)),
+    keys.filter((key) => (key.indexOf('na-b17-') === 0 || key.indexOf('na-b18-') === 0) && key !== CACHE).map((key) => caches.delete(key)),
   )).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (event) => {

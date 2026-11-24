@@ -151,6 +151,16 @@ const img = {
   worldTree: join(ROOT, 'assets/01-primary/world/tree-green.png'),
   worldBush: join(ROOT, 'assets/01-primary/world/bush-green.png'),
   caveMouth: join(ROOT, 'assets/01-primary/world/cave-mouth.png'),
+  /* G2-1 竹林 / G2 后备群系：ink-studio 离线生成，见 docs/ART_PIPELINE.md */
+  bambooGrove: join(ROOT, 'assets/01-primary/world/bamboo-grove.png'),
+  bambooGate: join(ROOT, 'assets/01-primary/world/bamboo-gate.png'),
+  bambooHermit: join(ROOT, 'assets/01-primary/world/bamboo-hermit.png'),
+  desertArch: join(ROOT, 'assets/01-primary/world/desert-arch.png'),
+  desertDeadTree: join(ROOT, 'assets/01-primary/world/desert-dead-tree.png'),
+  snowPine: join(ROOT, 'assets/01-primary/world/snow-pine.png'),
+  snowShrine: join(ROOT, 'assets/01-primary/world/snow-shrine.png'),
+  volcanoSpire: join(ROOT, 'assets/01-primary/world/volcano-spire.png'),
+  volcanoVent: join(ROOT, 'assets/01-primary/world/volcano-vent.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
   faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
   faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
@@ -195,6 +205,10 @@ const FRAME = {
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
   herb: [16, 16],
   worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
+  bambooGrove: [64, 96], bambooGate: [96, 128], bambooHermit: [64, 64],
+  desertArch: [96, 80], desertDeadTree: [64, 80],
+  snowPine: [64, 96], snowShrine: [64, 80],
+  volcanoSpire: [64, 96], volcanoVent: [64, 48],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
 };
@@ -304,8 +318,8 @@ writeFileSync(join(ROOT, 'dist', gameName), code);
 writeFileSync(join(ROOT, 'dist', assetsName), assetsCode);
 
 /* ---------- PWA：service worker 预缓存首屏；index.html 走网络优先 ---------- */
-const swVersion = `na-b17-${sha(assetsName + gameName)}`;
-const swCode = `/* 自动生成：批 17 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
+const swVersion = `na-b18-${sha(assetsName + gameName)}`;
+const swCode = `/* 自动生成：批 18 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
 const CACHE = '${swVersion}';
 const CORE = [
   './',
@@ -327,7 +341,7 @@ self.addEventListener('install', (event) => {
 });
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((key) => key.indexOf('na-b17-') === 0 && key !== CACHE).map((key) => caches.delete(key)),
+    keys.filter((key) => (key.indexOf('na-b17-') === 0 || key.indexOf('na-b18-') === 0) && key !== CACHE).map((key) => caches.delete(key)),
   )).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (event) => {

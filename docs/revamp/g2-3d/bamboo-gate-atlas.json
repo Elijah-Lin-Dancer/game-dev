@@ -1,0 +1,43 @@
+{
+  "width": 96,
+  "height": 128,
+  "tileWidth": 96,
+  "tileHeight": 128,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0,
+    1.72,
+    0.02
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.12,
+      "pitch": 0.12,
+      "unitsPerPixel": 0.033356737537436315,
+      "depthOrigin": 18.2,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 96,
+        "height": 128
+      },
+      "pivot": {
+        "x": 48,
+        "y": 64
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "bamboo-gate.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

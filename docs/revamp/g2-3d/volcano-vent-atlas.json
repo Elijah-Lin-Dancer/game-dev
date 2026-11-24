@@ -1,0 +1,43 @@
+{
+  "width": 64,
+  "height": 48,
+  "tileWidth": 64,
+  "tileHeight": 48,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.24,
+    0.02
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.16,
+      "pitch": 0.26,
+      "unitsPerPixel": 0.06599612588051916,
+      "depthOrigin": 14.6,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 48
+      },
+      "pivot": {
+        "x": 32,
+        "y": 24
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "volcano-vent.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

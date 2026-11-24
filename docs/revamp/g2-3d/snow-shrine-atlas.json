@@ -1,0 +1,43 @@
+{
+  "width": 64,
+  "height": 80,
+  "tileWidth": 64,
+  "tileHeight": 80,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.94,
+    0.02
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.12,
+      "pitch": 0.14,
+      "unitsPerPixel": 0.046484227794104806,
+      "depthOrigin": 17.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 80
+      },
+      "pivot": {
+        "x": 32,
+        "y": 40
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "snow-shrine.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}
