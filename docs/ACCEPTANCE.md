@@ -292,7 +292,7 @@
 | 编号 | 判据 | 验证方式 | 结果 |
 |---|---|---|---|
 | W-1 | 12 屏、6 竹林、2 NPC | 进 world 读 `screens / ids / npcs` | 通过；`field-1..6 + bamboo-1..6`，NPC 村医 / 竹隐，`errs=[]` |
-| W-2 | Boss 后真实进竹林 | `boss=done` 种子；站 field-6 右边界按 D | 通过；`screen=bamboo-1 / x=2912.32 / bossActive=false / layer=surface`，HUD `雾 · 第 7/12 屏` |
+| W-2 | Boss 后真实进竹林 | `boss=done` 种子；站 field-6 右边界按 D | 通过；`screen=bamboo-1 / x=2902.32 / bossActive=false / layer=surface`，HUD `雾 · 第 7/12 屏` |
 | W-3 | 竹林摆件 / 地表 | 640 / 960 实机截图 | 通过；石拱门 96×160、两柱可走，竹丛 / 雾竹 / 地表色可读；接缝无黑缝 |
 | W-4 | 竹隐委托 | 接 → 采 2 丛 → 交付 | 通过；`active/0 → active/4 → done/0 / tokens 2`，面板与交付对话均出 |
 | W-5 | 草原委托回归 | 村医接 → 采 3 丛 → 交付 | 通过；`active/0 → active/6 → done/1 / tokens 1` |
@@ -300,5 +300,6 @@
 | W-7 | 窄屏 / 单文件 | 640×360、960×540、844×390 hasTouch、`web/game.html` | 通过；逻辑 640×360、960 CSS 1.5×、844 逻辑 779×360；单文件 12 屏，`errs=[]` |
 | W-8 | 构建 / 冒烟 | `npm run build`、`build:single`、`npm run smoke` | 通过；首屏报告 1,882 KB / gzip 767 KB <2 MiB；9 项 PASS |
 | W-9 | PWA 缓存 | 本地 SW ready / controller、cache 列表；断网 reload | 通过；`na-b18-fdbd810a` / 12 条；离线 world 可进，`errs=[]` |
+| W-10 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.d2e34f5f.js` + `assets.87a5fab8.js`；12 屏 / 2 NPC；竹林 1 / 4、委托 / 交付、mobile 均通过，`errs=[]`（`g2-online-*.png`） |
 
-证据：`docs/revamp/g2/` 9 张本地截图 + `docs/revamp/g2-3d/` 9 组源图集 / 对照板；详见 `docs/BATCH18-G2-1.md`。
+证据：`docs/revamp/g2/` 9 张本地截图 + 5 张线上截图 + `docs/revamp/g2-3d/` 9 组源图集 / 对照板；详见 `docs/BATCH18-G2-1.md`。

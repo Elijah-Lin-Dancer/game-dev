@@ -1,7 +1,7 @@
 # 批 18 / G2-1：竹林群系与多群系底座
 
 日期：2026-11-24
-状态：本地实现 + 构建 + 桌面 / 窄屏 / 单文件 / 冒烟验收完成；G2 只完成第 2 个群系，尚未达到“五群系可通”。
+状态：本地实现 + 构建 + 桌面 / 窄屏 / 单文件 / 冒烟验收完成，已推送并在 Pages 线上验收；G2 只完成第 2 个群系，尚未达到“五群系可通”。
 
 ## 1. 范围与结果
 
@@ -25,7 +25,7 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 | `web/data/world.json` | `version=3`；12 屏 `field-1..6 / bamboo-1..6`；新增 `bambooQuest`（`bamboo4 / 雾竹三味 / need 4 / yield 2 / rewardTokens 2`）；`bamboo-4` NPC `hermit / 竹隐`；竹林摆件 / 雾竹分布；清掉竹林屏误继承的 `cave / plateau` |
 | `src/systems/worldSave.js` | `VERSION=3`；`SCREENS` 12；默认 / 迁移补 `bambooHerbs / bambooQuest`；旧 v2 映射 `field/bamboo/desert → field-1/3/6`；迁移即刻落盘 |
 | `src/scenes/world.js` | `TINT` 加竹林；逐屏底色 + 群系接缝混色；`bamboo / bambooGate` 摆件与碰撞；NPC 数组、最近 NPC、按 NPC 分派委托；采集按 `node.biome` 分 `herbs / bambooHerbs`；HUD / 提示按当前群系切文案 |
-| `tools/build.mjs` | 9 张 G2 素材登记 `img / FRAME`；`bambooGate` 96×160；PWA 缓存名改 `na-b18-*`，清 b17 / b18 旧缓存 |
+| `tools/build.mjs` | 9 张 G2 素材登记 `img / FRAME`；`bambooGate` 96×160；PWA 缓存名改 `na-b18-*`，清 b17 / b18 旧缓存；SW 版本纳入 `core.png` 哈希，图集变更可失效 |
 | `src/scenes/world.js` | 竹林屏不再继承草原 `cave / plateau`；HUD 不再出现“地穴”误标 |
 
 ## 4. 验收
@@ -41,6 +41,7 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 | G2-1-7 | 640 / 960 / 844 / 单文件 | 640×360、960×540、844×390 hasTouch、`web/game.html` | 通过；内部逻辑 640×360、960 为 CSS 1.5×、844 逻辑 779×360；单文件 12 屏，均 `errs=[]` |
 | G2-1-8 | 构建与冒烟 | `npm run build` / `build:single` / `npm run smoke` | 通过；首屏报告 1,882 KB（gzip 767 KB）< 2 MiB；9 项冒烟 PASS |
 | G2-1-9 | PWA 缓存升级 | 本地 HTTP 首次加载 → SW ready / controller → 读 cache；断网 reload | 通过；`na-b18-fdbd810a` / 12 条缓存；离线 world 场景仍可进，`errs=[]` |
+| G2-1-10 | Pages 线上 | 线上 Playwright 960×540 / 844×390 | 通过；入口 `game.d2e34f5f.js` + `assets.87a5fab8.js`；12 屏 / 2 NPC；竹林 1 / 4、委托 / 交付、mobile，`errs=[]` |
 
 ### 构建产物
 
@@ -51,6 +52,7 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 
 ### 截图
 
+- 线上：`docs/revamp/g2/g2-online-bamboo-1-960.png`、`g2-online-bamboo-4-960.png`、`g2-online-quest-960.png`、`g2-online-done-960.png`、`g2-online-mobile-844x390.png`
 - `docs/revamp/g2/g2-bamboo-1-960.png` / `g2-bamboo-1-640.png`
 - `docs/revamp/g2/g2-bamboo-4-960.png` / `g2-bamboo-4-640.png`
 - `docs/revamp/g2/g2-bamboo-quest-960.png` / `g2-bamboo-quest-640.png`
