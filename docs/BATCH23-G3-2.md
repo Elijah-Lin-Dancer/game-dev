@@ -160,7 +160,11 @@ node art-src/g3/render-g3.cjs
 
 ### 4.4 Pages 线上
 
-- 入口 `https://elijah-lin-dancer.github.io/game-dev/`：待推送 / 部署后回填（见 W-70）。
+- 推送 `0f51099..e4efbc1`，部署等待约 20s；入口 `https://elijah-lin-dancer.github.io/game-dev/` 已切到 `game.f3072417.js` + `assets.cf099f61.js`，PWA `na-b18-ba98e423` / 12 条。
+- 线上 960×540 `?world=1&debug=1`：30 屏，`applyScreen(11)` 为竹林 `bamboo-6`，Boss `bambooMirage / hp72 / active / scale1.8084 / originY0.7604 / tex=bambooMirageIdle`，`standoff104 / pounceGap48 / pounceR58`。
+- 线上扑击：`HP20→15`，Boss `state=recover`，落点 `{x:5473.50,y:263.70}`；24 次 3 伤击杀 → `hp72→0 / bossDead=true / bosses={mossBeast:none,bambooMirage:done} / tokens4 / victory=true`。
+- 线上 640×360：`scrollWidth=640`；844×390 `hasTouch`：`touchCtl=true / touchItems=3 / scrollWidth=844`；PWA 断网 reload：`online=false / 30 屏 / bambooMirage / cache 12 条`；四组 `errs=[]`。
+- 截图：`g3-online-bamboo-intro-960.png`、`g3-online-bamboo-idle-960.png`、`g3-online-bamboo-pounce-960.png`、`g3-online-bamboo-victory-960.png`、`g3-online-bamboo-640.png`、`g3-online-bamboo-touch-844x390.png`、`g3-online-bamboo-pwa-offline-960.png`，共 7 张。
 
 ---
 
