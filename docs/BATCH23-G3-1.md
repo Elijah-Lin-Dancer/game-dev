@@ -61,8 +61,8 @@ node art-src/g3/render-g3.cjs
   "id": "mossBeast",
   "name": "苔背巨兽",
   "screen": "field-6",
-  "x": 252,
-  "y": 210,
+  "x": 300,
+  "y": 170,
   "hp": 64,
   "dmg": 4,
   "rewardTokens": 3
@@ -79,7 +79,7 @@ node art-src/g3/render-g3.cjs
 `src/scenes/world.js` 新增：
 
 - `BOSS_TEX = { idle, charge, roar }`，`BOSS_SCALE = 2.2`；
-- `bossDirection()`：玩家在下方 → 帧 0（正前），上方 → 帧 2（背面），左右 → 帧 3 / 1（左右侧）；
+- `bossDirection()`：玩家在下方 → 帧 0（正前），上方 → 帧 2（背面），左右 → 帧 1 / 3（左右侧）；
 - `setBossPose(pose, dir)`：切 `mossBeastIdle / Charge / Roar` + 对应帧，避免 `play('racoon-idle')` 一类旧动画残留；
 - Boss 入场 `state='intro'` 900ms，先咆哮再转 `chase`；不会一进屏就被 chase 的朝向刷新覆盖掉咆哮；
 - 追击、蓄力、扑击、落地、回气、死亡分别绑定姿态；`spr` 有 1.2% 的呼吸缩放 tween，但切姿态时保持帧完整。
@@ -94,16 +94,23 @@ node art-src/g3/render-g3.cjs
 - **环境苔尘**：Boss 激活时每 300ms 从背脊附近升起 1–2px 苔光碎屑，不遮挡判定；
 - **地面**：新增 118×20 黑色投影 + 102×22 苔色贴地环，Boss 不再像贴纸浮空；
 - **名字**：世界名标签在 Boss 战中隐藏，名字交给底部血条，避免顶栏压字；入场 banner 仍独立显示「苔背巨兽 · 星火守巢者」；
-- **入场站位**：`startBossFight / retryBoss` 把玩家放在 `screen.x+150 / WORLD_Y+185`，避开左侧跨屏树冠与底栏 Boss 血条；`field-6` 地面 deco 清空，保留草纹、光束与跨屏树框，战场中心不再有前景树盖住玩家；
+- **入场站位**：`startBossFight / retryBoss` 把玩家放在 `screen.x+150 / WORLD_Y+240`，避开左侧跨屏树冠与底栏 Boss 血条；`field-6` 地面 deco 清空，保留草纹、光束与跨屏树框，战场中心不再有前景树盖住玩家；
 - **结算清理**：胜利时清掉入场 banner / toast，失败面板同样独占视线，避免残留「SPACE / J 攻击」压住结算；
 - **触屏**：Boss 战隐藏桌面“攻击”大块，只保留右下「攻」触控键；HUD 提示改“点按「攻」击败…”；解决 844×390 下两个攻击按钮重叠；
 - **文案**：banner / HUD / 失败面板 / 胜利面板的“苔背巨兽”改为从 `this.boss.name` 读取，为下一只 Boss 留口，不再硬编码。
+
+### 3.3.1 脚底锚定与站位（本轮新增）
+
+- **脚底锚定**：96×96 图集里脚底只到第 65–72 行，整帧下方有 24–31 px 透明边；旧 `setOrigin(0.5,1)` 把脚底抬高了 60–70 px，Boss 看起来浮空。现在按姿态把 origin 设到脚底线：`idle 66/96 / charge 72/96 / roar 65/96`，阴影与苔色贴地环仍贴 `spr.y-3`。
+- **站位重算**：脚底落回地面后，`world.boss.y` 从 210 收到 **170**，`x` 从 252 右移到 **300**；玩家仍在 `screen.x+150`，与 Boss 体宽（约 183 px）留出可读间隙。入场 / 重试都站在 `WORLD_Y+240`，不再被左侧跨屏树冠或底栏血条压住。
+- **追击距离**：新增 `BOSS_STANDOFF=122`。巨兽不再追到玩家脚边再停下，而是在 122 px 外站住；近身（<104 px）才切抓击，避免整只玩家被背甲盖住。
+- **四向修正**：图集实际是 `0 前 / 1 左 / 2 后 / 3 右`；旧代码把 1/3 写反，Boss 会背对玩家。`bossDirection()` 已改为左→1、右→3，进场咆哮就朝玩家。
 
 ### 3.4 边界与战斗
 
 - `movePlayer` 的 `screenIndex === 5` 硬编码改为 `bossSpawn.screenIndex`，Boss 换屏时不锁错边；
 - Boss 场地边界仍是 `x1 = s.x + 44 / x2 = s.x + SCREEN_W - 44`，但玩家侧锁边改为 `bossSpawn.screen.x + 24`；
-- 近身抓击判定 74px、扑击落地判定 64px、半径 82px 内才进入抓击，符合新体型；
+- 近身抓击判定 74px、扑击落地判定 64px、半径 104px 内才进入抓击、122px 外停止追击，符合新体型；
 - 失败面板保留“重新挑战 / 回到小屋”，R / 按钮重试；重试重置 `intro → chase`、满血、姿态 idle；
 - 击杀写 `patchWorldSave({ boss: 'done', tokens: +3 })`；胜利面板动态显示 Boss 名。
 
@@ -117,7 +124,7 @@ node art-src/g3/render-g3.cjs
 |---|---|
 | 入口 | `?world=1&debug` → `applyScreen(5)`；Boss `mossBeast / hp 64 / dmg 4 / reward 3` |
 | 图集 | `textures.exists('mossBeastIdle')=true`；`frameTotal=5`（SpriteSheet 含 1 个 base frame + 4 帧） |
-| 四向 | `below=0 / above=2 / left=3 / right=1`；帧序与图集一致 |
+| 四向 | `below=0 / above=2 / left=1 / right=3`；帧序 0 前 / 1 左 / 2 后 / 3 右 |
 | 姿态 | `intro=roar → chase=idle`；蓄力 `charge`；落地 / 死亡 `roar` |
 | 击杀 | 22 次 3 伤 → `bossDead=true / boss='done' / tokens 3 / victory=true` |
 | 失败 / 重试 | HP 归零 → 失败面板；`retryBoss()` → `hp 20 / bossHp 64 / state intro→chase` |
@@ -138,10 +145,10 @@ node art-src/g3/render-g3.cjs
 |---|---|
 | 首屏预算 | **1943 KB / gzip 801 KB**（<2 MiB） |
 | 图集 | **151 切片 / 216 KB**（新增 3 张 384×96 Boss atlas） |
-| 游戏逻辑 | `dist/game.958c009c.js` **327,071 B** |
-| 素材数据 | `dist/assets.e45baf55.js` **123,728 B** |
-| 单文件 | `web/game.html` **2,106,634 B** |
-| PWA | `na-b18-a235847f` / 12 条 |
+| 游戏逻辑 | `dist/game.09389bb4.js` **327,151 B** |
+| 素材数据 | `dist/assets.5d1e6b5b.js` **123,728 B** |
+| 单文件 | `web/game.html` **2,106,726 B** |
+| PWA | `na-b18-6719a767` / 12 条 |
 | 冒烟 | 9 项 PASS |
 
 ---

@@ -33,7 +33,11 @@ const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完�
 const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
 /* G3-1 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。 */
 const BOSS_TEX = { idle: 'mossBeastIdle', charge: 'mossBeastCharge', roar: 'mossBeastRoar' };
+/* atlas 96 px 高，脚底在帧内约 65–72 px，不能按整帧底对齐，否则浮空 30 px。 */
+const BOSS_ORIGIN = { idle: 66 / 96, charge: 72 / 96, roar: 65 / 96 };
 const BOSS_SCALE = 2.2;
+/* 巨兽体宽约 1.7 屏像素，追击要停在 122 px 外，避免把玩家整只盖住。 */
+const BOSS_STANDOFF = 122;
 const WORLD_TOUCH = [
   { id: 'attack', label: '攻', r: 22, fx: 38, fy: 42 },
   { id: 'interact', label: 'E', r: 18, fx: 84, fy: 28 },
@@ -1842,7 +1846,7 @@ export class World extends Phaser.Scene {
     const shadow = this.add.ellipse(x, y - 3, 118, 20, 0x000000, 0.26).setDepth(30).setVisible(false);
     const ring = this.add.ellipse(x, y - 3, 102, 22, UI.world.field, 0.13).setDepth(32).setVisible(false);
     const spr = this.add.sprite(x, y, 'mossBeastIdle', 0)
-      .setOrigin(0.5, 1).setScale(BOSS_SCALE).setDepth(35).setVisible(false);
+      .setOrigin(0.5, BOSS_ORIGIN.idle).setScale(BOSS_SCALE).setDepth(35).setVisible(false);
     const label = this.add.text(x, y - 152, b.name, {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
       backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
@@ -1860,12 +1864,12 @@ export class World extends Phaser.Scene {
     this.setBossPose('idle', 0);
   }
 
-  /* 四向帧：0 前 / 1 左 / 2 后 / 3 右。苔背巨兽只换静态姿势，不做旋转动画。 */
+  /* 四向帧：0 前 / 1 左 / 2 后 / 3 右（以图集实际画面为准）。苔背巨兽只换静态姿势，不做旋转动画。 */
   bossDirection() {
     if (!this.boss) return 0;
     const dx = this.player.x - this.boss.spr.x;
     const dy = this.player.y - this.boss.spr.y;
-    if (Math.abs(dx) > Math.abs(dy) * 0.9) return dx < 0 ? 3 : 1;
+    if (Math.abs(dx) > Math.abs(dy) * 0.9) return dx < 0 ? 1 : 3;
     return dy < 0 ? 2 : 0;
   }
 
@@ -1877,6 +1881,7 @@ export class World extends Phaser.Scene {
     if (B.pose === nextPose && B.dir === nextDir) return;
     B.pose = nextPose;
     B.dir = nextDir;
+    B.spr.setOrigin(0.5, BOSS_ORIGIN[nextPose]);
     B.spr.setTexture(BOSS_TEX[nextPose], nextDir);
   }
 
@@ -1919,7 +1924,7 @@ export class World extends Phaser.Scene {
     const b = this.world.boss;
     if (!b || !this.boss) return;
     // 避开上一屏跨过来的树冠：把入场站位放到巢心左下空地。
-    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 185);
+    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 240);
     this.bossActive = true;
     this.bossDead = false;
     this.victory = false;
@@ -1996,11 +2001,11 @@ export class World extends Phaser.Scene {
       if (time >= B.faceAt) { B.faceAt = time + 90; this.setBossPose('idle'); }
       if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
       if (time >= B.nextAt) {
-        if (dist < 82) this.startSwipe();
+        if (dist < 104) this.startSwipe();
         else this.startPounce();
         return;
       }
-      if (dist > 74) {
+      if (dist > BOSS_STANDOFF) {
         const dx = this.player.x - B.spr.x;
         const dy = this.player.y - B.spr.y;
         const d = Math.hypot(dx, dy) || 1;
@@ -2229,7 +2234,7 @@ export class World extends Phaser.Scene {
     this.iframe = 0;
     this.lastHurtAt = -9999;
     this.player.setAlpha(1);
-    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 185);
+    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 240);
     this.boss.hp = this.boss.maxHp;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y);
     this.boss.state = 'intro';
