@@ -20,28 +20,28 @@ module.exports = ({ makeBuilder, makeSculpt, KIT: K }) => ({
       S.box([sx * 1.05, 0.12, 0], [0.58, 0.24, 0.44], stone, { res: 0.04, rd: 0.05 });
       S.box([sx * 1.05, 0.25, 0], [0.62, 0.08, 0.46], moss, { res: 0.03, rd: 0.03 });
     }
-    // Two timber posts leaning slightly inwards.
-    S.tube([[-1.02, 0.22, 0], [-0.86, 2.00, 0.01], [-0.78, 3.15, 0.01]], 0.15, 0.11, wood, { res: 0.03 });
-    S.tube([[1.02, 0.22, 0], [0.86, 2.00, 0.01], [0.78, 3.15, 0.01]], 0.15, 0.11, wood, { res: 0.03 });
-    // Lintel + top bracket, slightly oversized for silhouette.
-    S.box([0, 3.22, 0], [2.18, 0.20, 0.34], wood, { res: 0.04, rd: 0.04 });
-    S.box([0, 3.42, 0], [1.90, 0.14, 0.28], stoneLight, { res: 0.035, rd: 0.03 });
-    S.box([0, 3.46, 0], [0.18, 0.26, 0.18], dark, { res: 0.025 });
-    // Hanging paper lanterns.
-    for (const sx of [-0.64, 0.64]) {
-      S.tube([[sx, 3.18, 0.13], [sx, 2.94, 0.18]], 0.018, 0.012, dark, { res: 0.008 });
-      S.ball([sx, 2.78, 0.19], [0.13, 0.18, 0.11], { r: [10, 11, 12], em: true }, { res: 0.02 });
-      S.box([sx, 2.62, 0.19], [0.12, 0.05, 0.10], dark, { res: 0.01 });
-      S.ball([sx, 2.78, 0.28], 0.035, glow, { res: 0.008 });
+    // A stone moon-arch: two posts + a curved crown. No flat lintel, so it
+    // cannot read as a tabletop at 1x.
+    S.tube([[-1.05, 0.20, 0], [-1.00, 1.45, 0.01], [-0.96, 2.28, 0.01]], 0.18, 0.15, stone, { res: 0.035 });
+    S.tube([[1.05, 0.20, 0], [1.00, 1.45, 0.01], [0.96, 2.28, 0.01]], 0.18, 0.15, stone, { res: 0.035 });
+    S.tube([[-0.96, 2.26, 0], [-0.76, 2.92, 0.01], [0, 3.26, 0.01], [0.76, 2.92, 0.01], [0.96, 2.26, 0]], 0.19, 0.19, stone, { res: 0.035 });
+    // Keystone, post caps, and moss on the crown.
+    S.box([0, 3.26, 0.01], [0.22, 0.28, 0.34], stoneLight, { res: 0.025, rd: 0.03 });
+    S.box([-0.96, 2.28, 0.01], [0.22, 0.10, 0.34], moss, { res: 0.02 });
+    S.box([0.96, 2.28, 0.01], [0.22, 0.10, 0.34], moss, { res: 0.02 });
+    for (const sx of [-0.58, 0.58]) {
+      S.tube([[sx, 3.04, 0.16], [sx, 2.82, 0.22]], 0.018, 0.012, dark, { res: 0.008 });
+      S.ball([sx, 2.68, 0.23], [0.12, 0.17, 0.10], { r: [10, 11, 12], em: true }, { res: 0.02 });
+      S.box([sx, 2.55, 0.23], [0.11, 0.05, 0.09], dark, { res: 0.01 });
+      S.ball([sx, 2.68, 0.31], 0.032, glow, { res: 0.008 });
     }
-    // Moss patches on posts, and a small charm at the center.
-    S.ball([-0.82, 0.68, 0.17], [0.14, 0.18, 0.06], moss, { res: 0.02 });
-    S.ball([0.80, 1.04, 0.17], [0.13, 0.15, 0.05], moss, { res: 0.02 });
-    S.ball([0, 3.04, 0.18], 0.08, glow, { res: 0.012 });
+    S.ball([-0.82, 0.75, 0.15], [0.14, 0.18, 0.06], moss, { res: 0.02 });
+    S.ball([0.82, 1.15, 0.15], [0.13, 0.15, 0.05], moss, { res: 0.02 });
+    S.box([0, 0.18, 0], [0.84, 0.10, 0.34], moss, { res: 0.02, rd: 0.02 });
     S.bake();
 
     return B.finish({
-      cam: { target: [0, 1.72, 0.02], dist: 6.2, pitch: 0.12, yaw: 0.12 },
+      cam: { target: [0, 1.70, 0.02], dist: 8.2, pitch: 0.12, yaw: 0.12 },
       detail: 16, dither: 0.22, radius: 4,
     });
   },

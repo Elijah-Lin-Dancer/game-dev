@@ -14,7 +14,7 @@ fs.mkdirSync(outDir, { recursive: true });
 
 const specs = [
   { file: 'bamboo-grove.cjs', out: 'bamboo-grove-atlas', w: 64, h: 96, directions: 1, dist: 5.2 },
-  { file: 'bamboo-gate.cjs', out: 'bamboo-gate-atlas', w: 96, h: 128, directions: 1, dist: 6.2 },
+  { file: 'bamboo-gate.cjs', out: 'bamboo-gate-atlas', w: 96, h: 160, directions: 1, dist: 8.2 },
   { file: 'bamboo-hermit.cjs', out: 'bamboo-hermit-atlas', w: 64, h: 64, directions: 4, dist: 4.3 },
   { file: 'desert-arch.cjs', out: 'desert-arch-atlas', w: 96, h: 80, directions: 1, dist: 5.4 },
   { file: 'desert-dead-tree.cjs', out: 'desert-dead-tree-atlas', w: 64, h: 80, directions: 1, dist: 5.0 },

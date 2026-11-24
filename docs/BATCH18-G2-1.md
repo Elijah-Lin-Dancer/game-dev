@@ -16,7 +16,7 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 - 源图集：`docs/revamp/g2-3d/*-atlas.png/json`；对照板 `g2-props-board.png`。
 - 正式输出：`assets/01-primary/world/` 9 张 PNG；登记见 `assets/CREDITS.md`，MIT 原文随包。
 - 竹隐 4 向源图集 256×64，正式 PNG 只取正面 64×64，运行时 1.5 倍显示。
-- 竹林石门从 96×64 回炉到 96×128：原剪影横梁偏低、像一张桌子；加高立柱与上梁后，640 / 960 实机可读为门。
+- 竹林石门从 96×64 两次回炉到 96×160，最终改为石拱门（两柱 + 弧形拱券 + 拱心石 + 低门槛）：640 / 960 实机不再读成桌子。
 
 ## 3. 代码与数据
 
@@ -25,7 +25,7 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 | `web/data/world.json` | `version=3`；12 屏 `field-1..6 / bamboo-1..6`；新增 `bambooQuest`（`bamboo4 / 雾竹三味 / need 4 / yield 2 / rewardTokens 2`）；`bamboo-4` NPC `hermit / 竹隐`；竹林摆件 / 雾竹分布；清掉竹林屏误继承的 `cave / plateau` |
 | `src/systems/worldSave.js` | `VERSION=3`；`SCREENS` 12；默认 / 迁移补 `bambooHerbs / bambooQuest`；旧 v2 映射 `field/bamboo/desert → field-1/3/6`；迁移即刻落盘 |
 | `src/scenes/world.js` | `TINT` 加竹林；逐屏底色 + 群系接缝混色；`bamboo / bambooGate` 摆件与碰撞；NPC 数组、最近 NPC、按 NPC 分派委托；采集按 `node.biome` 分 `herbs / bambooHerbs`；HUD / 提示按当前群系切文案 |
-| `tools/build.mjs` | 9 张 G2 素材登记 `img / FRAME`；`bambooGate` 96×128；PWA 缓存名改 `na-b18-*`，清 b17 / b18 旧缓存 |
+| `tools/build.mjs` | 9 张 G2 素材登记 `img / FRAME`；`bambooGate` 96×160；PWA 缓存名改 `na-b18-*`，清 b17 / b18 旧缓存 |
 | `src/scenes/world.js` | 竹林屏不再继承草原 `cave / plateau`；HUD 不再出现“地穴”误标 |
 
 ## 4. 验收
@@ -33,21 +33,21 @@ G2-1 把 `web/data/world.json` 从草原 6 屏扩到 **草原 6 + 竹林 6 = 12 
 | 编号 | 判据 | 验证方式 | 结果 |
 |---|---|---|---|
 | G2-1-1 | 12 屏与 2 NPC | 进 world 读 `screens / ids / npcs` | 通过；`screens=12`，`bamboo-1..6` 齐全，NPC `村医 阿杏 / 竹隐`，`errs=[]` |
-| G2-1-2 | 草原 Boss 后真实进竹林 | 持久化 `boss='done'`，站到 `field-6` 右边界按 D | 通过；`screen=6 / bamboo-1`，`x=2912.32`，`bossActive=false`，`layer=surface`，HUD `雾 · 第 7/12 屏` |
-| G2-1-3 | 竹林摆件与地表 | 640×360 / 960×540 实机截图 | 通过；石门 96×128 两柱可走、竹丛剪影可读；竹林地表比草原暗，接缝混色不透明 |
+| G2-1-2 | 草原 Boss 后真实进竹林 | 持久化 `boss='done'`，站到 `field-6` 右边界按 D | 通过；`screen=6 / bamboo-1`，`x=2902.32`，`bossActive=false`，`layer=surface`，HUD `雾 · 第 7/12 屏` |
+| G2-1-3 | 竹林摆件与地表 | 640×360 / 960×540 实机截图 | 通过；石拱门 96×160 两柱可走、竹丛剪影可读；竹林地表比草原暗，接缝混色不透明 |
 | G2-1-4 | 竹隐委托闭环 | 接委托 → 采 2 丛（每丛 2）→ 交付 | 通过；`active/0 → active/4 → done/0`，`tokens 0→2`，面板与交付对话均出现 |
 | G2-1-5 | 草原委托回归 | 村医接委托 → 采 3 丛 → 交付 | 通过；`active/0 → active/6 → done/1`，`tokens 0→1`，面板正常 |
 | G2-1-6 | v2→v3 迁移 | 写 v2 种子后 reload | 通过；`v=3`，`visited [field-1,field-2,field-3,field-6]`，`bambooHerbs=0 / bambooQuest=none` 并立即落盘 |
 | G2-1-7 | 640 / 960 / 844 / 单文件 | 640×360、960×540、844×390 hasTouch、`web/game.html` | 通过；内部逻辑 640×360、960 为 CSS 1.5×、844 逻辑 779×360；单文件 12 屏，均 `errs=[]` |
-| G2-1-8 | 构建与冒烟 | `npm run build` / `build:single` / `npm run smoke` | 通过；首屏报告 1,881 KB（gzip 768 KB）< 2 MiB；9 项冒烟 PASS |
-| G2-1-9 | PWA 缓存升级 | 本地 HTTP 首次加载 → SW ready / controller → 读 cache；断网 reload | 通过；`na-b18-80e8cc33` / 12 条缓存；离线 world 场景仍可进，`errs=[]` |
+| G2-1-8 | 构建与冒烟 | `npm run build` / `build:single` / `npm run smoke` | 通过；首屏报告 1,882 KB（gzip 767 KB）< 2 MiB；9 项冒烟 PASS |
+| G2-1-9 | PWA 缓存升级 | 本地 HTTP 首次加载 → SW ready / controller → 读 cache；断网 reload | 通过；`na-b18-fdbd810a` / 12 条缓存；离线 world 场景仍可进，`errs=[]` |
 
 ### 构建产物
 
-- `dist/game.d2e34f5f.js` 299,789 B；`dist/assets.a8c2948a.js` 113,615 B。
-- `web/game.html` 2,035,389 B；`index.html` 1,328 B；`sw.js` 1,808 B，缓存 `na-b18-80e8cc33`。
-- `web/atlas/core.png` 195,712 B / 136 切片（新增 9 件 G2 素材）。
-- `manifest.json` 762 B；字体 133,548 B。
+- `dist/game.d2e34f5f.js` 299,789 B；`dist/assets.87a5fab8.js` 113,615 B。
+- `web/game.html` 2,035,525 B；`index.html` 1,328 B；`sw.js` 1,808 B，缓存 `na-b18-fdbd810a`。
+- `web/atlas/core.png` 195,807 B / 136 切片（新增 9 件 G2 素材）。
+- `manifest.json` 762 B；字体 133,556 B。
 
 ### 截图
 

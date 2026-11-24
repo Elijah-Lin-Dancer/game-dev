@@ -205,7 +205,7 @@ const FRAME = {
   floorDungeon: [16, 16], floorDetail: [16, 16], ray: [72, 102], dust: [8, 8],
   herb: [16, 16],
   worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
-  bambooGrove: [64, 96], bambooGate: [96, 128], bambooHermit: [64, 64],
+  bambooGrove: [64, 96], bambooGate: [96, 160], bambooHermit: [64, 64],
   desertArch: [96, 80], desertDeadTree: [64, 80],
   snowPine: [64, 96], snowShrine: [64, 80],
   volcanoSpire: [64, 96], volcanoVent: [64, 48],
@@ -318,7 +318,8 @@ writeFileSync(join(ROOT, 'dist', gameName), code);
 writeFileSync(join(ROOT, 'dist', assetsName), assetsCode);
 
 /* ---------- PWA：service worker 预缓存首屏；index.html 走网络优先 ---------- */
-const swVersion = `na-b18-${sha(assetsName + gameName)}`;
+const coreSha = sha(readFileSync(join(ROOT, 'web/atlas/core.png')));
+const swVersion = `na-b18-${sha(assetsName + gameName + coreSha)}`;
 const swCode = `/* 自动生成：批 18 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
 const CACHE = '${swVersion}';
 const CORE = [

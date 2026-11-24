@@ -73,7 +73,7 @@ python3 tools/crop_hub.py
 | 件 | 源 | 源图集 | 正式输出 | 运行时状态 |
 |---|---|---|---|---|
 | 竹林竹丛 | `art-src/g2/bamboo-grove.cjs` | 64×96，1 向 | `assets/01-primary/world/bamboo-grove.png` | 已接入 `bamboo` 摆件 |
-| 竹林石门 | `art-src/g2/bamboo-gate.cjs` | 96×128，1 向 | `assets/01-primary/world/bamboo-gate.png` | 已接入 `bambooGate`；两根柱碰撞，中间可走 |
+| 竹林石门 | `art-src/g2/bamboo-gate.cjs` | 96×160，1 向 | `assets/01-primary/world/bamboo-gate.png` | 已接入 `bambooGate`；两根柱碰撞，中间可走 |
 | 竹隐 | `art-src/g2/bamboo-hermit.cjs` | 256×64，4 向 | `assets/01-primary/world/bamboo-hermit.png`（正面 64×64） | 已接入竹林 NPC；运行只用正面帧 |
 | 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×80，1 向 | `assets/01-primary/world/desert-arch.png` | 已入图集，未接沙漠屏 |
 | 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | 已入图集，未接沙漠屏 |
@@ -83,7 +83,7 @@ python3 tools/crop_hub.py
 | 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | 已入图集，未接火山屏 |
 
 - 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`；9 个 `*-atlas.png/json` 同目录。
-- 竹林石门从最初的 96×64 回炉到 96×128，解决“横梁偏低像桌子”的剪影问题。
+- 竹林石门从 96×64 两次回炉到 96×160，最终改为石拱门：两柱 + 弧形拱券 + 拱心石 + 低门槛，解决 1x 下“横梁像桌子”的剪影问题。
 - 竹隐源图 4 向保留；正式 PNG 只取正面首帧 64×64，运行时显示 1.5 倍，避免透明边过多导致角色显小。
 - 正式输出已登记 `assets/CREDITS.md`；MIT 原文随包 `assets/01-primary/world/ink-studio-LICENSE.txt`。
 
