@@ -31,13 +31,25 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
-/* G3-1 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。 */
-const BOSS_TEX = { idle: 'mossBeastIdle', charge: 'mossBeastCharge', roar: 'mossBeastRoar' };
-/* atlas 96 px 高，脚底在帧内约 65–72 px，不能按整帧底对齐，否则浮空 30 px。 */
-const BOSS_ORIGIN = { idle: 66 / 96, charge: 72 / 96, roar: 65 / 96 };
-const BOSS_SCALE = 2.2;
-/* 巨兽体宽约 1.7 屏像素，追击要停在 122 px 外，避免把玩家整只盖住。 */
-const BOSS_STANDOFF = 122;
+/* G3 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。
+ * 竹林 Boss 的脚底统一在 73/96；苔背巨兽三姿态各有 1–2px 差，保留逐姿态。 */
+const BOSS_ART = {
+  mossBeast: {
+    tex: { idle: 'mossBeastIdle', charge: 'mossBeastCharge', roar: 'mossBeastRoar' },
+    origin: { idle: 66 / 96, charge: 72 / 96, roar: 65 / 96 },
+    scale: 2.2, standoff: 122, pounceGap: 118, pounceR: 126, swipeR: 96, swipeWarn: 96,
+    shadow: [118, 20], glowY: 30, labelY: 152,
+    tint: UI.world.fieldLight,
+  },
+  bambooMirage: {
+    tex: { idle: 'bambooMirageIdle', charge: 'bambooMirageCharge', roar: 'bambooMirageRoar' },
+    origin: { idle: 73 / 96, charge: 73 / 96, roar: 73 / 96 },
+    scale: 1.8, standoff: 104, pounceGap: 48, pounceR: 58, swipeR: 62, swipeWarn: 62,
+    shadow: [78, 14], glowY: 24, labelY: 126,
+    tint: UI.world.herb,
+  },
+};
+const bossArt = (id) => BOSS_ART[id] || BOSS_ART.mossBeast;
 const WORLD_TOUCH = [
   { id: 'attack', label: '攻', r: 22, fx: 38, fy: 42 },
   { id: 'interact', label: 'E', r: 18, fx: 84, fy: 28 },
@@ -190,7 +202,9 @@ function normalizeWorld(raw) {
   const sq = raw && raw.snowQuest ? raw.snowQuest : {};
   const vq = raw && raw.volcanoQuest ? raw.volcanoQuest : {};
   const vq2 = raw && raw.volcanoQuest2 ? raw.volcanoQuest2 : {};
-  const bossRaw = raw && raw.boss ? raw.boss : null;
+  const bossesRaw = Array.isArray(raw && raw.bosses)
+    ? raw.bosses
+    : (raw && raw.boss ? [raw.boss] : []);
   const screenIds = new Set(screens.map((s) => s.id));
   const quenches = (Array.isArray(raw && raw.quenches) ? raw.quenches : [])
     .filter((q) => q && q.id && screenIds.has(String(q.screen)))
@@ -205,8 +219,29 @@ function normalizeWorld(raw) {
       x: asNumber(c.x, 0), y: asNumber(c.y, 0),
       spawnX: asNumber(c.spawnX, asNumber(c.x, 0) - 36), spawnY: asNumber(c.spawnY, asNumber(c.y, 0) - 2),
     }));
+  const bosses = [];
+  for (const b of bossesRaw) {
+    if (!b || !b.id || !b.screen || !screenIds.has(String(b.screen))) continue;
+    const screen = String(b.screen);
+    if (bosses.some((x) => x.screen === screen)) continue;
+    bosses.push({
+      id: String(b.id),
+      name: String(b.name || b.id),
+      screen,
+      x: asNumber(b.x, 240),
+      y: asNumber(b.y, 190),
+      hp: Math.max(1, Math.round(asNumber(b.hp, 64))),
+      dmg: Math.max(1, Math.round(asNumber(b.dmg, 4))),
+      rewardTokens: Math.max(0, Math.round(asNumber(b.rewardTokens, 3))),
+      art: String(b.art || 'mossBeast'),
+      title: String(b.title || '星火守巢者'),
+      victoryTitle: String(b.victoryTitle || '星火的碎片 · 已归位'),
+      victoryBody: String(b.victoryBody || '这片群系的远征，暂时告一段落。'),
+      memorialText: String(b.memorialText || '星火已归位'),
+    });
+  }
   return {
-    screens, quenches, campfires,
+    screens, quenches, campfires, bosses,
     quest: {
       id: String(q.id || 'herb5'),
       name: String(q.name || '草药五株'),
@@ -248,16 +283,6 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(vq2.need, 3))),
       rewardTokens: Math.max(0, Math.round(asNumber(vq2.rewardTokens, 3))),
     },
-    boss: bossRaw ? {
-      id: String(bossRaw.id || 'mossBeast'),
-      name: String(bossRaw.name || '苔背巨兽'),
-      screen: String(bossRaw.screen || 'field-6'),
-      x: asNumber(bossRaw.x, 240),
-      y: asNumber(bossRaw.y, 190),
-      hp: Math.max(1, Math.round(asNumber(bossRaw.hp, 64))),
-      dmg: Math.max(1, Math.round(asNumber(bossRaw.dmg, 4))),
-      rewardTokens: Math.max(0, Math.round(asNumber(bossRaw.rewardTokens, 3))),
-    } : null,
   };
 }
 
@@ -270,6 +295,7 @@ export class World extends Phaser.Scene {
     this.world = normalizeWorld(window.__worldData);
     this.save = loadWorldSave();
     this.screens = this.world.screens;
+    this.bossByScreen = new Map(this.world.bosses.map((b) => [b.screen, b]));
     this.worldWidth = this.screens.length * SCREEN_W;
     this.blockers = [];
     this.screenIndex = -1;
@@ -1130,7 +1156,7 @@ export class World extends Phaser.Scene {
     if (this.gathering) return '正在采集 · 移动会打断';
     if (this.dead) return '星火熄灭 · R 重新挑战 / ESC 回小屋';
     if (this.bossActive) {
-      const name = this.boss?.name || '苔背巨兽';
+      const name = this.boss?.name || '世界 Boss';
       return this.touchCtl ? '点按「攻」击败' + name + ' · 点按「返」回小屋' : 'SPACE / J 攻击 · 击败' + name + ' · ESC 回小屋';
     }
     const s = this.screens[this.screenIndex] || this.screens[0];
@@ -1208,16 +1234,36 @@ export class World extends Phaser.Scene {
     this.updateLayer(true);
     this.updateHud();
     if (!initial) this.banner(s.name);
-    if (this.world.boss && s.id === this.world.boss.screen) this.enterBossScreen();
+    const bossDef = this.bossByScreen.get(s.id);
+    if (bossDef) this.enterBossScreen(bossDef);
   }
 
-  enterBossScreen() {
-    if (!this.world.boss) return;
-    if (this.save.boss === 'done') {
-      this.showMemorial();
+  bossDone(def) {
+    if (!def) return false;
+    if (this.save.bosses && this.save.bosses[def.id] === 'done') return true;
+    // v7 旧档兼容：boss 字段只代表草原苔背巨兽。
+    return def.id === 'mossBeast' && this.save.boss === 'done';
+  }
+
+  bossSpawnFor(def) {
+    const si = this.screens.findIndex((s) => s.id === def.screen);
+    if (si < 0) return null;
+    const s = this.screens[si];
+    return {
+      x: s.x + def.x, y: WORLD_Y + def.y,
+      screenIndex: si, screen: s, def,
+    };
+  }
+
+  enterBossScreen(def) {
+    const spawn = this.bossSpawnFor(def);
+    if (!spawn) return;
+    this.bossSpawn = spawn;
+    if (this.bossDone(def)) {
+      this.showMemorial(def);
       return;
     }
-    if (!this.boss) this.spawnBoss();
+    if (!this.boss || this.boss.id !== def.id) this.spawnBoss(def);
     if (!this.bossActive && !this.bossDead) this.startBossFight();
   }
 
@@ -1831,36 +1877,46 @@ export class World extends Phaser.Scene {
   }
 
   /* ---------- Boss ---------- */
-  spawnBoss() {
-    const b = this.world.boss;
+  spawnBoss(def) {
+    const b = def || (this.bossSpawn && this.bossSpawn.def);
     if (!b) return;
-    const si = this.screens.findIndex((s) => s.id === b.screen);
-    if (si < 0) return;
-    const s = this.screens[si];
-    const x = s.x + b.x;
-    const y = WORLD_Y + b.y;
-    this.bossSpawn = { x, y, screenIndex: si, screen: s };
-    const glow = this.add.image(x, y - 30, 'aura', 0)
-      .setScale(3.6).setAlpha(0.16).setTint(UI.world.fieldLight)
+    if (this.boss) {
+      for (const key of ['spr', 'glow', 'shadow', 'ring', 'label', 'warning']) {
+        if (this.boss[key]) this.boss[key].destroy();
+      }
+      if (this.boss.breath) this.boss.breath.remove();
+      this.boss = null;
+    }
+    const spawn = this.bossSpawnFor(b);
+    if (!spawn) return;
+    this.bossSpawn = spawn;
+    const art = bossArt(b.art);
+    const { x, y } = spawn;
+    const glow = this.add.image(x, y - art.glowY, 'aura', 0)
+      .setScale(3.6).setAlpha(0.16).setTint(art.tint)
       .setBlendMode(Phaser.BlendModes.ADD).setDepth(33).setVisible(false);
-    const shadow = this.add.ellipse(x, y - 3, 118, 20, 0x000000, 0.26).setDepth(30).setVisible(false);
-    const ring = this.add.ellipse(x, y - 3, 102, 22, UI.world.field, 0.13).setDepth(32).setVisible(false);
-    const spr = this.add.sprite(x, y, 'mossBeastIdle', 0)
-      .setOrigin(0.5, BOSS_ORIGIN.idle).setScale(BOSS_SCALE).setDepth(35).setVisible(false);
-    const label = this.add.text(x, y - 152, b.name, {
+    const shadow = this.add.ellipse(x, y - 3, art.shadow[0], art.shadow[1], 0x000000, 0.26).setDepth(30).setVisible(false);
+    const ring = this.add.ellipse(x, y - 3, Math.round(art.shadow[0] * 0.86), Math.round(art.shadow[1] * 1.1), art.tint, 0.13).setDepth(32).setVisible(false);
+    const spr = this.add.sprite(x, y, art.tex.idle, 0)
+      .setOrigin(0.5, art.origin.idle).setScale(art.scale).setDepth(35).setVisible(false);
+    const label = this.add.text(x, y - art.labelY, b.name, {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
       backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
     }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
     this.boss = {
+      id: b.id, def: b, art,
       name: b.name, spr, glow, shadow, ring, label, x, y,
       maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
+      scale: art.scale, standoff: art.standoff,
       state: 'idle', stateEnd: 0, nextAt: 0, target: null, warning: null, flash: 0,
       pose: 'idle', dir: 0, faceAt: 0, moteAt: 0,
-      screenIndex: si, arena: {
-        x1: s.x + 44, x2: s.x + SCREEN_W - 44,
+      screenIndex: spawn.screenIndex, arena: {
+        x1: spawn.screen.x + 44, x2: spawn.screen.x + SCREEN_W - 44,
         y1: WORLD_Y + 104, y2: WORLD_Y + SCREEN_H - 22,
       },
     };
+    this.bossActive = false;
+    this.bossDead = false;
     this.setBossPose('idle', 0);
   }
 
@@ -1876,17 +1932,18 @@ export class World extends Phaser.Scene {
   setBossPose(pose, dir) {
     const B = this.boss;
     if (!B) return;
-    const nextPose = BOSS_TEX[pose] ? pose : 'idle';
+    const nextPose = B.art.tex[pose] ? pose : 'idle';
     const nextDir = Number.isInteger(dir) ? dir : this.bossDirection();
     if (B.pose === nextPose && B.dir === nextDir) return;
     B.pose = nextPose;
     B.dir = nextDir;
-    B.spr.setOrigin(0.5, BOSS_ORIGIN[nextPose]);
-    B.spr.setTexture(BOSS_TEX[nextPose], nextDir);
+    B.spr.setOrigin(0.5, B.art.origin[nextPose]);
+    B.spr.setTexture(B.art.tex[nextPose], nextDir);
   }
 
   bossImpact(x, y, big = false) {
-    const ring = this.add.ellipse(x, y - 2, big ? 54 : 30, big ? 16 : 10, UI.world.fieldLight, 0.22)
+    const tint = this.boss ? this.boss.art.tint : UI.world.fieldLight;
+    const ring = this.add.ellipse(x, y - 2, big ? 54 : 30, big ? 16 : 10, tint, 0.22)
       .setDepth(36).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({
       targets: ring, scaleX: big ? 3.2 : 2.2, scaleY: big ? 1.7 : 1.3, alpha: 0,
@@ -1896,7 +1953,7 @@ export class World extends Phaser.Scene {
     for (let i = 0; i < n; i += 1) {
       const a = (i / n) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.2, 0.2);
       const r = Phaser.Math.Between(4, big ? 16 : 10);
-      const mote = this.add.rectangle(x + Math.cos(a) * r, y - 8 + Math.sin(a) * r * 0.45, 2, 2, i % 3 ? UI.world.fieldLight : UI.world.herb, 0.8)
+      const mote = this.add.rectangle(x + Math.cos(a) * r, y - 8 + Math.sin(a) * r * 0.45, 2, 2, i % 3 ? tint : UI.world.herb, 0.8)
         .setDepth(37);
       this.tweens.add({
         targets: mote, x: mote.x + Math.cos(a) * (big ? 34 : 20), y: mote.y - (big ? 26 : 14),
@@ -1911,7 +1968,7 @@ export class World extends Phaser.Scene {
     const mote = this.add.rectangle(
       B.spr.x + Phaser.Math.Between(-56, 56),
       B.spr.y - Phaser.Math.Between(24, 68),
-      Phaser.Math.Between(1, 2), 2, UI.world.fieldLight, 0.62,
+      Phaser.Math.Between(1, 2), 2, B.art.tint, 0.62,
     ).setDepth(34);
     this.tweens.add({
       targets: mote, y: mote.y - Phaser.Math.Between(12, 24),
@@ -1921,8 +1978,7 @@ export class World extends Phaser.Scene {
   }
 
   startBossFight() {
-    const b = this.world.boss;
-    if (!b || !this.boss) return;
+    if (!this.boss) return;
     // 避开上一屏跨过来的树冠：把入场站位放到巢心左下空地。
     this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 240);
     this.bossActive = true;
@@ -1938,9 +1994,9 @@ export class World extends Phaser.Scene {
     this.boss.stateEnd = this.time.now + 900;
     this.boss.nextAt = this.time.now + 900;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(1);
-    this.boss.spr.setScale(BOSS_SCALE * 0.92);
+    this.boss.spr.setScale(this.boss.scale * 0.92);
     this.tweens.add({
-      targets: this.boss.spr, scale: BOSS_SCALE, duration: 520, ease: 'Back.easeOut',
+      targets: this.boss.spr, scale: this.boss.scale, duration: 520, ease: 'Back.easeOut',
       onComplete: () => { if (this.bossActive) this.startBossBreath(); },
     });
     this.boss.glow.setVisible(true);
@@ -1948,16 +2004,15 @@ export class World extends Phaser.Scene {
     this.boss.ring.setVisible(true);
     this.boss.label.setVisible(false);
     this.setBossPose('roar');
-    if (!this.arenaLine) {
-      const s = this.screens[this.boss.screenIndex];
-      this.arenaLine = this.add.rectangle(s.x + 6, WORLD_Y + 6, 5, SCREEN_H - 12, UI.world.boss, 0.45)
-        .setOrigin(0).setDepth(38);
-    }
+    if (this.arenaLine) { this.arenaLine.destroy(); this.arenaLine = null; }
+    const arenaScreen = this.screens[this.boss.screenIndex];
+    this.arenaLine = this.add.rectangle(arenaScreen.x + 6, WORLD_Y + 6, 5, SCREEN_H - 12, UI.world.boss, 0.45)
+      .setOrigin(0).setDepth(38);
     this.updateHud();
     this.updateBossBar();
-    this.banner((this.boss.name || '苔背巨兽') + ' · 星火守巢者');
+    this.banner((this.boss.name || '世界 Boss') + ' · ' + (this.boss.def.title || '星火守巢者'));
     this.time.delayedCall(900, () => {
-      if (this.bossActive) this.toast('SPACE / J 攻击 · 击败' + (this.boss.name || '苔背巨兽'));
+      if (this.bossActive) this.toast((this.touchCtl ? '点按「攻」' : 'SPACE / J 攻击') + ' · 击败' + (this.boss.name || '世界 Boss'));
     });
   }
 
@@ -1965,7 +2020,7 @@ export class World extends Phaser.Scene {
     const B = this.boss;
     if (!B || B.breath) return;
     B.breath = this.tweens.add({
-      targets: B.spr, scaleX: BOSS_SCALE * 1.012, scaleY: BOSS_SCALE * 0.988,
+      targets: B.spr, scaleX: B.scale * 1.012, scaleY: B.scale * 0.988,
       duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
   }
@@ -1980,10 +2035,10 @@ export class World extends Phaser.Scene {
     if (!B || !this.bossActive || this.dead || this.victory) return;
     B.spr.x = clamp(B.spr.x, B.arena.x1, B.arena.x2);
     B.spr.y = clamp(B.spr.y, B.arena.y1, B.arena.y2);
-    B.glow.x = B.spr.x; B.glow.y = B.spr.y - 30;
+    B.glow.x = B.spr.x; B.glow.y = B.spr.y - B.art.glowY;
     B.shadow.x = B.spr.x; B.shadow.y = B.spr.y - 3;
     B.ring.x = B.spr.x; B.ring.y = B.spr.y - 3;
-    B.label.x = B.spr.x; B.label.y = B.spr.y - 152;
+    B.label.x = B.spr.x; B.label.y = B.spr.y - B.art.labelY;
     if (B.flash > 0) {
       B.flash -= delta;
       if (B.flash <= 0) B.spr.clearTint();
@@ -2005,7 +2060,7 @@ export class World extends Phaser.Scene {
         else this.startPounce();
         return;
       }
-      if (dist > BOSS_STANDOFF) {
+      if (dist > B.standoff) {
         const dx = this.player.x - B.spr.x;
         const dy = this.player.y - B.spr.y;
         const d = Math.hypot(dx, dy) || 1;
@@ -2025,7 +2080,8 @@ export class World extends Phaser.Scene {
         targets: B.spr, x: tx, y: ty, duration: 180, ease: 'Quad.easeOut',
         onComplete: () => {
           if (!this.bossActive) return;
-          if (this.distBoss() <= 64) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
+          const hitD = Phaser.Math.Distance.Between(this.player.x, this.player.y, B.target.x, B.target.y);
+          if (hitD <= B.art.pounceR) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
           this.bossImpact(B.spr.x, B.spr.y);
           this.setBossPose('roar');
           B.state = 'recover';
@@ -2038,7 +2094,7 @@ export class World extends Phaser.Scene {
     if (B.state === 'swipeWindup' && time >= B.stateEnd) {
       if (B.warning) { B.warning.destroy(); B.warning = null; }
       this.setBossPose('roar');
-      if (this.distBoss() <= 74) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
+      if (this.distBoss() <= B.art.swipeR) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
       this.bossImpact(B.spr.x, B.spr.y);
       this.cameras.main.shake(110, 0.008);
       B.state = 'recover';
@@ -2061,7 +2117,7 @@ export class World extends Phaser.Scene {
     B.stateEnd = this.time.now + 320;
     this.setBossPose('charge');
     if (B.warning) B.warning.destroy();
-    B.warning = this.add.circle(B.spr.x, B.spr.y - 22, 52, UI.world.boss, 0.26)
+    B.warning = this.add.circle(B.spr.x, B.spr.y - 22, B.art.swipeWarn, UI.world.boss, 0.26)
       .setDepth(37);
     this.tweens.add({ targets: B.warning, alpha: 0.08, scale: 1.15, duration: 160, yoyo: true });
   }
@@ -2071,7 +2127,12 @@ export class World extends Phaser.Scene {
     if (!B) return;
     B.state = 'pounceWindup';
     B.stateEnd = this.time.now + 420;
-    B.target = { x: this.player.x, y: this.player.y };
+    // 扑击落在玩家与 Boss 之间的“体宽安全带”上，不再整只压到玩家头顶。
+    const gap = B.art.pounceGap;
+    const dx = B.spr.x - this.player.x;
+    const dy = B.spr.y - this.player.y;
+    const d = Math.hypot(dx, dy) || 1;
+    B.target = { x: this.player.x + (dx / d) * gap, y: this.player.y + (dy / d) * gap };
     this.setBossPose('charge');
     if (B.warning) B.warning.destroy();
     B.warning = this.add.circle(B.target.x, B.target.y - 10, 32, UI.world.boss, 0.3)
@@ -2143,7 +2204,7 @@ export class World extends Phaser.Scene {
     this.bossImpact(this.boss.spr.x, this.boss.spr.y, true);
     this.cameras.main.shake(200, 0.014);
     this.tweens.add({
-      targets: this.boss.spr, alpha: 0, scale: BOSS_SCALE * 1.08, duration: 620, ease: 'Quad.easeOut',
+      targets: this.boss.spr, alpha: 0, scale: this.boss.scale * 1.08, duration: 620, ease: 'Quad.easeOut',
       onComplete: () => { if (this.boss) { this.boss.spr.setVisible(false).setAlpha(1); } },
     });
     this.boss.glow.setVisible(false);
@@ -2152,8 +2213,8 @@ export class World extends Phaser.Scene {
     this.boss.label.setVisible(false);
     if (this.arenaLine) { this.arenaLine.destroy(); this.arenaLine = null; }
     this.updateBossBar();
-    const reward = this.world.boss.rewardTokens;
-    this.save = patchWorldSave({ boss: 'done', tokens: this.save.tokens + reward });
+    const reward = this.boss.rewardTokens;
+    this.save = patchWorldSave({ bosses: { ...this.save.bosses, [this.boss.id]: 'done' }, tokens: this.save.tokens + reward });
     this.updateHud();
     this.addAuraAtBoss();
     this.showVictory(reward);
@@ -2162,21 +2223,32 @@ export class World extends Phaser.Scene {
   addAuraAtBoss() {
     if (!this.bossSpawn) return;
     const { x, y } = this.bossSpawn;
+    const tint = this.boss && this.boss.id === this.bossSpawn.def.id
+      ? this.boss.art.tint
+      : bossArt(this.bossSpawn.def.art).tint;
     const aura = this.add.image(x, y - 18, 'aura', 0)
-      .setScale(2.4).setAlpha(0.5).setTint(UI.world.herbGold)
+      .setScale(2.4).setAlpha(0.5).setTint(tint)
       .setBlendMode(Phaser.BlendModes.ADD).setDepth(26);
     this.tweens.add({ targets: aura, alpha: 0.16, scale: 2.8, duration: 900, yoyo: true, repeat: -1 });
-    this.memorial = { aura };
+    this.memorial = { aura, key: this.bossSpawn.screen.id + ':' + this.bossSpawn.def.id };
   }
 
-  showMemorial() {
+  showMemorial(def) {
     if (!this.bossSpawn) return;
-    if (this.memorial) return;
-    this.addAuraAtBoss();
-    this.memorialText = this.add.text(this.bossSpawn.x, this.bossSpawn.y - 66, '星火已归位', {
-      fontFamily: UI.font, fontSize: '12px', color: UI.text.gold,
-      backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
-    }).setOrigin(0.5, 1).setDepth(40);
+    const d = def || this.boss?.def || this.bossSpawn.def;
+    const key = this.bossSpawn.screen.id + ':' + d.id;
+    if (this.memorial && this.memorial.key !== key) {
+      this.memorial.aura.destroy();
+      if (this.memorialText) { this.memorialText.destroy(); this.memorialText = null; }
+      this.memorial = null;
+    }
+    if (!this.memorial) this.addAuraAtBoss();
+    if (!this.memorialText) {
+      this.memorialText = this.add.text(this.bossSpawn.x, this.bossSpawn.y - 66, d.memorialText || '星火已归位', {
+        fontFamily: UI.font, fontSize: '12px', color: UI.text.gold,
+        backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
+      }).setOrigin(0.5, 1).setDepth(40);
+    }
   }
 
   worldDown() {
@@ -2204,7 +2276,7 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     p.add(makeText(this, 14, 12, '星火熄灭', 'h2', { color: UI.text.danger }));
-    p.add(makeText(this, 14, 34, '你被' + (this.boss?.name || '苔背巨兽') + '击倒了。', 'body', { color: UI.text.body }));
+    p.add(makeText(this, 14, 34, '你被' + (this.boss?.name || '世界 Boss') + '击倒了。', 'body', { color: UI.text.body }));
     const rows = [
       ['重新挑战', () => this.retryBoss()],
       ['回到小屋', () => this.leave()],
@@ -2242,7 +2314,7 @@ export class World extends Phaser.Scene {
     this.boss.nextAt = this.time.now + 650;
     this.bossActive = true;
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
-    this.boss.spr.setVisible(true).setAlpha(1).setScale(BOSS_SCALE);
+    this.boss.spr.setVisible(true).setAlpha(1).setScale(this.boss.scale);
     this.startBossBreath();
     this.setBossPose('roar');
     this.boss.glow.setVisible(true);
@@ -2251,7 +2323,7 @@ export class World extends Phaser.Scene {
     this.boss.label.setVisible(false);
     if (this.hudHint) this.hudHint.setVisible(true);
     this.updateHud();
-    this.banner((this.boss.name || '苔背巨兽') + ' · 再战');
+    this.banner((this.boss.name || '世界 Boss') + ' · 再战');
     this.updatePrompts();
     this.updateBossBar();
   }
@@ -2274,9 +2346,10 @@ export class World extends Phaser.Scene {
     // 胜利按钮用一块无描边底板：保留按钮感，又不让卡片顶线贴着“继续探索”。
     const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, 34, UI.color.panelRaised, 0.92)
       .setOrigin(0).setScrollFactor(0).setDepth(103);
-    p.add(makeText(this, 14, 12, '草原的星火 · 已归位', 'h2', { color: UI.text.gold }));
-    p.add(makeText(this, 14, 36, (this.boss?.name || '苔背巨兽') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
-    p.add(makeText(this, 14, 58, '这片草原的远征，暂时告一段落。', 'caption', { color: UI.text.muted }));
+    const def = this.boss?.def || {};
+    p.add(makeText(this, 14, 12, def.victoryTitle || '星火的碎片 · 已归位', 'h2', { color: UI.text.gold }));
+    p.add(makeText(this, 14, 36, (this.boss?.name || '世界 Boss') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
+    p.add(makeText(this, 14, 58, def.victoryBody || '这片群系的远征，暂时告一段落。', 'caption', { color: UI.text.muted }));
     const rows = [['继续探索', () => this.closeVictory()]].map(([label, cb]) => {
       const card = makeCard(this, {
         x: x + 16, y: y + 100, w: W - 32, h: 34,

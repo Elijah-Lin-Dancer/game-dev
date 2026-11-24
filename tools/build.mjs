@@ -179,6 +179,10 @@ const img = {
   mossBeastIdle: join(ROOT, 'assets/01-primary/world/moss-beast-idle.png'),
   mossBeastCharge: join(ROOT, 'assets/01-primary/world/moss-beast-charge.png'),
   mossBeastRoar: join(ROOT, 'assets/01-primary/world/moss-beast-roar.png'),
+  /* G3-2 世界 Boss：ink-studio 雾竹蜃 96×96 四向 idle / charge / roar */
+  bambooMirageIdle: join(ROOT, 'assets/01-primary/world/bamboo-mirage-idle.png'),
+  bambooMirageCharge: join(ROOT, 'assets/01-primary/world/bamboo-mirage-charge.png'),
+  bambooMirageRoar: join(ROOT, 'assets/01-primary/world/bamboo-mirage-roar.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
   faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
   faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
@@ -231,6 +235,7 @@ const FRAME = {
   volcanoForge: [96, 128], volcanoSmith: [64, 64], volcanoEmber: [32, 48],
   volcanoLava: [64, 48], volcanoTile: [16, 16],
   mossBeastIdle: [96, 96], mossBeastCharge: [96, 96], mossBeastRoar: [96, 96],
+  bambooMirageIdle: [96, 96], bambooMirageCharge: [96, 96], bambooMirageRoar: [96, 96],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
 };

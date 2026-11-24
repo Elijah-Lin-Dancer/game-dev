@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G3-2 v8：
+ *   - 世界 Boss 进度由单值 boss 改为 bosses 对象（mossBeast / bambooMirage）；
+ *   - 旧 v7 的 boss:'done' 迁移到 bosses.mossBeast；boss 字段保留为草原 Boss 兼容别名；
+ *
  * G2-5 v7：
  *   - 新增 volcanoQuest2 / volcanoVents；篝火传送由 volcanoQuest2 完成解锁；
  *   - 30 屏和旧群系字段保持不变；
@@ -12,7 +16,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 7;
+const VERSION = 8;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -28,7 +32,21 @@ function sanitizeVents(v) {
   if (!Array.isArray(v)) return [];
   return [...new Set(v.filter((id) => VENTS.has(id)))];
 }
-const BOSSES = ['none', 'done'];
+const BOSS_STATES = ['none', 'done'];
+const BOSS_IDS = ['mossBeast', 'bambooMirage'];
+const bossDefaults = () => Object.fromEntries(BOSS_IDS.map((id) => [id, 'none']));
+
+function sanitizeBosses(raw, legacy) {
+  const out = bossDefaults();
+  if (raw && typeof raw === 'object') {
+    for (const id of BOSS_IDS) {
+      if (BOSS_STATES.includes(raw[id])) out[id] = raw[id];
+    }
+  } else if (legacy === 'done') {
+    out.mossBeast = 'done';
+  }
+  return out;
+}
 
 const defaults = () => ({
   v: VERSION,
@@ -46,6 +64,7 @@ const defaults = () => ({
   volcanoQuest2: 'none',
   volcanoVents: [],
   boss: 'none',
+  bosses: bossDefaults(),
   tokens: 0,
   updatedAt: 0,
 });
@@ -76,7 +95,8 @@ function migrate(old) {
     volcanoQuest: QUESTS.includes(old.volcanoQuest) ? old.volcanoQuest : 'none',
     volcanoQuest2: QUESTS.includes(old.volcanoQuest2) ? old.volcanoQuest2 : 'none',
     volcanoVents: sanitizeVents(old.volcanoVents),
-    boss: BOSSES.includes(old.boss) ? old.boss : 'none',
+    bosses: sanitizeBosses(old.bosses, old.bosses ? null : old.boss),
+    boss: sanitizeBosses(old.bosses, old.bosses ? null : old.boss).mossBeast === 'done' ? 'done' : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),
     updatedAt: num(old.updatedAt),
     v: VERSION,
@@ -115,7 +135,13 @@ export function patchWorldSave(patch) {
   next.snowQuest = QUESTS.includes(next.snowQuest) ? next.snowQuest : 'none';
   next.volcanoHerbs = Math.min(99, Math.round(num(next.volcanoHerbs)));
   next.volcanoQuest = QUESTS.includes(next.volcanoQuest) ? next.volcanoQuest : 'none';
-  next.boss = BOSSES.includes(next.boss) ? next.boss : 'none';
+  const currentBosses = loadWorldSave().bosses;
+  const bossPatch = patch && patch.bosses && typeof patch.bosses === 'object'
+    ? { ...currentBosses, ...patch.bosses }
+    : { ...currentBosses };
+  if (patch && patch.boss === 'done') bossPatch.mossBeast = 'done';
+  next.bosses = sanitizeBosses(bossPatch, null);
+  next.boss = next.bosses.mossBeast === 'done' ? 'done' : 'none';
   next.tokens = Math.min(99, Math.round(num(next.tokens)));
   return writeWorldSave(next);
 }

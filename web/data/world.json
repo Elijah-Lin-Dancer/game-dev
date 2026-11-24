@@ -1241,85 +1241,12 @@
       "biome": "bamboo",
       "weather": "fog",
       "weatherName": "雾",
-      "deco": [
-        [
-          24,
-          74,
-          8,
-          1
-        ],
-        [
-          112,
-          120,
-          6,
-          1
-        ],
-        [
-          184,
-          72,
-          9,
-          1
-        ],
-        [
-          258,
-          146,
-          7,
-          1
-        ],
-        [
-          330,
-          86,
-          10,
-          1
-        ],
-        [
-          400,
-          162,
-          8,
-          1
-        ],
-        [
-          470,
-          90,
-          6,
-          1
-        ],
-        [
-          438,
-          226,
-          7,
-          1
-        ],
-        [
-          356,
-          250,
-          8,
-          1
-        ],
-        [
-          270,
-          220,
-          9,
-          1
-        ],
-        [
-          160,
-          230,
-          6,
-          1
-        ],
-        [
-          58,
-          246,
-          8,
-          1
-        ]
-      ],
+      "deco": [],
       "props": [
         [
           "bambooGate",
-          236,
-          228,
+          430,
+          224,
           1
         ],
         [
@@ -1333,24 +1260,9 @@
           452,
           190,
           0.75
-        ],
-        [
-          "bamboo",
-          84,
-          246,
-          0.8
         ]
       ],
-      "herbs": [
-        [
-          210,
-          214
-        ],
-        [
-          346,
-          196
-        ]
-      ],
+      "herbs": [],
       "npc": null
     },
     {
@@ -3439,16 +3351,6 @@
     "yield": 2,
     "rewardTokens": 1
   },
-  "boss": {
-    "id": "mossBeast",
-    "name": "苔背巨兽",
-    "screen": "field-6",
-    "x": 300,
-    "y": 170,
-    "hp": 64,
-    "dmg": 4,
-    "rewardTokens": 3
-  },
   "bambooQuest": {
     "id": "bamboo4",
     "name": "雾竹三味",
@@ -3556,6 +3458,36 @@
       "y": 244,
       "spawnX": 384,
       "spawnY": 242
+    }
+  ],
+  "bosses": [
+    {
+      "id": "mossBeast",
+      "name": "苔背巨兽",
+      "screen": "field-6",
+      "x": 300,
+      "y": 170,
+      "hp": 64,
+      "dmg": 4,
+      "rewardTokens": 3,
+      "art": "mossBeast",
+      "title": "星火守巢者",
+      "victoryTitle": "草原的星火 · 已归位",
+      "victoryBody": "这片草原的远征，暂时告一段落。"
+    },
+    {
+      "id": "bambooMirage",
+      "name": "雾竹蜃",
+      "screen": "bamboo-6",
+      "x": 300,
+      "y": 170,
+      "hp": 72,
+      "dmg": 5,
+      "rewardTokens": 4,
+      "art": "bambooMirage",
+      "title": "竹影守渡者",
+      "victoryTitle": "竹林的星火 · 已归位",
+      "victoryBody": "雾隐渡的竹影，暂时安静下来。"
     }
   ]
 }

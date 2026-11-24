@@ -82,6 +82,23 @@ python3 tools/crop_hub.py
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
 
 
+## G3-2 产出（2026-11-24）
+
+世界 Boss 第二只，雾竹蜃。玩家基线仍是 32px 可见高度；这不是放大竹节虫，也不是苔背巨兽换色，而是重新建模。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 雾竹蜃 待机 | `art-src/g3/bamboo-mirage.cjs`（seed 302，`pose=idle`） | 384×96，4 向 | `bamboo-mirage-idle.png` 384×96 | 世界 Boss；2.87–2.98× 玩家 |
+| 雾竹蜃 蓄力 | 同上，`pose=charge` | 384×96，4 向 | `bamboo-mirage-charge.png` 384×96 | 蓄力 / 扑击；2.53–2.70× 玩家 |
+| 雾竹蜃 咆哮 | 同上，`pose=roar` | 384×96，4 向 | `bamboo-mirage-roar.png` 384×96 | 挥击 / 落地 / 死亡；3.21–3.26× 玩家 |
+
+- 造型：老竹高跷四腿、窄长竹龛、米纸窗 + 青焰、旧戏面（厚眉 / 空眼窝 / 青焰眼 / 朱砂额符与颊纹）、冠后竹角、长竹喙、龛下悬灯、三根断竹尾与纸铃。
+- 帧序：0 前 / 1 左 / 2 后 / 3 右；三姿态脚底统一 73/96，`originY=0.7604`；运行时 `BOSS_SCALE=1.8`，静态姿态切帧 + 呼吸 tween。
+- 对照板：`docs/revamp/g3-3d/bamboo-mirage-board.png`；源元数据：`docs/revamp/g3-3d/bamboo-mirage-{idle,charge,roar}.json`。
+- 审计：`python3 tools/audit_scale.py` 扩两只 Boss → **145 实例 / 0 FAIL**，雾竹蜃 2.53–3.26× 班组通过。
+- 复现：`node art-src/g3/render-g3.cjs`（需要 `INK_STUDIO` 指向固定 checkout）。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
 ## G3-1 产出（2026-11-24）
 
 世界 Boss 第一只，苔背巨兽。玩家基线仍是 32px 可见高度；这不是把 GiantRacoon 换色，而是重新建模。

@@ -390,3 +390,19 @@
 | W-61 | Pages 线上 | 推送后读入口 hash / 线上截图 | 通过；入口 `game.09389bb4.js` + `assets.5d1e6b5b.js`；Boss `x300 / y170`、`deco=0`、脚底 origin、左向 1；960 / 640 / 844 七张线上截图；击杀 / 失败 / 触屏均通过，`errs=[]`（`g3-online-boss-*.png`） |
 
 证据：`docs/revamp/g3/` 9 张本地 / 单文件 / PWA 截图 + 7 张线上截图，`docs/revamp/g3-3d/moss-beast-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-1.md`。G3 世界 Boss 仍 1/5，剩余 4 只未做。
+
+## W-62～W-70. 批 23 / G3-2 雾竹蜃 3D 重制与多 Boss 存档（2026-11-24 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| W-62 | 竹林专属 Boss 资产 | 读 `assets/01-primary/world/bamboo-mirage-*.png`、`docs/revamp/g3-3d/*.json` | 通过；3 张 384×96 RGBA atlas；源 `art-src/g3/bamboo-mirage.cjs` seed 302；正式资产非 Ninja Adventure 改色 |
+| W-63 | 四向 / 三姿态 / 脚底 | 图集逐帧 bbox；运行时 `bossDirection()`；读 `pose / dir / originY` | 通过；0 前 / 1 左 / 2 后 / 3 右；`idle / charge / roar` 三姿态脚底均 73/96；玩家在左时 `dir=1`；bbox idle 26×51 / charge 25×45 / roar 26×56（前向） |
+| W-64 | 多 Boss 数据 | 读 `world.bosses`、`bossByScreen`、`applyScreen(11)` | 通过；`bosses=[mossBeast,bambooMirage]`；`bossByScreen` 含 `field-6 / bamboo-6`；`bamboo-6` 生成 `bambooMirage / hp72 / dmg5 / reward4 / tex=bambooMirageIdle / scale=1.8` |
+| W-65 | `na.world v8` 迁移 | v7 旧档 `{boss:'done',tokens:9}` reload；读 `save / localStorage` | 通过；`v=8`，`boss=done`，`bosses={mossBeast:done,bambooMirage:none}`，`tokens=9`，即时落盘；`field-6` 已击杀档不再生成 Boss，只留纪念光环 |
+| W-66 | 扑击 / 真实击杀 | 触发 `startPounce()`；站桩读 HP；24 次真实攻击 | 通过；雾竹蜃 `HP20→15`（落点 48 / 冲击 58）；苔背巨兽回归 `HP20→16`（落点 118 / 冲击 126）；24 次 3 伤 → `bossDead=true / bosses.bambooMirage=done / tokens4 / victory=true` |
+| W-67 | 失败 / 重试 / 960 / 640 | HP 归零 → 失败面板；`retryBoss()`；960×540 / 640×360 | 通过；`dead=true / panelOpen=true / hp=0`；重试 `hp20 / bossHp72 / active=true`；两档 HUD / 底栏 Boss 名无溢出；`g3-bamboo-down-960.png`、`g3-bamboo-640.png` |
+| W-68 | 844×390 触屏 | `hasTouch=true / isMobile=true`；读 `touchCtl.items / hudHint` | 通过；`touch=true / touchItems=3`；桌面攻击块隐藏；顶部「点按「攻」· 击败雾竹蜃」，底部「点按「攻」击败雾竹蜃 · 点按「返」回小屋」；`g3-bamboo-touch-844x390.png` |
+| W-69 | 单文件 / PWA / 构建 / 审计 / 冒烟 | `file://` 单文件；SW controller → `setOffline(true)` reload；`npm run build:single`；`audit_scale.py`；`npm run smoke` | 通过；单文件 `bambooMirage / hp72 / tex=bambooMirageIdle / sw=false`；PWA `na-b18-ba98e423` / 12 条断网仍 `bambooMirage`；首屏 1958 KB / gzip814 KB；154 切片 / 233,083 B；`game.f3072417.js` 330,145 B + `assets.cf099f61.js` 124,157 B；单文件 2,126,381 B；**145 实例 / 0 FAIL**（雾竹蜃 idle 2.98× / charge 2.70× / roar 3.26×）；9 项 PASS |
+| W-70 | Pages 线上 | 推送后读入口 hash / 线上截图 | 待回填；候选入口 `game.f3072417.js` + `assets.cf099f61.js`；部署后补 960 / 640 / 844 / 单文件 / PWA 证据 |
+
+证据：本地 `docs/revamp/g3/g3-bamboo-intro-960.png`、`g3-bamboo-idle-960.png`、`g3-bamboo-pounce-960.png`、`g3-bamboo-victory-960.png`、`g3-bamboo-down-960.png`、`g3-bamboo-640.png`、`g3-bamboo-touch-844x390.png`、`g3-bamboo-single-960.png`、`g3-bamboo-pwa-offline-960.png`，`docs/revamp/g3-3d/bamboo-mirage-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-2.md`。G3 世界 Boss 2/5，沙漠 / 雪原 / 火山三只未做。

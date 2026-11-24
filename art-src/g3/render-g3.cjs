@@ -16,6 +16,9 @@ const specs = [
   { file: 'moss-beast.cjs', pose: 'idle', out: 'moss-beast-idle', w: 96, h: 96, directions: 4, dist: 8.4 },
   { file: 'moss-beast.cjs', pose: 'charge', out: 'moss-beast-charge', w: 96, h: 96, directions: 4, dist: 8.4 },
   { file: 'moss-beast.cjs', pose: 'roar', out: 'moss-beast-roar', w: 96, h: 96, directions: 4, dist: 8.4 },
+  { file: 'bamboo-mirage.cjs', pose: 'idle', out: 'bamboo-mirage-idle', w: 96, h: 96, directions: 4, dist: 12.0 },
+  { file: 'bamboo-mirage.cjs', pose: 'charge', out: 'bamboo-mirage-charge', w: 96, h: 96, directions: 4, dist: 12.0 },
+  { file: 'bamboo-mirage.cjs', pose: 'roar', out: 'bamboo-mirage-roar', w: 96, h: 96, directions: 4, dist: 12.0 },
 ];
 
 for (const spec of specs) {
