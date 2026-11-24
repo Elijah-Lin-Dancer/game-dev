@@ -89,8 +89,9 @@
 | 单文件 | 通过；`web/game.html?world` 30 屏 / 5 NPC，`errs=[]` |
 | PWA 断网 | 通过；`na-b18-64a58679` / 12 条；`setOffline(true)` reload 仍 30 屏 / 5 NPC，`errs=[]` |
 | 构建 / 冒烟 | 通过；图集 148 切片 / 203 KB；首屏 1914 KB / gzip 785 KB；`assets.db63aacd.js` 120 KB、`game.19501372.js` 304 KB；单文件 2,072,254 B；`npm run smoke` 9 项 PASS |
+| Pages 线上 | 通过；入口 `game.19501372.js` + `assets.db63aacd.js`；30 屏 / 5 NPC / 火山 6；熔匠 `active/0 → 10 枚 → done / 剩余 5 / tokens 2`；PWA `na-b18-64a58679` / 12 条；844×390 正常；`errs=[]` |
 
-证据：`docs/revamp/g2/g2-volcano-1..6-960.png`、`g2-volcano-3-final-960.png`、`g2-volcano-npc-960.png`、`g2-volcano-quest-960.png`、`g2-volcano-done-960.png`、`g2-volcano-3-640.png`、`g2-volcano-3-844x390.png`、`g2-volcano-single-960.png`、`g2-volcano-pwa-960.png`；素材板与源图集在 `docs/revamp/g2-3d/`。
+证据：本地 `docs/revamp/g2/g2-volcano-1..6-960.png`、`g2-volcano-3-final-960.png`、`g2-volcano-npc-960.png`、`g2-volcano-quest-960.png`、`g2-volcano-done-960.png`、`g2-volcano-3-640.png`、`g2-volcano-3-844x390.png`、`g2-volcano-single-960.png`、`g2-volcano-pwa-960.png`；线上 `g2-online-volcano-3-960.png`、`g2-online-volcano-npc-960.png`、`g2-online-volcano-quest-960.png`、`g2-online-volcano-done-960.png`、`g2-online-volcano-844x390.png`；素材板与源图集在 `docs/revamp/g2-3d/`。
 
 ## 已知限制 / 下一步
 

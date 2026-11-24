@@ -351,6 +351,6 @@
 | W-37 | 单文件 | `web/game.html?world` + `file://` 双击 | 通过；30 屏 / 5 NPC / 65 点；`__SINGLE__` 守卫不注册 `./sw.js`，`errs=[]` |
 | W-38 | 构建 / 冒烟 | `npm run build`、`npm run build:single`、`npm run smoke` | 通过；148 切片 / 203 KB；首屏 1914 KB / gzip 785 KB；9 项 PASS；单文件 2,072,254 B；`assets.db63aacd.js` + `game.19501372.js` |
 | W-39 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-64a58679` / 12 条；断网仍 30 屏 / 5 NPC，`errs=[]`（`g2-volcano-pwa-960.png`） |
-| W-40 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 待推送后回填；本地候选入口 `game.19501372.js` + `assets.db63aacd.js` |
+| W-40 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.19501372.js` + `assets.db63aacd.js`；30 屏 / 5 NPC / 火山 6；`volcano-3` 取景正常；熔匠 `active/0 → 10 枚 → done / 剩余 5 / tokens 2`；PWA `na-b18-64a58679` / 12 条；844×390 布局正常；`errs=[]`（`g2-online-volcano-*.png`） |
 
 证据：火山六屏 `g2-volcano-1..6-960.png`、`g2-volcano-3-final-960.png`、`g2-volcano-npc-960.png`、`g2-volcano-quest-960.png`、`g2-volcano-done-960.png`、640 / 844 / 单文件 / PWA 各一张、`volcano-props-board.png`；详见 `docs/BATCH21-G2-4.md`。
