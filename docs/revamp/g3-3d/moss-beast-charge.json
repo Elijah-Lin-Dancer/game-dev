@@ -1,0 +1,104 @@
+{
+  "width": 384,
+  "height": 96,
+  "tileWidth": 96,
+  "tileHeight": 96,
+  "directions": 4,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.96,
+    0.08
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.22,
+      "pitch": 0.18,
+      "unitsPerPixel": 0.060257332325691415,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 1,
+      "yaw": 1.7907963267948965,
+      "pitch": 0.18,
+      "unitsPerPixel": 0.060257332325691415,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 96,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 2,
+      "yaw": 3.3615926535897933,
+      "pitch": 0.18,
+      "unitsPerPixel": 0.060257332325691415,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 192,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 3,
+      "yaw": 4.932388980384689,
+      "pitch": 0.18,
+      "unitsPerPixel": 0.060257332325691415,
+      "depthOrigin": 20.4,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 288,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "moss-beast.cjs",
+  "pose": "charge",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

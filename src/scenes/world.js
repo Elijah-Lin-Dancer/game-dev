@@ -31,6 +31,9 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
+/* G3-1 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。 */
+const BOSS_TEX = { idle: 'mossBeastIdle', charge: 'mossBeastCharge', roar: 'mossBeastRoar' };
+const BOSS_SCALE = 2.2;
 const WORLD_TOUCH = [
   { id: 'attack', label: '攻', r: 22, fx: 38, fy: 42 },
   { id: 'interact', label: 'E', r: 18, fx: 84, fy: 28 },
@@ -242,12 +245,12 @@ function normalizeWorld(raw) {
       rewardTokens: Math.max(0, Math.round(asNumber(vq2.rewardTokens, 3))),
     },
     boss: bossRaw ? {
-      id: String(bossRaw.id || 'racoon'),
+      id: String(bossRaw.id || 'mossBeast'),
       name: String(bossRaw.name || '苔背巨兽'),
       screen: String(bossRaw.screen || 'field-6'),
       x: asNumber(bossRaw.x, 240),
       y: asNumber(bossRaw.y, 190),
-      hp: Math.max(1, Math.round(asNumber(bossRaw.hp, 56))),
+      hp: Math.max(1, Math.round(asNumber(bossRaw.hp, 64))),
       dmg: Math.max(1, Math.round(asNumber(bossRaw.dmg, 4))),
       rewardTokens: Math.max(0, Math.round(asNumber(bossRaw.rewardTokens, 3))),
     } : null,
@@ -1112,7 +1115,7 @@ export class World extends Phaser.Scene {
     this.hudHint.setText(this.hudHintText());
     this.updateHp();
     this.updateBossBar();
-    const showAttack = this.bossActive && !this.panelOpen && !this.talking && !this.dead && !this.victory;
+    const showAttack = this.bossActive && !this.panelOpen && !this.talking && !this.dead && !this.victory && !this.touchCtl;
     if (this.attackBtn) {
       this.attackBtn.setVisible(showAttack);
       this.attackT.setVisible(showAttack);
@@ -1122,7 +1125,10 @@ export class World extends Phaser.Scene {
   hudHintText() {
     if (this.gathering) return '正在采集 · 移动会打断';
     if (this.dead) return '星火熄灭 · R 重新挑战 / ESC 回小屋';
-    if (this.bossActive) return 'SPACE / J 攻击 · 击败苔背巨兽 · ESC 回小屋';
+    if (this.bossActive) {
+      const name = this.boss?.name || '苔背巨兽';
+      return this.touchCtl ? '点按「攻」击败' + name + ' · 点按「返」回小屋' : 'SPACE / J 攻击 · 击败' + name + ' · ESC 回小屋';
+    }
     const s = this.screens[this.screenIndex] || this.screens[0];
     const prof = profileFor(s.biome);
     const q = this.world[prof.questDef];
@@ -1379,8 +1385,8 @@ export class World extends Phaser.Scene {
     let ny = this.player.y + (vy / d) * step;
     nx = clamp(nx, 8, this.worldWidth - 8);
     ny = clamp(ny, WORLD_Y + 14, WORLD_Y + SCREEN_H - 10);
-    if (this.bossActive && this.screenIndex === 5) {
-      nx = Math.max(nx, this.screens[5].x + 24);
+    if (this.bossActive && this.bossSpawn && this.screenIndex === this.bossSpawn.screenIndex) {
+      nx = Math.max(nx, this.bossSpawn.screen.x + 24);
     }
     if (!this.isBlocked(nx, this.player.y)) this.player.x = nx;
     if (!this.isBlocked(this.player.x, ny)) this.player.y = ny;
@@ -1830,26 +1836,83 @@ export class World extends Phaser.Scene {
     const x = s.x + b.x;
     const y = WORLD_Y + b.y;
     this.bossSpawn = { x, y, screenIndex: si, screen: s };
-    const glow = this.add.image(x, y - 26, 'aura', 0)
-      .setScale(3.4).setAlpha(0.16).setTint(UI.world.boss)
+    const glow = this.add.image(x, y - 30, 'aura', 0)
+      .setScale(3.6).setAlpha(0.16).setTint(UI.world.fieldLight)
       .setBlendMode(Phaser.BlendModes.ADD).setDepth(33).setVisible(false);
-    const ring = this.add.ellipse(x, y - 2, 58, 14, UI.world.boss, 0.12).setDepth(32).setVisible(false);
-    const spr = this.add.sprite(x, y, 'racoonIdle', 0)
-      .setOrigin(0.5, 1).setScale(1.75).setDepth(35).setVisible(false);
-    spr.play('racoon-idle');
-    const label = this.add.text(x, y - 74, b.name, {
+    const shadow = this.add.ellipse(x, y - 3, 118, 20, 0x000000, 0.26).setDepth(30).setVisible(false);
+    const ring = this.add.ellipse(x, y - 3, 102, 22, UI.world.field, 0.13).setDepth(32).setVisible(false);
+    const spr = this.add.sprite(x, y, 'mossBeastIdle', 0)
+      .setOrigin(0.5, 1).setScale(BOSS_SCALE).setDepth(35).setVisible(false);
+    const label = this.add.text(x, y - 152, b.name, {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
       backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
     }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
     this.boss = {
-      name: b.name, spr, glow, ring, label, x, y,
+      name: b.name, spr, glow, shadow, ring, label, x, y,
       maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
       state: 'idle', stateEnd: 0, nextAt: 0, target: null, warning: null, flash: 0,
+      pose: 'idle', dir: 0, faceAt: 0, moteAt: 0,
       screenIndex: si, arena: {
         x1: s.x + 44, x2: s.x + SCREEN_W - 44,
         y1: WORLD_Y + 104, y2: WORLD_Y + SCREEN_H - 22,
       },
     };
+    this.setBossPose('idle', 0);
+  }
+
+  /* 四向帧：0 前 / 1 左 / 2 后 / 3 右。苔背巨兽只换静态姿势，不做旋转动画。 */
+  bossDirection() {
+    if (!this.boss) return 0;
+    const dx = this.player.x - this.boss.spr.x;
+    const dy = this.player.y - this.boss.spr.y;
+    if (Math.abs(dx) > Math.abs(dy) * 0.9) return dx < 0 ? 3 : 1;
+    return dy < 0 ? 2 : 0;
+  }
+
+  setBossPose(pose, dir) {
+    const B = this.boss;
+    if (!B) return;
+    const nextPose = BOSS_TEX[pose] ? pose : 'idle';
+    const nextDir = Number.isInteger(dir) ? dir : this.bossDirection();
+    if (B.pose === nextPose && B.dir === nextDir) return;
+    B.pose = nextPose;
+    B.dir = nextDir;
+    B.spr.setTexture(BOSS_TEX[nextPose], nextDir);
+  }
+
+  bossImpact(x, y, big = false) {
+    const ring = this.add.ellipse(x, y - 2, big ? 54 : 30, big ? 16 : 10, UI.world.fieldLight, 0.22)
+      .setDepth(36).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({
+      targets: ring, scaleX: big ? 3.2 : 2.2, scaleY: big ? 1.7 : 1.3, alpha: 0,
+      duration: big ? 520 : 320, ease: 'Quad.easeOut', onComplete: () => ring.destroy(),
+    });
+    const n = big ? 16 : 8;
+    for (let i = 0; i < n; i += 1) {
+      const a = (i / n) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.2, 0.2);
+      const r = Phaser.Math.Between(4, big ? 16 : 10);
+      const mote = this.add.rectangle(x + Math.cos(a) * r, y - 8 + Math.sin(a) * r * 0.45, 2, 2, i % 3 ? UI.world.fieldLight : UI.world.herb, 0.8)
+        .setDepth(37);
+      this.tweens.add({
+        targets: mote, x: mote.x + Math.cos(a) * (big ? 34 : 20), y: mote.y - (big ? 26 : 14),
+        alpha: 0, duration: big ? 620 : 420, ease: 'Quad.easeOut', onComplete: () => mote.destroy(),
+      });
+    }
+  }
+
+  spawnBossMote() {
+    const B = this.boss;
+    if (!B || !this.bossActive) return;
+    const mote = this.add.rectangle(
+      B.spr.x + Phaser.Math.Between(-56, 56),
+      B.spr.y - Phaser.Math.Between(24, 68),
+      Phaser.Math.Between(1, 2), 2, UI.world.fieldLight, 0.62,
+    ).setDepth(34);
+    this.tweens.add({
+      targets: mote, y: mote.y - Phaser.Math.Between(12, 24),
+      x: mote.x + Phaser.Math.Between(-6, 6), alpha: 0, duration: Phaser.Math.Between(700, 1100),
+      onComplete: () => mote.destroy(),
+    });
   }
 
   startBossFight() {
@@ -1864,13 +1927,20 @@ export class World extends Phaser.Scene {
     this.lastHurtAt = -9999;
     this.pointerTarget = null;
     this.boss.hp = this.boss.maxHp;
-    this.boss.state = 'chase';
+    this.boss.state = 'intro';
+    this.boss.stateEnd = this.time.now + 900;
     this.boss.nextAt = this.time.now + 900;
-    this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true);
+    this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(1);
+    this.boss.spr.setScale(BOSS_SCALE * 0.92);
+    this.tweens.add({
+      targets: this.boss.spr, scale: BOSS_SCALE, duration: 520, ease: 'Back.easeOut',
+      onComplete: () => { if (this.bossActive) this.startBossBreath(); },
+    });
     this.boss.glow.setVisible(true);
+    this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
     this.boss.label.setVisible(true);
-    this.boss.spr.play('racoon-idle');
+    this.setBossPose('roar');
     if (!this.arenaLine) {
       const s = this.screens[this.boss.screenIndex];
       this.arenaLine = this.add.rectangle(s.x + 6, WORLD_Y + 6, 5, SCREEN_H - 12, UI.world.boss, 0.45)
@@ -1878,15 +1948,24 @@ export class World extends Phaser.Scene {
     }
     this.updateHud();
     this.updateBossBar();
-    this.banner('苔背巨兽 · 星火守巢者');
+    this.banner((this.boss.name || '苔背巨兽') + ' · 星火守巢者');
     this.time.delayedCall(900, () => {
-      if (this.bossActive) this.toast('SPACE / J 攻击 · 击败守巢者');
+      if (this.bossActive) this.toast('SPACE / J 攻击 · 击败' + (this.boss.name || '苔背巨兽'));
+    });
+  }
+
+  startBossBreath() {
+    const B = this.boss;
+    if (!B || B.breath) return;
+    B.breath = this.tweens.add({
+      targets: B.spr, scaleX: BOSS_SCALE * 1.012, scaleY: BOSS_SCALE * 0.988,
+      duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
   }
 
   distBoss() {
     if (!this.boss) return 999;
-    return Phaser.Math.Distance.Between(this.player.x, this.player.y - 14, this.boss.spr.x, this.boss.spr.y - 30);
+    return Phaser.Math.Distance.Between(this.player.x, this.player.y - 14, this.boss.spr.x, this.boss.spr.y - 36);
   }
 
   updateBoss(time, delta) {
@@ -1894,17 +1973,28 @@ export class World extends Phaser.Scene {
     if (!B || !this.bossActive || this.dead || this.victory) return;
     B.spr.x = clamp(B.spr.x, B.arena.x1, B.arena.x2);
     B.spr.y = clamp(B.spr.y, B.arena.y1, B.arena.y2);
-    B.glow.x = B.spr.x; B.glow.y = B.spr.y - 26;
-    B.ring.x = B.spr.x; B.ring.y = B.spr.y - 2;
-    B.label.x = B.spr.x; B.label.y = B.spr.y - 74;
+    B.glow.x = B.spr.x; B.glow.y = B.spr.y - 30;
+    B.shadow.x = B.spr.x; B.shadow.y = B.spr.y - 3;
+    B.ring.x = B.spr.x; B.ring.y = B.spr.y - 3;
+    B.label.x = B.spr.x; B.label.y = B.spr.y - 152;
     if (B.flash > 0) {
       B.flash -= delta;
       if (B.flash <= 0) B.spr.clearTint();
     }
     const dist = this.distBoss();
+    if (B.state === 'intro') {
+      if (time >= B.stateEnd) {
+        B.state = 'chase';
+        B.nextAt = time + 720;
+        this.setBossPose('idle');
+      }
+      return;
+    }
     if (B.state === 'chase') {
+      if (time >= B.faceAt) { B.faceAt = time + 90; this.setBossPose('idle'); }
+      if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
       if (time >= B.nextAt) {
-        if (dist < 68) this.startSwipe();
+        if (dist < 82) this.startSwipe();
         else this.startPounce();
         return;
       }
@@ -1921,17 +2011,18 @@ export class World extends Phaser.Scene {
     if (B.state === 'pounceWindup' && time >= B.stateEnd) {
       if (B.warning) { B.warning.destroy(); B.warning = null; }
       B.state = 'pounceAir';
-      B.spr.play('racoon-jump');
+      this.setBossPose('charge');
       const tx = clamp(B.target.x, B.arena.x1, B.arena.x2);
       const ty = clamp(B.target.y, B.arena.y1, B.arena.y2);
       this.tweens.add({
         targets: B.spr, x: tx, y: ty, duration: 180, ease: 'Quad.easeOut',
         onComplete: () => {
           if (!this.bossActive) return;
-          if (this.distBoss() <= 52) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
+          if (this.distBoss() <= 64) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
+          this.bossImpact(B.spr.x, B.spr.y);
+          this.setBossPose('roar');
           B.state = 'recover';
-          B.stateEnd = this.time.now + 480;
-          B.spr.play('racoon-idle');
+          B.stateEnd = this.time.now + 520;
         },
       });
       return;
@@ -1939,16 +2030,17 @@ export class World extends Phaser.Scene {
     if (B.state === 'pounceAir') return;
     if (B.state === 'swipeWindup' && time >= B.stateEnd) {
       if (B.warning) { B.warning.destroy(); B.warning = null; }
-      B.spr.play('racoon-atk');
-      if (this.distBoss() <= 58) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
-      this.cameras.main.shake(80, 0.006);
+      this.setBossPose('roar');
+      if (this.distBoss() <= 74) this.hurtPlayer(B.spr.x, B.spr.y, B.dmg);
+      this.bossImpact(B.spr.x, B.spr.y);
+      this.cameras.main.shake(110, 0.008);
       B.state = 'recover';
       B.stateEnd = this.time.now + 460;
       return;
     }
     if (B.state === 'recover') {
       if (time >= B.stateEnd) {
-        B.spr.play('racoon-idle');
+        this.setBossPose('idle');
         B.state = 'chase';
         B.nextAt = time + 760;
       }
@@ -1960,9 +2052,9 @@ export class World extends Phaser.Scene {
     if (!B) return;
     B.state = 'swipeWindup';
     B.stateEnd = this.time.now + 320;
-    B.spr.play('racoon-chg');
+    this.setBossPose('charge');
     if (B.warning) B.warning.destroy();
-    B.warning = this.add.circle(B.spr.x, B.spr.y - 18, 38, UI.world.boss, 0.26)
+    B.warning = this.add.circle(B.spr.x, B.spr.y - 22, 52, UI.world.boss, 0.26)
       .setDepth(37);
     this.tweens.add({ targets: B.warning, alpha: 0.08, scale: 1.15, duration: 160, yoyo: true });
   }
@@ -1973,9 +2065,9 @@ export class World extends Phaser.Scene {
     B.state = 'pounceWindup';
     B.stateEnd = this.time.now + 420;
     B.target = { x: this.player.x, y: this.player.y };
-    B.spr.play('racoon-chg');
+    this.setBossPose('charge');
     if (B.warning) B.warning.destroy();
-    B.warning = this.add.circle(B.target.x, B.target.y - 10, 24, UI.world.boss, 0.3)
+    B.warning = this.add.circle(B.target.x, B.target.y - 10, 32, UI.world.boss, 0.3)
       .setDepth(37);
     this.tweens.add({ targets: B.warning, alpha: 0.1, scale: 1.2, duration: 210, yoyo: true });
   }
@@ -2039,8 +2131,16 @@ export class World extends Phaser.Scene {
     this.bossActive = false;
     this.boss.state = 'dead';
     if (this.boss.warning) { this.boss.warning.destroy(); this.boss.warning = null; }
-    this.boss.spr.setVisible(false);
+    if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
+    this.setBossPose('roar');
+    this.bossImpact(this.boss.spr.x, this.boss.spr.y, true);
+    this.cameras.main.shake(200, 0.014);
+    this.tweens.add({
+      targets: this.boss.spr, alpha: 0, scale: BOSS_SCALE * 1.08, duration: 620, ease: 'Quad.easeOut',
+      onComplete: () => { if (this.boss) { this.boss.spr.setVisible(false).setAlpha(1); } },
+    });
     this.boss.glow.setVisible(false);
+    this.boss.shadow.setVisible(false);
     this.boss.ring.setVisible(false);
     this.boss.label.setVisible(false);
     if (this.arenaLine) { this.arenaLine.destroy(); this.arenaLine = null; }
@@ -2097,7 +2197,7 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     p.add(makeText(this, 14, 12, '星火熄灭', 'h2', { color: UI.text.danger }));
-    p.add(makeText(this, 14, 34, '你被苔背巨兽击倒了。', 'body', { color: UI.text.body }));
+    p.add(makeText(this, 14, 34, '你被' + (this.boss?.name || '苔背巨兽') + '击倒了。', 'body', { color: UI.text.body }));
     const rows = [
       ['重新挑战', () => this.retryBoss()],
       ['回到小屋', () => this.leave()],
@@ -2130,17 +2230,21 @@ export class World extends Phaser.Scene {
     this.player.setPosition(this.bossSpawn.screen.x + 74, WORLD_Y + 232);
     this.boss.hp = this.boss.maxHp;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y);
-    this.boss.state = 'chase';
-    this.boss.nextAt = this.time.now + 900;
+    this.boss.state = 'intro';
+    this.boss.stateEnd = this.time.now + 650;
+    this.boss.nextAt = this.time.now + 650;
     this.bossActive = true;
-    this.boss.spr.setVisible(true);
+    if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
+    this.boss.spr.setVisible(true).setAlpha(1).setScale(BOSS_SCALE);
+    this.startBossBreath();
+    this.setBossPose('roar');
     this.boss.glow.setVisible(true);
+    this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
     this.boss.label.setVisible(true);
-    this.boss.spr.play('racoon-idle');
     if (this.hudHint) this.hudHint.setVisible(true);
     this.updateHud();
-    this.banner('苔背巨兽 · 再战');
+    this.banner((this.boss.name || '苔背巨兽') + ' · 再战');
     this.updatePrompts();
     this.updateBossBar();
   }
@@ -2161,7 +2265,7 @@ export class World extends Phaser.Scene {
     const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, 34, UI.color.panelRaised, 0.92)
       .setOrigin(0).setScrollFactor(0).setDepth(103);
     p.add(makeText(this, 14, 12, '草原的星火 · 已归位', 'h2', { color: UI.text.gold }));
-    p.add(makeText(this, 14, 36, '苔背巨兽倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
+    p.add(makeText(this, 14, 36, (this.boss?.name || '苔背巨兽') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
     p.add(makeText(this, 14, 58, '这片草原的远征，暂时告一段落。', 'caption', { color: UI.text.muted }));
     const rows = [['继续探索', () => this.closeVictory()]].map(([label, cb]) => {
       const card = makeCard(this, {

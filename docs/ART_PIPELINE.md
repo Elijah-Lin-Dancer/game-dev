@@ -82,6 +82,23 @@ python3 tools/crop_hub.py
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
 
 
+## G3-1 产出（2026-11-24）
+
+世界 Boss 第一只，苔背巨兽。玩家基线仍是 32px 可见高度；这不是把 GiantRacoon 换色，而是重新建模。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 苔背巨兽 待机 | `art-src/g3/moss-beast.cjs`（seed 301，`pose=idle`） | 384×96，4 向 | `moss-beast-idle.png` 384×96 | 世界 Boss；2.41–2.61×玩家 |
+| 苔背巨兽 蓄力 | 同上，`pose=charge` | 384×96，4 向 | `moss-beast-charge.png` 384×96 | 蓄力 / 扑击；2.61–3.03×玩家 |
+| 苔背巨兽 咆哮 | 同上，`pose=roar` | 384×96，4 向 | `moss-beast-roar.png` 384×96 | 挥击 / 落地 / 死亡；2.34–2.54×玩家 |
+
+- 造型：四足低伏、宽背；6 块苔盖 + 3 块旧石背脊 + 5 根垂苔 + 3 株高蕨；骨色长獠牙、4 颗下齿、琥珀发光眼、背甲小蘑菇、喉部呼吸光。
+- 帧序：0 前 / 1 左 / 2 后 / 3 右；底部 pivot `0.5,1`；运行时 `BOSS_SCALE=2.2`，用三相呼吸 tween 不是逐帧旋转。
+- 对照板：`docs/revamp/g3-3d/moss-beast-board.png`；源元数据：`docs/revamp/g3-3d/moss-beast-{idle,charge,roar}.json`。
+- 审计：`python3 tools/audit_scale.py` 新增三行 Boss → **144 实例 / 0 FAIL**，Boss 2.2–3.3× 班组通过。
+- 复现：`node art-src/g3/render-g3.cjs`（需要 `INK_STUDIO` 指向固定 checkout）。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
 ## G2-5 产出（2026-11-24）
 
 本轮 **0 新增美术件**。 `field-1` / `bamboo-4` 补的两个篝火落点复用既有 `campfire` 摆件（krial CC0，`16x16 Animated Campfire`）；三处炉眼复用 `volcanoVent`，火种复用 `volcanoEmber`，均为 G2-4 已登记的 ink-studio / G2 后备件重导。基础地形仍为 NinjaAdventure CC0 16px tile 调色。

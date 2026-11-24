@@ -39,6 +39,12 @@ NPC = {
     'snow': ('assets/01-primary/world/snow-keeper.png', 0.9, (0, 0, 64, 64)),
     'volcano': ('assets/01-primary/world/volcano-smith.png', 0.95, (0, 0, 64, 64)),
 }
+BOSS_POSES = {
+    'idle': ('assets/01-primary/world/moss-beast-idle.png', 2.2),
+    'charge': ('assets/01-primary/world/moss-beast-charge.png', 3.0),
+    'roar': ('assets/01-primary/world/moss-beast-roar.png', 2.4),
+}
+BOSS_SCALE = 2.2
 ASSET = {
     'tree': 'assets/01-primary/world/tree-green.png',
     'bush': 'assets/01-primary/world/bush-green.png',
@@ -105,6 +111,21 @@ def main():
             if ratio > 1.15:
                 fails.append(f'{s["id"]} herb {ratio:.2f}x > 1.15')
             rows.append((s['id'], 'herb:' + biome, round(h, 1), round(ratio, 2)))
+    if data.get('boss'):
+        for pose, (path, _seed_scale) in BOSS_POSES.items():
+            im = Image.open(ROOT / path).convert('RGBA')
+            widths = []
+            heights = []
+            for i in range(4):
+                box = im.crop((i * 96, 0, (i + 1) * 96, 96)).getbbox()
+                if box:
+                    heights.append(box[3] - box[1])
+                    widths.append(box[2] - box[0])
+            h = max(heights) * BOSS_SCALE
+            ratio = h / PLAYER_H
+            if not 2.2 <= ratio <= 3.3:
+                fails.append(f'boss {pose} {ratio:.2f}x outside 2.2–3.3 (h={h:.1f}, w={max(widths)})')
+            rows.append(('field-6', 'boss:苔背巨兽:' + pose, round(h, 1), round(ratio, 2)))
     print('screen | kind | visible_px | ratio_to_player')
     for row in rows:
         print(' | '.join(map(str, row)))

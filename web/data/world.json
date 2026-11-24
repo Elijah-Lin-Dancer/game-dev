@@ -3513,12 +3513,12 @@
     "rewardTokens": 1
   },
   "boss": {
-    "id": "racoon",
+    "id": "mossBeast",
     "name": "苔背巨兽",
     "screen": "field-6",
     "x": 252,
     "y": 182,
-    "hp": 56,
+    "hp": 64,
     "dmg": 4,
     "rewardTokens": 3
   },

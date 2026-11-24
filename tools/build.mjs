@@ -175,6 +175,10 @@ const img = {
   volcanoEmber: join(ROOT, 'assets/01-primary/world/volcano-ember.png'),
   volcanoLava: join(ROOT, 'assets/01-primary/world/volcano-lava.png'),
   volcanoTile: join(ROOT, 'assets/01-primary/world/volcano-tile.png'),
+  /* G3-1 世界 Boss：ink-studio 苔背巨兽 96×96 四向 idle / charge / roar */
+  mossBeastIdle: join(ROOT, 'assets/01-primary/world/moss-beast-idle.png'),
+  mossBeastCharge: join(ROOT, 'assets/01-primary/world/moss-beast-charge.png'),
+  mossBeastRoar: join(ROOT, 'assets/01-primary/world/moss-beast-roar.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
   faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
   faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
@@ -226,6 +230,7 @@ const FRAME = {
   volcanoSpire: [64, 96], volcanoVent: [64, 48],
   volcanoForge: [96, 128], volcanoSmith: [64, 64], volcanoEmber: [32, 48],
   volcanoLava: [64, 48], volcanoTile: [16, 16],
+  mossBeastIdle: [96, 96], mossBeastCharge: [96, 96], mossBeastRoar: [96, 96],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
 };
