@@ -136,9 +136,10 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 | **18 · G2-1 竹林（已完成）** | 草原 6 + 竹林 6 = 12 屏；竹隐 / 雾竹三味；`na.world v3`；9 件 G2 素材（3 件接入） | `world.js`、`web/data/world.json`、`worldSave.js`、`tools/build.mjs`、`art-src/g2/` | W1–W10：12 屏 / 真实跨群系 / 竹隐委托 / 村医回归 / v2→v3 / 640·960·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH18-G2-1.md` |
 | **19 · G2-2 沙漠（已完成）** | 草原 6 + 竹林 6 + 沙漠 6 = 18 屏；沙婆 / 沙海拾味 / 14 沙枣丛；`na.world v4`；11 件 3D + 沙棕 / 16px 沙地素材库 | `world.js`、`web/data/world.json`、`worldSave.js`、`tools/build.mjs`、`art-src/g2/`、`tools/crop_desert.py` | W11–W20：18 屏 / 沙漠六屏 / 沙婆委托 / 沙尘 / 沙地 / 草原竹林回归 / v3→v4 / 640·960·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH19-G2-2.md` |
 | **21 · G2-4 火山与落灰（已完成）** | 30 屏（五群系 6×5）；熔匠 赤砧 / 拾火五枚 / 14 火种；`na.world v6`；熔岩锻炉 / 熔匠 / 火种 / 熔岩池 3D；`PROP_SCALE` + alpha bbox 审计 139/0 | `world.js`、`web/data/world.json`、`worldSave.js`、`tools/build.mjs`、`tools/audit_scale.py`、`art-src/g2/` | W31–W40：30 屏 / 熔匠委托 / 比例审计 / v5→v6 / 640·960·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH21-G2-4.md` |
+| **22 · G2-5 火山第二委托与篝火（已完成）** | 30 屏不变；熔匠第二条「三淬归火」（3 炉眼 / 3 碎片）；5 个篝火主落点 + 已访问传送；world 三键触屏 + 摇杆；`na.world v7`；无新增美术，alpha bbox 审计 141/0 | `world.js`、`web/data/world.json`、`worldSave.js`、`src/systems/input.js`、`tools/audit_scale.py` | W41–W50：委托 / 传送 / v6→v7 / 960·640·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH22-G2-5.md` |
 | **20 · G2-3 雪原与比例基线（已完成）** | 24 屏（四群系 6×4）；守灯人 / 雪灯五盏 / 14 雪灯草；`na.world v5`；雪松 / 雪祠 96×128、守灯人 / 雪灯草 / 完整沙棕 3D；`PROP_SCALE` + alpha bbox 审计 106/0 | `world.js`、`web/data/world.json`、`worldSave.js`、`tools/build.mjs`、`tools/audit_scale.py`、`art-src/g2/` | W21–W30：24 屏 / 雪灯委托 / 比例审计 / v4→v5 / 640·960·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH20-G2-3.md` |
 
-**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → G3（世界 Boss / 剩余委托收尾）。
+**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → **22（已完成）** → G3（世界 Boss / 剩余委托收尾）。
 
 ---
 

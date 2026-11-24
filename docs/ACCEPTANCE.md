@@ -354,3 +354,20 @@
 | W-40 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.19501372.js` + `assets.db63aacd.js`；30 屏 / 5 NPC / 火山 6；`volcano-3` 取景正常；熔匠 `active/0 → 10 枚 → done / 剩余 5 / tokens 2`；PWA `na-b18-64a58679` / 12 条；844×390 布局正常；`errs=[]`（`g2-online-volcano-*.png`） |
 
 证据：火山六屏 `g2-volcano-1..6-960.png`、`g2-volcano-3-final-960.png`、`g2-volcano-npc-960.png`、`g2-volcano-quest-960.png`、`g2-volcano-done-960.png`、640 / 844 / 单文件 / PWA 各一张、`volcano-props-board.png`；详见 `docs/BATCH21-G2-4.md`。
+
+## W-41～W-50. 批 22 / G2-5 火山第二委托、篝火传送与 world 触屏（2026-11-24 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| W-41 | 30 屏 / 5 NPC / 65 采集点 / 5 篝火 / 3 炉眼 | 进 world 读 `screens / npcs / herbs / campfires / quenches` 与 `save.v` | 通过；`save.v=7`，五群系各 6 屏，3 处炉眼为 `vent-jiao / vent-hei / vent-hui`，`errs=[]` |
+| W-42 | 第二委托接取 | 种子 `volcanoQuest=done`；熔匠对话 → 接取 | 通过；对白「火稳了，可铁砧还差三口气。」；`volcanoQuest2=none→active`，三处炉眼 `glow.visible=true` |
+| W-43 | 三处炉眼淬火 | 焦原 / 黑曜坡 / 灰口逐处按 E | 通过；`volcanoVents=1→2→3`；HUD `炉眼 3 · 可交付 3/3`；提示「三处炉眼已淬 · 回铁砧找赤砧」 |
+| W-44 | 第二委托交付 | 回铁砧，面板 stage 2，点击「交付 3 处炉眼」 | 通过；`volcanoQuest2=done`、`tokens 5`、`travelUnlocked=true`；对白「三淬归火。铁砧记住了你的手。」 |
+| W-45 | 篝火传送面板 | `volcano-3` 篝火旁按 E；读 `panel.type / rows`；点第一行 | 通过；`type=travel / rows=6`（5 篝火 + 留在原地）；「村口 · 草原」可点；`volcano-3 x=12900 y=288 → field-1 x=344 y=288`，`visited` 保留；未访问行「未点亮」不可点 |
+| W-46 | v6→v7 迁移 | v6 种子 reload，读 `save` 与 `localStorage` | 通过；`v=7 / screens=30`，保留 `visited=3 / snowQuest=active / volcanoQuest=done / tokens=7`，补 `volcanoQuest2=none / volcanoVents=[]` 并即时落盘 |
+| W-47 | 960 / 640 | 两档 Playwright；960 第二委托 / 淬火 / 面板 / 传送，640 传送面板 | 通过；960×540 与 640×360；HUD / 面板无溢出；640 面板 6 行；banner 已关闭，标签「村口 · 草原」等无重复 |
+| W-48 | 844×390 触屏 | `hasTouch=true`；读 `touchCtl.items`、点 E、CDP 拖拽摇杆 | 通过；`touch=true / touchItems=3`；点 E `gathering=true`；拖拽摇杆 `x 240→268 / stick.dx=1`；HUD 触屏文案「摇杆移动 · E 采集 / 交谈 · 攻 攻击 · 返 回小屋」 |
+| W-49 | 构建 / 比例 / 冒烟 | `npm run build`、`npm run build:single`、`python3 tools/audit_scale.py`、`npm run smoke` | 通过；**141 实例 / 0 FAIL**；首屏 1927 KB / gzip 788 KB；`game.cdb847c9.js` 323,713 B + `assets.5c5b7a63.js` 123,658 B；单文件 2,085,666 B；9 项 PASS |
+| W-50 | 单文件 / PWA / Pages | `file://` 单文件；SW ready → 断网 reload；Pages 线上 960×540 | 待 Pages 推送后补验；本地单文件 `__SINGLE__=true / 30 屏 / panel=travel`，PWA `na-b18-7a92b9e9` / 12 条断网仍 30 屏 / 5 篝火，`errs=[]` |
+
+证据：本地 `docs/revamp/g2/g2-volcano-quest2-accept-960.png`、`g2-volcano-quench-glow-960.png`、`g2-volcano-quench-960.png`、`g2-volcano-quest2-960.png`、`g2-volcano-quest2-done-960.png`、`g2-travel-960.png`、`g2-travel-field-960.png`、`g2-volcano-3-640.png`、`g2-volcano-touch-844x390.png`、`g2-volcano-touch-joystick-844x390.png`、`g2-volcano-single-960.png`、`g2-volcano-pwa-960.png`；详见 `docs/BATCH22-G2-5.md`。

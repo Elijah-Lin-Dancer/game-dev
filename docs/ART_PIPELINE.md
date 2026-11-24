@@ -40,7 +40,7 @@
 - **批 15 剧情**：6 张过场卡、结局主视觉、引路人/铁匠/商人对话头像。
 - **批 16 元进度**：20 个成就图标、第二技能图标、周目词条图标。
 - **批 17 工程化**：PWA 图标 / 启动图 / 分享图；不进入游戏内 tile。
-- **G2 五群系**：G2-1 竹林、G2-2 沙漠、G2-3 雪原、G2-4 火山均已接入；五群系 30 屏完成，基础地面仍走 16px tile 调色。
+- **G2 五群系**：G2-1 竹林、G2-2 沙漠、G2-3 雪原、G2-4 火山、G2-5 火山第二委托与篝火均已接入；五群系 30 屏完成，基础地面仍走 16px tile 调色。G2-5 不新增美术，只补 campfire 落点。
 - **G3 收尾**：4 只世界 Boss、远征结局主视觉、3 个成就图标。
 
 ## 批 13 产出（2026-11-23）
@@ -81,6 +81,14 @@ python3 tools/crop_hub.py
 - `desertPalm` 与 `desertTile` 均来自 NinjaAdventure CC0 原包；沙地只做颜色重映射，不重绘 16px tile。
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
 
+
+## G2-5 产出（2026-11-24）
+
+本轮 **0 新增美术件**。 `field-1` / `bamboo-4` 补的两个篝火落点复用既有 `campfire` 摆件（krial CC0，`16x16 Animated Campfire`）；三处炉眼复用 `volcanoVent`，火种复用 `volcanoEmber`，均为 G2-4 已登记的 ink-studio / G2 后备件重导。基础地形仍为 NinjaAdventure CC0 16px tile 调色。
+
+- 比例审计：`python3 tools/audit_scale.py` → **141 实例 / 0 FAIL**；新增的 2 个实例仅为 campfire 落点。
+- 来源口径不变：篝火 krial CC0；炉眼 / 火种 / 熔岩锻炉等为 ink-studio 生成（工具 MIT，成品自制）；16px 火山地 CC0 调色。
+- 对照板 / 源图集仍用 `docs/revamp/g2-3d/volcano-props-board.png` 与 `volcano-*-atlas.png/json`。
 
 ## G2-4 产出（2026-11-24）
 
