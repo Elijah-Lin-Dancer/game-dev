@@ -170,6 +170,11 @@ const img = {
   snowTile: join(ROOT, 'assets/01-primary/world/snow-tile.png'),
   volcanoSpire: join(ROOT, 'assets/01-primary/world/volcano-spire.png'),
   volcanoVent: join(ROOT, 'assets/01-primary/world/volcano-vent.png'),
+  volcanoForge: join(ROOT, 'assets/01-primary/world/volcano-forge.png'),
+  volcanoSmith: join(ROOT, 'assets/01-primary/world/volcano-smith.png'),
+  volcanoEmber: join(ROOT, 'assets/01-primary/world/volcano-ember.png'),
+  volcanoLava: join(ROOT, 'assets/01-primary/world/volcano-lava.png'),
+  volcanoTile: join(ROOT, 'assets/01-primary/world/volcano-tile.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
   faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
   faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
@@ -219,6 +224,8 @@ const FRAME = {
   desertNomad: [64, 64], desertShrub: [32, 48], desertPalm: [64, 96], desertTile: [16, 16],
   snowPine: [96, 128], snowShrine: [96, 128], snowKeeper: [64, 64], snowLantern: [32, 48], snowTile: [16, 16],
   volcanoSpire: [64, 96], volcanoVent: [64, 48],
+  volcanoForge: [96, 128], volcanoSmith: [64, 64], volcanoEmber: [32, 48],
+  volcanoLava: [64, 48], volcanoTile: [16, 16],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
 };

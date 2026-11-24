@@ -1,8 +1,8 @@
-/* G2 开放世界：草原 / 竹林 / 沙漠群系，18 屏 30×17
+/* G2 开放世界：草原 / 竹林 / 沙漠 / 雪原 / 火山，30 屏 30×17
  *
  * 设计边界：
  *   - 单屏 480×272（30×17 格 ×16px），镜头仍是 640×360，能看到相邻屏边缘；
- *   - 四种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
+ *   - 五种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
  *   - 世界 Boss 仍只在 field-6，任务不跨群系记账；
  *   - 仍只写 na.world，不碰主线 na.save。
  */
@@ -29,7 +29,10 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 
-const TINT = { field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert, snow: UI.world.snow };
+const TINT = {
+  field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert,
+  snow: UI.world.snow, volcano: UI.world.volcano,
+};
 
 /* 尺寸基线：玩家 16×16 源帧 ×2 = 32px 高。所有摆件按“可见像素高度”对齐：
  * 树 / 门 / 祠 >= 2.5 个玩家，灌木 / 采集物 <= 1.3 个玩家，NPC 约 1.0–1.2 个玩家。
@@ -39,7 +42,8 @@ const PROP_SCALE = {
   tree: 1.8, bush: 0.9, bamboo: 1.1, bambooGate: 1.0, desertArch: 1.0,
   desertDeadTree: 1.35, desertPalm: 1.5, campfire: 1.3,
   snowPine: 1.0, snowShrine: 1.1, snowLantern: 1.3,
-  volcanoSpire: 1.5, volcanoVent: 1.0,
+  volcanoSpire: 1.2, volcanoVent: 2.0, volcanoForge: 1.0,
+  volcanoLava: 3.0,
 };
 
 /* 群系任务配置：数据键、存档键、HUD 文案、NPC 素材都在这里对齐。
@@ -72,6 +76,13 @@ const QUEST_PROFILE = {
     glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '雪灯够了 · 去雪祠找阿霁交付',
     respawn: '一盏雪灯草重新亮了',
+  },
+  volcano: {
+    biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs',
+    item: '火种', unit: '枚', npcAsset: 'volcanoSmith', npcScale: 0.95, glowTint: UI.world.ember,
+    glowScale: 1.2, labelY: 46, promptY: 60,
+    readyHint: '火种够了 · 去铁砧找赤砧交付',
+    respawn: '一枚火种在灰里重新亮了',
   },
 };
 
@@ -159,6 +170,7 @@ function normalizeWorld(raw) {
   const bq = raw && raw.bambooQuest ? raw.bambooQuest : {};
   const dq = raw && raw.desertQuest ? raw.desertQuest : {};
   const sq = raw && raw.snowQuest ? raw.snowQuest : {};
+  const vq = raw && raw.volcanoQuest ? raw.volcanoQuest : {};
   const bossRaw = raw && raw.boss ? raw.boss : null;
   return {
     screens,
@@ -189,6 +201,13 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(sq.need, 5))),
       yield: Math.max(1, Math.round(asNumber(sq.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(sq.rewardTokens, 2))),
+    },
+    volcanoQuest: {
+      id: String(vq.id || 'volcano5'),
+      name: String(vq.name || '拾火五枚'),
+      need: Math.max(1, Math.round(asNumber(vq.need, 5))),
+      yield: Math.max(1, Math.round(asNumber(vq.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(vq.rewardTokens, 2))),
     },
     boss: bossRaw ? {
       id: String(bossRaw.id || 'racoon'),
@@ -306,21 +325,27 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setDepth(-0.5);
     this.screens.forEach((s) => {
       const tint = TINT[s.biome] || TINT.field;
-      const ground = s.biome === 'desert' ? 'desertTile' : (s.biome === 'snow' ? 'snowTile' : 'field');
-      const groundFrame = (s.biome === 'desert' || s.biome === 'snow') ? 0 : 21;
-      const whiteGround = s.biome === 'desert' || s.biome === 'snow';
+      const ground = s.biome === 'desert' ? 'desertTile'
+        : (s.biome === 'snow' ? 'snowTile' : (s.biome === 'volcano' ? 'volcanoTile' : 'field'));
+      const groundFrame = (s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano') ? 0 : 21;
+      const whiteGround = s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano';
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, tint, 1)
         .setOrigin(0).setDepth(-0.4);
       this.add.tileSprite(s.x, WORLD_Y, SCREEN_W, SCREEN_H, ground, groundFrame)
         .setOrigin(0).setTint(whiteGround ? 0xffffff : tint).setDepth(0);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, s.biome === 'snow' ? 0.035 : (s.biome === 'desert' ? 0.10 : 0.07))
+      const shade = s.biome === 'snow' ? 0.035 : (s.biome === 'desert' ? 0.10 : (s.biome === 'volcano' ? 0.16 : 0.07));
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, shade)
         .setOrigin(0).setDepth(1);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, s.biome === 'snow' ? UI.world.snowLight : (s.biome === 'desert' ? 0xe5c37d : UI.world.fieldLight), s.biome === 'snow' ? 0.32 : (s.biome === 'desert' ? 0.20 : 0.16))
+      const rim = s.biome === 'snow' ? UI.world.snowLight
+        : (s.biome === 'desert' ? 0xe5c37d : (s.biome === 'volcano' ? UI.world.volcanoLight : UI.world.fieldLight));
+      const rimAlpha = s.biome === 'snow' ? 0.32 : (s.biome === 'desert' ? 0.20 : (s.biome === 'volcano' ? 0.30 : 0.16));
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, rim, rimAlpha)
         .setOrigin(0).setDepth(1.4);
       s.deco.forEach((d) => {
         const [dx, dy, frame = 0, scale = 1] = d;
+        const decoAlpha = s.biome === 'snow' ? 0.28 : (s.biome === 'desert' ? 0.32 : (s.biome === 'volcano' ? 0.30 : 0.42));
         this.add.image(s.x + dx, WORLD_Y + dy, 'floorDetail', frame)
-          .setScale(scale).setAlpha(s.biome === 'snow' ? 0.28 : (s.biome === 'desert' ? 0.32 : 0.42)).setTint(tint).setDepth(2);
+          .setScale(scale).setAlpha(decoAlpha).setTint(tint).setDepth(2);
       });
       if (s.biome === 'field') {
         const beam = this.add.image(s.x + 330, WORLD_Y + 20, 'ray', 0)
@@ -337,6 +362,12 @@ export class World extends Phaser.Scene {
         this.add.ellipse(s.x + 238, WORLD_Y + 250, 316, 36, UI.world.snowLight, 0.10)
           .setOrigin(0.5, 0.5).setDepth(2.3);
         this.add.ellipse(s.x + 118, WORLD_Y + 210, 160, 22, UI.world.snowDark, 0.08)
+          .setOrigin(0.5, 0.5).setDepth(2.35);
+      }
+      if (s.biome === 'volcano') {
+        this.add.ellipse(s.x + 238, WORLD_Y + 251, 322, 34, UI.world.volcanoLight, 0.11)
+          .setOrigin(0.5, 0.5).setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD);
+        this.add.ellipse(s.x + 128, WORLD_Y + 208, 150, 22, UI.world.volcanoDark, 0.16)
           .setOrigin(0.5, 0.5).setDepth(2.35);
       }
       this.add.text(s.x + 16, WORLD_Y + 12, s.name, {
@@ -486,6 +517,30 @@ export class World extends Phaser.Scene {
       this.add.image(x, y, 'snowShrine')
         .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 38 * k, p.y - 14, 76 * k, 14);
+    } else if (p.kind === 'volcanoForge') {
+      this.add.image(x, y - 40, 'aura', 0).setScale(3.2)
+        .setTint(UI.world.volcanoLight).setAlpha(0.15).setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
+      this.add.ellipse(x, y - 2, 92 * k, 13 * k, 0x000000, 0.28).setDepth(17);
+      this.add.image(x, y, 'volcanoForge')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 42 * k, p.y - 16, 84 * k, 16);
+    } else if (p.kind === 'volcanoLava') {
+      this.add.image(x, y - 10, 'aura', 0).setScale(2.4)
+        .setTint(UI.world.volcanoLight).setAlpha(0.16).setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(16);
+      this.add.image(x, y, 'volcanoLava')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+    } else if (p.kind === 'volcanoSpire') {
+      this.add.ellipse(x, y - 3, 32 * k, 9 * k, 0x000000, 0.26).setDepth(17);
+      this.add.image(x, y, 'volcanoSpire')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 10 * k, p.y - 20, 20 * k, 20);
+    } else if (p.kind === 'volcanoVent') {
+      this.add.image(x, y - 8, 'aura', 0).setScale(1.7)
+        .setTint(UI.world.volcanoLight).setAlpha(0.14).setBlendMode(Phaser.BlendModes.ADD)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
+      this.add.image(x, y, 'volcanoVent')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
     } else if (p.kind === 'campfire') {
       this.add.circle(x, y - 8, 28 * k, 0xff9a4a, 0.10)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
@@ -511,7 +566,7 @@ export class World extends Phaser.Scene {
         .setScale(p.glowScale).setAlpha(0.16).setTint(p.glowTint)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(22);
       this.tweens.add({ targets: glow, alpha: 0.06, scale: p.glowScale + 0.4, duration: 900, yoyo: true, repeat: -1 });
-      const sprite = this.add.sprite(x, y, p.npcAsset, 0)
+      const sprite = this.add.sprite(x, y, p.npcAsset, n.frame || 0)
         .setOrigin(0.5, 1).setScale(p.npcScale).setDepth(25);
       this.tweens.add({ targets: sprite, y: y - 2, duration: 620, yoyo: true, repeat: -1 });
       const label = this.add.text(x, y - p.labelY, String(n.name || '村民'), {
@@ -551,12 +606,15 @@ export class World extends Phaser.Scene {
         const y = WORLD_Y + asNumber(h[1], 0);
         const desert = s.biome === 'desert';
         const snow = s.biome === 'snow';
+        const volcano = s.biome === 'volcano';
         const glow = this.add.circle(x, y - 6, snow ? 12 : (desert ? 15 : 12), prof.glowTint, snow ? 0.10 : (desert ? 0.08 : 0.10))
           .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
-        const sprite = this.add.sprite(x, y, desert ? 'desertShrub' : (snow ? 'snowLantern' : 'herb'), 0)
-          .setOrigin(0.5, 1).setScale(desert ? 1.7 : (snow ? 1.3 : 1.0)).setDepth(24);
+        const herbAsset = desert ? 'desertShrub' : (snow ? 'snowLantern' : (volcano ? 'volcanoEmber' : 'herb'));
+        const herbScale = desert ? 1.7 : (snow ? 1.3 : (volcano ? 1.3 : 1.0));
+        const sprite = this.add.sprite(x, y, herbAsset, 0)
+          .setOrigin(0.5, 1).setScale(herbScale).setDepth(24);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 760 + i * 90, yoyo: true, repeat: -1 });
-        const prompt = this.add.text(x, y - (desert || snow ? 32 : 24), 'E 采集', {
+        const prompt = this.add.text(x, y - (desert || snow || volcano ? 32 : 24), 'E 采集', {
           fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
           backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
         }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -674,6 +732,24 @@ export class World extends Phaser.Scene {
     this.snowVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.snowVeil, 0.08)
       .setOrigin(0).setScrollFactor(0).setDepth(792).setAlpha(0);
 
+    // 落灰：比雪更慢、更暗，带一点余烬的暖色；和雪共用 dust 纹理。
+    this.ashFall = this.add.particles(0, 0, 'dust', {
+      x: { min: -20, max: VIEW_W + 20 },
+      y: -12,
+      lifespan: { min: 2200, max: 3600 },
+      speedX: { min: -18, max: 14 },
+      speedY: { min: 28, max: 58 },
+      scaleX: { min: 0.35, max: 0.85 },
+      scaleY: { min: 0.35, max: 0.85 },
+      alpha: { start: 0.58, end: 0.04 },
+      quantity: 2,
+      frequency: 54,
+      tint: UI.world.ash,
+    }).setScrollFactor(0).setDepth(795);
+    this.ashFall.stop();
+    this.ashVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.volcanoVeil, 0.10)
+      .setOrigin(0).setScrollFactor(0).setDepth(793).setAlpha(0);
+
     this.dustVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.dustVeil, 0.13)
       .setOrigin(0).setScrollFactor(0).setDepth(791).setAlpha(0);
     this.fogVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.fogVeil, 0.16)
@@ -690,10 +766,14 @@ export class World extends Phaser.Scene {
     this.fogMist.stop();
     this.dustStorm.stop();
     this.snowFall.stop();
+    this.ashFall.stop();
     this.fogVeil.setAlpha(0);
     this.dustVeil.setAlpha(0);
     this.snowVeil.setAlpha(0);
-    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48 : (s.weather === 'dust' ? 0.34 : (s.weather === 'snow' ? 0.22 : 0.12)));
+    this.ashVeil.setAlpha(0);
+    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48
+      : (s.weather === 'dust' ? 0.34
+        : (s.weather === 'snow' ? 0.22 : (s.weather === 'ash' ? 0.30 : 0.12))));
     if (s.weather === 'rain') this.rain.start();
     if (s.weather === 'fog') {
       this.fogMist.start();
@@ -706,6 +786,10 @@ export class World extends Phaser.Scene {
     if (s.weather === 'snow') {
       this.snowFall.start();
       this.snowVeil.setAlpha(0.08);
+    }
+    if (s.weather === 'ash') {
+      this.ashFall.start();
+      this.ashVeil.setAlpha(0.10);
     }
   }
 
@@ -1164,6 +1248,11 @@ export class World extends Phaser.Scene {
       if (state === 'none') return ['破祠的灯灭了很久，雪把灯芯压在霜林里。', '帮我拾五盏雪灯回来，我想再点一次。'];
       return ['还差 ' + missing + ' 盏雪灯。', '白原和石灯附近还有，雪化之前它们会重新亮。'];
     }
+    if (npc.quest === 'volcano') {
+      if (state === 'done') return ['炉子又烧起来了，铁砧响得像心跳。', '收好碎片，别让火山吞了你的影子。'];
+      if (state === 'none') return ['炉子冷了三天，火种被灰埋在南边的焦原里。', '帮我拾五枚火种回来，铁砧还没凉透。'];
+      return ['还差 ' + missing + ' 枚火种。', '焦原和黑曜坡还有，火种会在灰下重新亮。'];
+    }
     if (state === 'done') return ['这些草药救了不少人。', '路上小心，星火会记得你。'];
     if (state === 'none') return ['你来得正好。村东的草药被雨泡坏了不少。', '能帮我采 5 株回来吗？草原上还有三丛。'];
     return ['还差 ' + missing + ' 株。', '草原上那几丛，采完会重新长出来。'];
@@ -1253,7 +1342,9 @@ export class World extends Phaser.Scene {
         ? ['沙枣够了。', '收下这枚星火碎片，旧门的灯就拜托你了。']
         : (npc.quest === 'snow'
           ? ['雪灯够了。', '收下这枚星火碎片，破祠的灯就拜托你了。']
-          : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。'])));
+          : (npc.quest === 'volcano'
+            ? ['火种够了。', '收下这枚星火碎片，铁砧的火就拜托你了。']
+            : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。']))));
   }
 
   closePanel() {

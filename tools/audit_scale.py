@@ -20,7 +20,8 @@ BASE = {
     'tree': 1.8, 'bush': 0.9, 'bamboo': 1.1, 'bambooGate': 1.0,
     'desertArch': 1.0, 'desertDeadTree': 1.35, 'desertPalm': 1.5,
     'campfire': 1.3, 'snowPine': 1.0, 'snowShrine': 1.1,
-    'volcanoSpire': 1.5, 'volcanoVent': 1.0,
+    'volcanoSpire': 1.2, 'volcanoVent': 2.0, 'volcanoForge': 1.0,
+    'volcanoLava': 3.0,
 }
 # 群系资源点缩放，与 buildHerbs 同步
 HERB = {
@@ -28,6 +29,7 @@ HERB = {
     'bamboo': ('assets/01-primary/NinjaAdventure/Items/Food/TeaLeaf.png', 1.0),
     'desert': ('assets/01-primary/world/desert-shrub.png', 1.7),
     'snow': ('assets/01-primary/world/snow-lantern.png', 1.3),
+    'volcano': ('assets/01-primary/world/volcano-ember.png', 1.3),
 }
 # NPC 正面帧与缩放，与 QUEST_PROFILE 同步
 NPC = {
@@ -35,6 +37,7 @@ NPC = {
     'bamboo': ('assets/01-primary/world/bamboo-hermit.png', 0.9, (0, 0, 64, 64)),
     'desert': ('assets/01-primary/world/desert-nomad.png', 0.95, (0, 0, 64, 64)),
     'snow': ('assets/01-primary/world/snow-keeper.png', 0.9, (0, 0, 64, 64)),
+    'volcano': ('assets/01-primary/world/volcano-smith.png', 0.95, (0, 0, 64, 64)),
 }
 ASSET = {
     'tree': 'assets/01-primary/world/tree-green.png',
@@ -49,6 +52,8 @@ ASSET = {
     'snowShrine': 'assets/01-primary/world/snow-shrine.png',
     'volcanoSpire': 'assets/01-primary/world/volcano-spire.png',
     'volcanoVent': 'assets/01-primary/world/volcano-vent.png',
+    'volcanoForge': 'assets/01-primary/world/volcano-forge.png',
+    'volcanoLava': 'assets/01-primary/world/volcano-lava.png',
 }
 
 def bbox_h(path, crop=None):
@@ -75,8 +80,10 @@ def main():
                 continue
             h = h0 * pscale
             ratio = h / PLAYER_H
-            low = 2.2 if kind in ('tree', 'bamboo', 'bambooGate', 'desertArch', 'desertDeadTree', 'desertPalm', 'snowPine', 'volcanoSpire') else (2.8 if kind == 'snowShrine' else 0)
-            high = 1.3 if kind == 'campfire' else 0
+            low = 2.2 if kind in ('tree', 'bamboo', 'bambooGate', 'desertArch', 'desertDeadTree', 'desertPalm', 'snowPine', 'volcanoSpire') else (2.8 if kind in ('snowShrine', 'volcanoForge') else 0)
+            high = 1.3 if kind in ('campfire', 'volcanoLava', 'volcanoVent') else 0
+            if kind == 'campfire' and ratio < 0.7:
+                fails.append(f'{s["id"]} campfire {ratio:.2f}x < 0.7x')
             if low and ratio < low:
                 fails.append(f'{s["id"]} {kind} {ratio:.2f}x < {low}x')
             if high and ratio > high:

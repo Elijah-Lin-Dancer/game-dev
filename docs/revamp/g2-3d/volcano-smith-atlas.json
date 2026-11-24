@@ -1,0 +1,103 @@
+{
+  "width": 256,
+  "height": 64,
+  "tileWidth": 64,
+  "tileHeight": 64,
+  "directions": 4,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.95,
+    0.04
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.22,
+      "pitch": 0.15,
+      "unitsPerPixel": 0.04626902303579876,
+      "depthOrigin": 16.3,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "pivot": {
+        "x": 32,
+        "y": 32
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 1,
+      "yaw": 1.7907963267948965,
+      "pitch": 0.15,
+      "unitsPerPixel": 0.04626902303579876,
+      "depthOrigin": 16.3,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 64,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "pivot": {
+        "x": 32,
+        "y": 32
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 2,
+      "yaw": 3.3615926535897933,
+      "pitch": 0.15,
+      "unitsPerPixel": 0.04626902303579876,
+      "depthOrigin": 16.3,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 128,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "pivot": {
+        "x": 32,
+        "y": 32
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 3,
+      "yaw": 4.932388980384689,
+      "pitch": 0.15,
+      "unitsPerPixel": 0.04626902303579876,
+      "depthOrigin": 16.3,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 192,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "pivot": {
+        "x": 32,
+        "y": 32
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "volcano-smith.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

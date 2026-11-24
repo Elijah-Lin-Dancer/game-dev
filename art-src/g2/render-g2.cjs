@@ -27,6 +27,10 @@ const specs = [
   { file: 'snow-lantern.cjs', out: 'snow-lantern-atlas', w: 32, h: 48, directions: 1, dist: 3.4 },
   { file: 'volcano-spire.cjs', out: 'volcano-spire-atlas', w: 64, h: 96, directions: 1, dist: 5.2 },
   { file: 'volcano-vent.cjs', out: 'volcano-vent-atlas', w: 64, h: 48, directions: 1, dist: 4.6 },
+  { file: 'volcano-forge.cjs', out: 'volcano-forge-atlas', w: 96, h: 128, directions: 1, dist: 5.8 },
+  { file: 'volcano-smith.cjs', out: 'volcano-smith-atlas', w: 64, h: 64, directions: 4, dist: 4.3 },
+  { file: 'volcano-ember.cjs', out: 'volcano-ember-atlas', w: 32, h: 48, directions: 1, dist: 3.5 },
+  { file: 'volcano-lava.cjs', out: 'volcano-lava-atlas', w: 64, h: 48, directions: 1, dist: 4.5 },
 ];
 
 for (const spec of specs) {
