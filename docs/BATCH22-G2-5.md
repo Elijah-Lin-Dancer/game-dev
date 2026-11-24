@@ -54,7 +54,7 @@
 | PWA 断网 | `na-b18-7a92b9e9` / 12 条；在线 reload → `setOffline(true)` reload，仍 30 屏 / 5 篝火 / travel 面板可用，`errs=[]` |
 | 比例审计 | `python3 tools/audit_scale.py`：**141 实例 / 0 FAIL**（新增 2 个 campfire 实例；无新增美术件） |
 | 构建 / 冒烟 | 首屏 1927 KB / gzip 788 KB；`dist/game.cdb847c9.js` 323,713 B；`dist/assets.5c5b7a63.js` 123,658 B；单文件 2,085,666 B；`npm run smoke` 9 项 PASS |
-| Pages 线上 | 待推送后补验（入口应为 `game.cdb847c9.js + assets.5c5b7a63.js`；PWA `na-b18-7a92b9e9` / 12 条） |
+| Pages 线上 | 通过；入口 `game.cdb847c9.js` + `assets.5c5b7a63.js`；30 屏 / 5 NPC / 65 点 / 5 篝火 / 3 炉眼；q2 `none→active→1/2/3→done / tokens 5`；`volcano-3 → field-1`；844×390 `touchItems=3` 且 E 打开传送；PWA `na-b18-7a92b9e9` / 12 条断网仍 30 屏；`errs=[]` |
 
 ## 素材与来源
 
@@ -77,6 +77,16 @@
 - `docs/revamp/g2/g2-volcano-touch-joystick-844x390.png`
 - `docs/revamp/g2/g2-volcano-single-960.png`
 - `docs/revamp/g2/g2-volcano-pwa-960.png`
+
+线上：
+- `docs/revamp/g2/g2-online-volcano-quest2-accept-960.png`
+- `docs/revamp/g2/g2-online-volcano-quench-960.png`
+- `docs/revamp/g2/g2-online-volcano-quest2-960.png`
+- `docs/revamp/g2/g2-online-volcano-quest2-done-960.png`
+- `docs/revamp/g2/g2-online-travel-960.png`
+- `docs/revamp/g2/g2-online-travel-field-960.png`
+- `docs/revamp/g2/g2-online-touch-844x390.png`
+- `docs/revamp/g2/g2-online-pwa-960.png`
 
 代码：
 - `web/data/world.json`
