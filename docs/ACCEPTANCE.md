@@ -320,3 +320,20 @@
 | W-20 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.c6eead2a.js` + `assets.fc823a9d.js`；18 屏 / 3 NPC；`desert-1` / `desert-4` 取景正常；沙婆面板「需要 5 颗沙枣，当前 5 颗」→ 交付 `done/0 / tokens 2`；844×390 布局 18/3，线上 `touchCtl=false`（world 触屏未接，已知限制）；`errs=[]`（`g2-online-desert-*.png`） |
 
 证据：本地 960 六屏 `g2-desert-1..6-960.png`、`g2-desert-dust-960.png`、`g2-desert-quest-960.png`、`g2-desert-done-960.png`、640 两张、移动一张、单文件一张、PWA 一张；线上 `g2-online-desert-1-960.png`、`g2-online-desert-4-960.png`、`g2-online-desert-quest-960.png`、`g2-online-desert-done-960.png`、`g2-online-desert-mobile-844x390.png`；详见 `docs/BATCH19-G2-2.md`。
+
+## W-21～W-30. 批 20 / G2-3 雪原群系与比例基线（2026-11-24 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| W-21 | 24 屏、6 雪原、4 NPC | 进 world 读 `screens / ids / npcs / herbs` | 通过；`field-1..6 + bamboo-1..6 + desert-1..6 + snow-1..6`，NPC 村医 / 竹隐 / 沙婆 / 守灯人；24 屏 / 4 NPC / 51 采集点，`errs=[]` |
+| W-22 | 雪原 6 屏与雪 / 晴切换 | 逐屏 `applyScreen` + `weather / snowVeil / snowFall` + 960 截图 | 通过；`雪坳/霜林/破祠/石灯/风口/白原`；`snow-1/2/3/5/6=snow`、`snow-4=clear`；`snowVeil α0.08`、`snowFall=true` |
+| W-23 | 守灯人委托全流程 | 对话接取 → 采 1 丛 → 5 盏面板 → 交付 | 通过；`active/0 → active/2 → active/5 → done/0 / tokens 2`；面板「需要 5 盏雪灯，当前 5 盏」；交付对白「雪灯够了。」 |
+| W-24 | 比例基线（硬约束） | `python3 tools/audit_scale.py`；树 / 门 / 祠 / NPC / 草药实例 | 通过；106 实例 / 0 FAIL；草原树 2.29–2.97×、竹丛 2.27–3.03×、竹林门 3.38×、沙海门 3.41–3.75×、沙棕约 3.3×、雪松 2.47–3.53×、雪祠 3.37×、NPC 0.94–1.22×、草药 ≤0.8× |
+| W-25 | v4→v5 迁移 | v4 18 屏种子 reload，读 `save` 与 `localStorage` | 通过；`v=5 / screens=24 / visited=18`，保留旧字段，补 `snowHerbs=0 / snowQuest=none` 并即时写回 |
+| W-26 | 960 / 640 / 844×390 | 三档 Playwright；读 canvas / 布局 | 通过；960×540、640×360、844×390 逻辑 779×360；HUD / 面板无溢出；world 场景仍无触屏（已知限制） |
+| W-27 | 单文件 | `web/game.html?world` + `file://` 双击 | 通过；24 屏 / 4 NPC；`__SINGLE__` 守卫不再注册 `./sw.js`，`errs=[]` |
+| W-28 | 构建 / 冒烟 | `npm run build`、`npm run build:single`、`npm run smoke` | 通过；143 切片 / 202,244 B；首屏 1901 KB / gzip 778 KB；9 项 PASS；单文件 2,057,162 B |
+| W-29 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-1ff21147` / 12 条；断网仍 24 屏 / 4 NPC，`errs=[]`（`g2-snow-pwa-offline-960.png`） |
+| W-30 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | **待推送后验收**（代码 / 文档提交后补填） |
+
+证据：雪原六屏 `g2-snow-1..6-960.png`、`g2-snow-3-final-960.png`、640 / 844 / 单文件 / PWA 各一张、`g2-snow-quest-960.png`、`g2-snow-done-960.png`、比例板 `scale-baseline-board.png`、三张群系比例图 `g2-scale-*.png`；源图集 / 15 件总览在 `docs/revamp/g2-3d/`；详见 `docs/BATCH20-G2-3.md`。

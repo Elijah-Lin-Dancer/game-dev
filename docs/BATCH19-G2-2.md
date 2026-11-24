@@ -62,13 +62,13 @@ HUD、就绪提示、采集 toast、重生 toast、委托面板、交付对话�
 | 沙枣丛 | `art-src/g2/desert-shrub.cjs` | 32×48，1 向 | `desert-shrub.png` 32×48 | 沙漠采集点，1.25 倍 |
 | 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×128，1 向 | `desert-arch.png` 96×128 | `desertArch` 摆件；两根柱碰撞 |
 | 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `desert-dead-tree.png` 64×80 | `desertDeadTree` 摆件 |
-| 沙棕 | NinjaAdventure `TilesetDesert.png` 裁切 | 48×48 | `desert-palm.png` 48×48 | `desertPalm` 摆件；素材库原件，非 3D |
+| 沙棕（G2-2 当时） | NinjaAdventure `TilesetDesert.png` 裁切 | 48×48 | `desert-palm.png` 48×48 | G2-2 当时为素材库树冠切片；G2-3 已替换为 ink-studio 64×96 完整树 |
 | 16px 沙地 | NinjaAdventure `TilesetField.png` 帧 21 调色 | 16×16 | `desert-tile.png` 16×16 | `desertTile` 地表 |
 | 篝火 | 既有 `krial` CC0 四帧 | 64×16 | `assets/01-primary/external/campfire-16x16.png` | `campfire` 摆件 / `campfire-burn` |
 
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g2/render-g2.cjs`，再 `python3 tools/crop_desert.py`。
 - 沙海旧门第一次 96×80 在实机像矮桌；改为 **96×128** 并删掉横在门洞底部的整条沙堤后，才读成门。沙婆 / 沙枣丛是 G2-2 新建的两件 3D 源。
-- 图集对照板 `docs/revamp/g2-3d/g2-props-board.png` 已扩为 11 件 3D + 1 件素材库沙棕；全部 `*-atlas.png/json` 同目录。
+- 图集对照板 `docs/revamp/g2-3d/g2-props-board.png` 在 G2-2 时为 11 件 3D + 1 件素材库沙棕；G2-3 已重生成 14 件 3D + 1 件 krial CC0 篝火。全部 `*-atlas.png/json` 同目录。
 - 新素材登记在 `assets/CREDITS.md`；ink-studio MIT 原文仍在 `assets/01-primary/world/ink-studio-LICENSE.txt`；NinjaAdventure 原包 `LICENSE.txt` 为 CC0 1.0（已核对全文）。
 
 ## 4. 构建

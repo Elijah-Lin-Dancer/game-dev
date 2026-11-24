@@ -157,13 +157,17 @@ const img = {
   bambooHermit: join(ROOT, 'assets/01-primary/world/bamboo-hermit.png'),
   desertArch: join(ROOT, 'assets/01-primary/world/desert-arch.png'),
   desertDeadTree: join(ROOT, 'assets/01-primary/world/desert-dead-tree.png'),
-  /* G2-2 沙漠：ink-studio 沙婆 / 沙枣丛，TilesetField 改色沙地，TilesetDesert 沙棕 */
+  /* G2-2 沙漠：ink-studio 沙婆 / 沙枣丛 / 完整沙棕，TilesetField 改色沙地 */
   desertNomad: join(ROOT, 'assets/01-primary/world/desert-nomad.png'),
   desertShrub: join(ROOT, 'assets/01-primary/world/desert-shrub.png'),
   desertPalm: join(ROOT, 'assets/01-primary/world/desert-palm.png'),
   desertTile: join(ROOT, 'assets/01-primary/world/desert-tile.png'),
+  /* G2-3 雪原：ink-studio 雪松 / 雪祠 / 守灯人 / 雪灯草，TilesetField 改色雪地 */
   snowPine: join(ROOT, 'assets/01-primary/world/snow-pine.png'),
   snowShrine: join(ROOT, 'assets/01-primary/world/snow-shrine.png'),
+  snowKeeper: join(ROOT, 'assets/01-primary/world/snow-keeper.png'),
+  snowLantern: join(ROOT, 'assets/01-primary/world/snow-lantern.png'),
+  snowTile: join(ROOT, 'assets/01-primary/world/snow-tile.png'),
   volcanoSpire: join(ROOT, 'assets/01-primary/world/volcano-spire.png'),
   volcanoVent: join(ROOT, 'assets/01-primary/world/volcano-vent.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
@@ -212,8 +216,8 @@ const FRAME = {
   worldTree: [64, 48], worldBush: [32, 48], caveMouth: [48, 40],
   bambooGrove: [64, 96], bambooGate: [96, 160], bambooHermit: [64, 64],
   desertArch: [96, 128], desertDeadTree: [64, 80],
-  desertNomad: [64, 64], desertShrub: [32, 48], desertPalm: [48, 48], desertTile: [16, 16],
-  snowPine: [64, 96], snowShrine: [64, 80],
+  desertNomad: [64, 64], desertShrub: [32, 48], desertPalm: [64, 96], desertTile: [16, 16],
+  snowPine: [96, 128], snowShrine: [96, 128], snowKeeper: [64, 64], snowLantern: [32, 48], snowTile: [16, 16],
   volcanoSpire: [64, 96], volcanoVent: [64, 48],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
@@ -419,7 +423,7 @@ if (single) {
       lobby: './audio/music/lobby.mp3', shop: './audio/music/shop.mp3',
       victory: './audio/music/victory.mp3', cave: './audio/music/cave.mp3' }, sfx: {} };
   for (const [k, p] of Object.entries(sfx)) singleAssets.sfx[k] = b64(p, 'audio/mpeg');
-  const singleHtml = `${head('归途：星火之章 · 单文件版', b64(FONT_OUT, 'font/woff2'), false)}<script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
+  const singleHtml = `${head('归途：星火之章 · 单文件版', b64(FONT_OUT, 'font/woff2'), false)}<script>window.__SINGLE__ = true;</script><script>window.ASSET_DATA = ${JSON.stringify(singleAssets)};</script>
 <script>${phaser}</script>
 <script>${code}</script>
 </body>

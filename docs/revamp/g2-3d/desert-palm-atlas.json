@@ -1,0 +1,43 @@
+{
+  "width": 64,
+  "height": 96,
+  "tileWidth": 64,
+  "tileHeight": 96,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0,
+    1.12,
+    0.02
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.18,
+      "pitch": 0.12,
+      "unitsPerPixel": 0.04519299924426856,
+      "depthOrigin": 18.3,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 96
+      },
+      "pivot": {
+        "x": 32,
+        "y": 48
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "desert-palm.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

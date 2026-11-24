@@ -73,6 +73,7 @@ window.addEventListener('load', () => {
 /* 批 17：PWA 只在 http(s) 下注册；单文件 file:// 双击时静默跳过。
  * sw.js 由 tools/build.mjs 生成，缓存名带首屏构建 hash，版本切换时清旧缓存。 */
 function registerPwa() {
+  if (window.__SINGLE__) return;
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
   navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' }).catch(() => {});

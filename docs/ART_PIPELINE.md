@@ -73,13 +73,32 @@ python3 tools/crop_hub.py
 | 沙婆 | `art-src/g2/desert-nomad.cjs` | 256×64，4 向 | `desert-nomad.png` 64×64 | 沙漠 NPC，1.7 倍 |
 | 沙枣丛 | `art-src/g2/desert-shrub.cjs` | 32×48，1 向 | `desert-shrub.png` 32×48 | 沙漠采集点，1.25 倍 |
 | 沙海旧门（加高） | `art-src/g2/desert-arch.cjs` | 96×128，1 向 | `desert-arch.png` 96×128 | `desertArch`；两根柱碰撞、中间可走 |
-| 沙棕 | NinjaAdventure `TilesetDesert.png` 裁切 | 48×48 | `desert-palm.png` 48×48 | `desertPalm` 摆件；素材库原件 |
+| 沙棕（G2-2 当时） | NinjaAdventure `TilesetDesert.png` 裁切 | 48×48 | `desert-palm.png` 48×48 | 仅树冠切片；G2-3 已替换为 ink-studio 完整树，见下节 |
 | 16px 沙地 | NinjaAdventure `TilesetField.png` 帧 21 调色 | 16×16 | `desert-tile.png` 16×16 | `desertTile` 地表 |
 
 - 沙海旧门从 96×80 加高到 96×128，并删掉横在门洞底部的整条沙堤；两柱保留碰撞，中间可走。
 - 沙婆 / 沙枣丛沿用 ink-studio 固定 seed；`desert-nomad` 4 向源图集保留，运行时只取正面首帧。
 - `desertPalm` 与 `desertTile` 均来自 NinjaAdventure CC0 原包；沙地只做颜色重映射，不重绘 16px tile。
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
+
+## G2-3 产出（2026-11-24）
+
+雪原与比例基线重做。所有运行时尺寸按 **alpha 可见 bbox** 校准，不以画布留白为准；玩家基线 `16×16 ×2 = 32px`。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 雪松 | `art-src/g2/snow-pine.cjs` | 96×128，1 向 | `snow-pine.png` 96×128 | `snowPine`；2.47–3.53×玩家 |
+| 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 96×128，1 向 | `snow-shrine.png` 96×128 | `snowShrine`；3.37×玩家 |
+| 守灯人 阿霁 | `art-src/g2/snow-keeper.cjs` | 256×64，4 向 | `snow-keeper.png` 64×64 正面 | 雪原 NPC；1.18×玩家 |
+| 雪灯草 | `art-src/g2/snow-lantern.cjs` | 32×48，1 向 | `snow-lantern.png` 32×48 | 雪原采集；0.69×玩家 |
+| 完整沙棕 | `art-src/g2/desert-palm.cjs` | 64×96，1 向 | `desert-palm.png` 64×96 | 替换 G2-2 的 48×48 树冠；约 3.3×玩家 |
+| 16px 雪地 | NinjaAdventure CC0 `TilesetField.png` 帧 21 | 16×16 | `snow-tile.png` 16×16 | `snowTile`；只改调色 |
+
+- 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`，15 件（14 件 ink-studio 3D + 1 件 krial CC0 篝火）。
+- 比例对照板：`docs/revamp/g2/scale-baseline-board.png`。
+- 审计：`python3 tools/audit_scale.py`，106 实例 / 0 FAIL。
+- 复现：`node art-src/g2/render-g2.cjs` → `python3 tools/crop_snow.py` → `python3 tools/crop_desert.py`。
+- 素材出处：ink-studio 生成件与本项目自制成品；工具 MIT；基础 tile、树 / 灌木 / 旧门等仍为 NinjaAdventure CC0；篝火为 krial CC0。
 
 ## G2-1 产出（2026-11-24）
 
@@ -92,8 +111,8 @@ python3 tools/crop_hub.py
 | 竹隐 | `art-src/g2/bamboo-hermit.cjs` | 256×64，4 向 | `assets/01-primary/world/bamboo-hermit.png`（正面 64×64） | 已接入竹林 NPC；运行只用正面帧 |
 | 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×128，1 向 | `assets/01-primary/world/desert-arch.png` | G2-2 已接入 `desertArch`；两柱碰撞、中间可走 |
 | 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | G2-2 已接入 `desertDeadTree` |
-| 雪松 | `art-src/g2/snow-pine.cjs` | 64×96，1 向 | `assets/01-primary/world/snow-pine.png` | 已入图集，未接雪原屏 |
-| 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 64×80，1 向 | `assets/01-primary/world/snow-shrine.png` | 已入图集，未接雪原屏 |
+| 雪松 | `art-src/g2/snow-pine.cjs` | 96×128，1 向 | `assets/01-primary/world/snow-pine.png` | G2-3 已接入 `snowPine`；树干碰撞 |
+| 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 96×128，1 向 | `assets/01-primary/world/snow-shrine.png` | G2-3 已接入 `snowShrine`；3.37×玩家 |
 | 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `assets/01-primary/world/volcano-spire.png` | 已入图集，未接火山屏 |
 | 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | 已入图集，未接火山屏 |
 

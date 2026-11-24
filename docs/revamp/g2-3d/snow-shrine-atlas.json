@@ -1,8 +1,8 @@
 {
-  "width": 64,
-  "height": 80,
-  "tileWidth": 64,
-  "tileHeight": 80,
+  "width": 96,
+  "height": 128,
+  "tileWidth": 96,
+  "tileHeight": 128,
   "directions": 1,
   "fps": 12,
   "pivot": [
@@ -16,19 +16,19 @@
       "direction": 0,
       "yaw": 0.12,
       "pitch": 0.14,
-      "unitsPerPixel": 0.046484227794104806,
-      "depthOrigin": 17.4,
+      "unitsPerPixel": 0.02044445203907387,
+      "depthOrigin": 15.8,
       "time": 0,
       "duration": 0.08333333333333333,
       "rect": {
         "x": 0,
         "y": 0,
-        "width": 64,
-        "height": 80
+        "width": 96,
+        "height": 128
       },
       "pivot": {
-        "x": 32,
-        "y": 40
+        "x": 48,
+        "y": 64
       }
     }
   ],

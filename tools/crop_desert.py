@@ -10,9 +10,8 @@ atlas.crop((0, 0, 64, 64)).save(out / 'desert-nomad.png')
 Image.open(ROOT / 'docs/revamp/g2-3d/desert-shrub-atlas.png').convert('RGBA').save(out / 'desert-shrub.png')
 Image.open(ROOT / 'docs/revamp/g2-3d/desert-arch-atlas.png').convert('RGBA').save(out / 'desert-arch.png')
 
-# NinjaAdventure TilesetDesert：一组 48x48 棕榈树冠（素材库原图，非 3D 生成）
-src = Image.open(ROOT / 'assets/00-raw/NinjaAdventure/Backgrounds/Tilesets/TilesetDesert.png').convert('RGBA')
-src.crop((168, 64, 216, 112)).save(out / 'desert-palm.png')
+# G2-3：沙棕改为 ink-studio 64×96 完整树，替换原先只有树冠的素材库切片。
+Image.open(ROOT / 'docs/revamp/g2-3d/desert-palm-atlas.png').convert('RGBA').save(out / 'desert-palm.png')
 
 # 16px 沙地：取 TilesetField 的纯色草皮帧 21（16,64），只做调色，不重绘。
 field = Image.open(ROOT / 'assets/00-raw/NinjaAdventure/Backgrounds/Tilesets/TilesetField.png').convert('RGBA')

@@ -2,7 +2,7 @@
  *
  * 设计边界：
  *   - 单屏 480×272（30×17 格 ×16px），镜头仍是 640×360，能看到相邻屏边缘；
- *   - 三种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
+ *   - 四种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
  *   - 世界 Boss 仍只在 field-6，任务不跨群系记账；
  *   - 仍只写 na.world，不碰主线 na.save。
  */
@@ -29,7 +29,18 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 
-const TINT = { field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert };
+const TINT = { field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert, snow: UI.world.snow };
+
+/* 尺寸基线：玩家 16×16 源帧 ×2 = 32px 高。所有摆件按“可见像素高度”对齐：
+ * 树 / 门 / 祠 >= 2.5 个玩家，灌木 / 采集物 <= 1.3 个玩家，NPC 约 1.0–1.2 个玩家。
+ * 这里的倍率只修正素材库与 3D 件的画布留白，p.scale 仍保留逐屏变化。 */
+const PLAYER_H = 32;
+const PROP_SCALE = {
+  tree: 1.8, bush: 0.9, bamboo: 1.1, bambooGate: 1.0, desertArch: 1.0,
+  desertDeadTree: 1.35, desertPalm: 1.5, campfire: 1.3,
+  snowPine: 1.0, snowShrine: 1.1, snowLantern: 1.3,
+  volcanoSpire: 1.5, volcanoVent: 1.0,
+};
 
 /* 群系任务配置：数据键、存档键、HUD 文案、NPC 素材都在这里对齐。
  * 不再用 bamboo 单布尔分派；沙漠和后续雪原 / 火山复用同一结构。 */
@@ -37,23 +48,30 @@ const QUEST_PROFILE = {
   field: {
     biome: 'field', questDef: 'quest', questSave: 'quest', herbSave: 'herbs',
     item: '草药', unit: '株', npcAsset: 'villager2', npcScale: 2, glowTint: UI.world.herbGold,
-    glowScale: 1.4, labelY: 48, promptY: 68,
+    glowScale: 1.1, labelY: 44, promptY: 58,
     readyHint: '草药够了 · 去找村医阿杏交付',
     respawn: '一丛草药重新长成了',
   },
   bamboo: {
     biome: 'bamboo', questDef: 'bambooQuest', questSave: 'bambooQuest', herbSave: 'bambooHerbs',
-    item: '雾竹', unit: '株', npcAsset: 'bambooHermit', npcScale: 1.5, glowTint: UI.world.herb,
-    glowScale: 1.6, labelY: 56, promptY: 76,
+    item: '雾竹', unit: '株', npcAsset: 'bambooHermit', npcScale: 0.9, glowTint: UI.world.herb,
+    glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '雾竹够了 · 去找竹隐交付',
     respawn: '一丛雾竹重新长成了',
   },
   desert: {
     biome: 'desert', questDef: 'desertQuest', questSave: 'desertQuest', herbSave: 'desertHerbs',
-    item: '沙枣', unit: '颗', npcAsset: 'desertNomad', npcScale: 1.7, glowTint: UI.world.herbGold,
-    glowScale: 1.6, labelY: 56, promptY: 76,
+    item: '沙枣', unit: '颗', npcAsset: 'desertNomad', npcScale: 0.95, glowTint: UI.world.herbGold,
+    glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '沙枣够了 · 去找沙婆阿砾交付',
     respawn: '一丛沙枣重新长成了',
+  },
+  snow: {
+    biome: 'snow', questDef: 'snowQuest', questSave: 'snowQuest', herbSave: 'snowHerbs',
+    item: '雪灯', unit: '盏', npcAsset: 'snowKeeper', npcScale: 0.9, glowTint: UI.world.snowLight,
+    glowScale: 1.1, labelY: 46, promptY: 60,
+    readyHint: '雪灯够了 · 去雪祠找阿霁交付',
+    respawn: '一盏雪灯草重新亮了',
   },
 };
 
@@ -140,6 +158,7 @@ function normalizeWorld(raw) {
   const q = raw && raw.quest ? raw.quest : {};
   const bq = raw && raw.bambooQuest ? raw.bambooQuest : {};
   const dq = raw && raw.desertQuest ? raw.desertQuest : {};
+  const sq = raw && raw.snowQuest ? raw.snowQuest : {};
   const bossRaw = raw && raw.boss ? raw.boss : null;
   return {
     screens,
@@ -163,6 +182,13 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(dq.need, 5))),
       yield: Math.max(1, Math.round(asNumber(dq.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(dq.rewardTokens, 2))),
+    },
+    snowQuest: {
+      id: String(sq.id || 'snow5'),
+      name: String(sq.name || '雪灯五盏'),
+      need: Math.max(1, Math.round(asNumber(sq.need, 5))),
+      yield: Math.max(1, Math.round(asNumber(sq.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(sq.rewardTokens, 2))),
     },
     boss: bossRaw ? {
       id: String(bossRaw.id || 'racoon'),
@@ -280,20 +306,21 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setDepth(-0.5);
     this.screens.forEach((s) => {
       const tint = TINT[s.biome] || TINT.field;
-      const ground = s.biome === 'desert' ? 'desertTile' : 'field';
-      const groundFrame = s.biome === 'desert' ? 0 : 21;
+      const ground = s.biome === 'desert' ? 'desertTile' : (s.biome === 'snow' ? 'snowTile' : 'field');
+      const groundFrame = (s.biome === 'desert' || s.biome === 'snow') ? 0 : 21;
+      const whiteGround = s.biome === 'desert' || s.biome === 'snow';
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, tint, 1)
         .setOrigin(0).setDepth(-0.4);
       this.add.tileSprite(s.x, WORLD_Y, SCREEN_W, SCREEN_H, ground, groundFrame)
-        .setOrigin(0).setTint(s.biome === 'desert' ? 0xffffff : tint).setDepth(0);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, s.biome === 'desert' ? 0.10 : 0.07)
+        .setOrigin(0).setTint(whiteGround ? 0xffffff : tint).setDepth(0);
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, s.biome === 'snow' ? 0.035 : (s.biome === 'desert' ? 0.10 : 0.07))
         .setOrigin(0).setDepth(1);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, s.biome === 'desert' ? 0xe5c37d : UI.world.fieldLight, s.biome === 'desert' ? 0.20 : 0.16)
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, s.biome === 'snow' ? UI.world.snowLight : (s.biome === 'desert' ? 0xe5c37d : UI.world.fieldLight), s.biome === 'snow' ? 0.32 : (s.biome === 'desert' ? 0.20 : 0.16))
         .setOrigin(0).setDepth(1.4);
       s.deco.forEach((d) => {
         const [dx, dy, frame = 0, scale = 1] = d;
         this.add.image(s.x + dx, WORLD_Y + dy, 'floorDetail', frame)
-          .setScale(scale).setAlpha(s.biome === 'desert' ? 0.32 : 0.42).setTint(tint).setDepth(2);
+          .setScale(scale).setAlpha(s.biome === 'snow' ? 0.28 : (s.biome === 'desert' ? 0.32 : 0.42)).setTint(tint).setDepth(2);
       });
       if (s.biome === 'field') {
         const beam = this.add.image(s.x + 330, WORLD_Y + 20, 'ray', 0)
@@ -305,6 +332,12 @@ export class World extends Phaser.Scene {
         const dune = this.add.ellipse(s.x + 238, WORLD_Y + 254, 300, 34, 0xdfbf82, 0.12)
           .setOrigin(0.5, 0.5).setDepth(2.4);
         dune.setBlendMode(Phaser.BlendModes.ADD);
+      }
+      if (s.biome === 'snow') {
+        this.add.ellipse(s.x + 238, WORLD_Y + 250, 316, 36, UI.world.snowLight, 0.10)
+          .setOrigin(0.5, 0.5).setDepth(2.3);
+        this.add.ellipse(s.x + 118, WORLD_Y + 210, 160, 22, UI.world.snowDark, 0.08)
+          .setOrigin(0.5, 0.5).setDepth(2.35);
       }
       this.add.text(s.x + 16, WORLD_Y + 12, s.name, {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
@@ -399,67 +432,67 @@ export class World extends Phaser.Scene {
   }
 
   buildProp(s, p) {
+    const base = PROP_SCALE[p.kind] || 1;
+    const k = p.scale * base;
+    const x = s.x + p.x;
+    const y = WORLD_Y + p.y;
     if (p.kind === 'tree') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 3, 34 * p.scale, 9 * p.scale, 0x000000, 0.25).setDepth(17);
+      this.add.ellipse(x, y - 3, 34 * k, 9 * k, 0x000000, 0.25).setDepth(17);
       this.add.image(x, y, 'worldTree')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 8, p.y - 12, 16, 12);
     } else if (p.kind === 'bush') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 2, 24 * p.scale, 7 * p.scale, 0x000000, 0.2).setDepth(17);
+      this.add.ellipse(x, y - 2, 24 * k, 7 * k, 0x000000, 0.2).setDepth(17);
       this.add.image(x, y, 'worldBush')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 5, p.y - 7, 10, 7);
     } else if (p.kind === 'bamboo') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 3, 34 * p.scale, 8 * p.scale, 0x000000, 0.24).setDepth(17);
+      this.add.ellipse(x, y - 3, 34 * k, 8 * k, 0x000000, 0.24).setDepth(17);
       this.add.image(x, y, 'bambooGrove')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 10, p.y - 12, 20, 12);
     } else if (p.kind === 'bambooGate') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 2, 72 * p.scale, 10 * p.scale, 0x000000, 0.22).setDepth(17);
+      this.add.ellipse(x, y - 2, 72 * k, 10 * k, 0x000000, 0.22).setDepth(17);
       this.add.image(x, y, 'bambooGate')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       // Only the two posts block; the gate opening stays walkable.
-      this.addBlock(s, p.x - 46, p.y - 12, 8, 12);
-      this.addBlock(s, p.x + 38, p.y - 12, 8, 12);
+      this.addBlock(s, p.x - 46 * k, p.y - 12, 8, 12);
+      this.addBlock(s, p.x + 38 * k, p.y - 12, 8, 12);
     } else if (p.kind === 'desertArch') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 2, 92 * p.scale, 12 * p.scale, 0x000000, 0.24).setDepth(17);
+      this.add.ellipse(x, y - 2, 92 * k, 12 * k, 0x000000, 0.24).setDepth(17);
       this.add.image(x, y, 'desertArch')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
-      this.addBlock(s, p.x - 42, p.y - 14, 10, 14);
-      this.addBlock(s, p.x + 32, p.y - 14, 10, 14);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 42 * k, p.y - 14, 10, 14);
+      this.addBlock(s, p.x + 32 * k, p.y - 14, 10, 14);
     } else if (p.kind === 'desertDeadTree') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 3, 36 * p.scale, 9 * p.scale, 0x000000, 0.24).setDepth(17);
+      this.add.ellipse(x, y - 3, 36 * k, 9 * k, 0x000000, 0.24).setDepth(17);
       this.add.image(x, y, 'desertDeadTree')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 8, p.y - 18, 16, 16);
     } else if (p.kind === 'desertPalm') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.ellipse(x, y - 2, 30 * p.scale, 8 * p.scale, 0x000000, 0.2).setDepth(17);
+      this.add.ellipse(x, y - 2, 30 * k, 8 * k, 0x000000, 0.2).setDepth(17);
       this.add.image(x, y, 'desertPalm')
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
       this.addBlock(s, p.x - 7, p.y - 9, 14, 9);
-    } else if (p.kind === 'campfire') {
-      const x = s.x + p.x;
-      const y = WORLD_Y + p.y;
-      this.add.circle(x, y - 8, 28 * p.scale, 0xff9a4a, 0.10)
+    } else if (p.kind === 'snowPine') {
+      this.add.ellipse(x, y - 3, 36 * k, 9 * k, 0x000000, 0.22).setDepth(17);
+      this.add.image(x, y, 'snowPine')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 9, p.y - 12, 18, 12);
+    } else if (p.kind === 'snowShrine') {
+      this.add.circle(x, y - 66 * k, 44 * k, 0xa9e8ff, 0.08)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
-      this.add.ellipse(x, y - 1, 24 * p.scale, 7 * p.scale, 0x000000, 0.22).setDepth(17);
+      this.add.ellipse(x, y - 2, 78 * k, 12 * k, 0x000000, 0.24).setDepth(17);
+      this.add.image(x, y, 'snowShrine')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 38 * k, p.y - 14, 76 * k, 14);
+    } else if (p.kind === 'campfire') {
+      this.add.circle(x, y - 8, 28 * k, 0xff9a4a, 0.10)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
+      this.add.ellipse(x, y - 1, 24 * k, 7 * k, 0x000000, 0.22).setDepth(17);
       this.add.sprite(x, y, 'campfire', 0)
-        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18).play('campfire-burn');
-      this.add.text(x, y - 28 * p.scale, '篝火', {
+        .setOrigin(0.5, 1).setScale(k).setDepth(18).play('campfire-burn');
+      this.add.text(x, y - 28 * k, '篝火', {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
       }).setOrigin(0.5, 1).setAlpha(0.65).setDepth(19);
     }
@@ -517,12 +550,13 @@ export class World extends Phaser.Scene {
         const x = s.x + asNumber(h[0], 0);
         const y = WORLD_Y + asNumber(h[1], 0);
         const desert = s.biome === 'desert';
-        const glow = this.add.circle(x, y - 6, desert ? 15 : 13, prof.glowTint, desert ? 0.08 : 0.13)
+        const snow = s.biome === 'snow';
+        const glow = this.add.circle(x, y - 6, snow ? 12 : (desert ? 15 : 12), prof.glowTint, snow ? 0.10 : (desert ? 0.08 : 0.10))
           .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
-        const sprite = this.add.sprite(x, y, desert ? 'desertShrub' : 'herb', 0)
-          .setOrigin(0.5, 1).setScale(desert ? 1.25 : 2).setDepth(24);
+        const sprite = this.add.sprite(x, y, desert ? 'desertShrub' : (snow ? 'snowLantern' : 'herb'), 0)
+          .setOrigin(0.5, 1).setScale(desert ? 1.7 : (snow ? 1.3 : 1.0)).setDepth(24);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 760 + i * 90, yoyo: true, repeat: -1 });
-        const prompt = this.add.text(x, y - (desert ? 42 : 28), 'E 采集', {
+        const prompt = this.add.text(x, y - (desert || snow ? 32 : 24), 'E 采集', {
           fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
           backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
         }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -621,6 +655,25 @@ export class World extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(796);
     this.dustStorm.stop();
 
+    // 雪：小片缓慢落下，偏蓝白；和沙尘共用 Snow.png 粒子纹理，不新增运行时依赖。
+    this.snowFall = this.add.particles(0, 0, 'dust', {
+      x: { min: -20, max: VIEW_W + 20 },
+      y: -12,
+      lifespan: { min: 1700, max: 2800 },
+      speedX: { min: -26, max: 18 },
+      speedY: { min: 48, max: 96 },
+      scaleX: { min: 0.45, max: 0.95 },
+      scaleY: { min: 0.45, max: 0.95 },
+      alpha: { start: 0.72, end: 0.08 },
+      quantity: 2,
+      frequency: 44,
+      tint: 0xe9fbff,
+      blendMode: 'ADD',
+    }).setScrollFactor(0).setDepth(795);
+    this.snowFall.stop();
+    this.snowVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.snowVeil, 0.08)
+      .setOrigin(0).setScrollFactor(0).setDepth(792).setAlpha(0);
+
     this.dustVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.dustVeil, 0.13)
       .setOrigin(0).setScrollFactor(0).setDepth(791).setAlpha(0);
     this.fogVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.fogVeil, 0.16)
@@ -636,9 +689,11 @@ export class World extends Phaser.Scene {
     this.rain.stop();
     this.fogMist.stop();
     this.dustStorm.stop();
+    this.snowFall.stop();
     this.fogVeil.setAlpha(0);
     this.dustVeil.setAlpha(0);
-    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48 : (s.weather === 'dust' ? 0.34 : 0.12));
+    this.snowVeil.setAlpha(0);
+    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48 : (s.weather === 'dust' ? 0.34 : (s.weather === 'snow' ? 0.22 : 0.12)));
     if (s.weather === 'rain') this.rain.start();
     if (s.weather === 'fog') {
       this.fogMist.start();
@@ -647,6 +702,10 @@ export class World extends Phaser.Scene {
     if (s.weather === 'dust') {
       this.dustStorm.start();
       this.dustVeil.setAlpha(0.13);
+    }
+    if (s.weather === 'snow') {
+      this.snowFall.start();
+      this.snowVeil.setAlpha(0.08);
     }
   }
 
@@ -907,7 +966,7 @@ export class World extends Phaser.Scene {
 
   movePlayer(vx, vy, delta) {
     const d = Math.hypot(vx, vy) || 1;
-    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92 : (this.weather === 'dust' ? 0.94 : 1));
+    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92 : (this.weather === 'dust' ? 0.94 : (this.weather === 'snow' ? 0.90 : 1)));
     if (this.layer === 'cave') mul *= 0.9;
     const step = SPEED * mul * (delta / 1000);
     let nx = this.player.x + (vx / d) * step;
@@ -1100,6 +1159,11 @@ export class World extends Phaser.Scene {
       if (state === 'none') return ['风把沙枣吹到旧门那边了。', '帮我拾五颗回来，井里还有一盏灯。'];
       return ['还差 ' + missing + ' 颗沙枣。', '旧门附近的沙丘上还有，采完会重新长出来。'];
     }
+    if (npc.quest === 'snow') {
+      if (state === 'done') return ['雪灯亮了，破祠里终于有影子。', '往风口走时别回头，雪会替你记路。'];
+      if (state === 'none') return ['破祠的灯灭了很久，雪把灯芯压在霜林里。', '帮我拾五盏雪灯回来，我想再点一次。'];
+      return ['还差 ' + missing + ' 盏雪灯。', '白原和石灯附近还有，雪化之前它们会重新亮。'];
+    }
     if (state === 'done') return ['这些草药救了不少人。', '路上小心，星火会记得你。'];
     if (state === 'none') return ['你来得正好。村东的草药被雨泡坏了不少。', '能帮我采 5 株回来吗？草原上还有三丛。'];
     return ['还差 ' + missing + ' 株。', '草原上那几丛，采完会重新长出来。'];
@@ -1187,7 +1251,9 @@ export class World extends Phaser.Scene {
       ? ['雾竹够了。', '收下这枚星火碎片，旧祠的灯就拜托你了。']
       : (npc.quest === 'desert'
         ? ['沙枣够了。', '收下这枚星火碎片，旧门的灯就拜托你了。']
-        : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。']));
+        : (npc.quest === 'snow'
+          ? ['雪灯够了。', '收下这枚星火碎片，破祠的灯就拜托你了。']
+          : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。'])));
   }
 
   closePanel() {
