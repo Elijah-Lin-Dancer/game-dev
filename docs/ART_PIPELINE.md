@@ -40,7 +40,7 @@
 - **批 15 剧情**：6 张过场卡、结局主视觉、引路人/铁匠/商人对话头像。
 - **批 16 元进度**：20 个成就图标、第二技能图标、周目词条图标。
 - **批 17 工程化**：PWA 图标 / 启动图 / 分享图；不进入游戏内 tile。
-- **G2 五群系**：4 个剩余群系的摆件、背景、Boss 房主视觉；基础地面仍走 tile。
+- **G2 五群系**：G2-1 已完成竹林 3 件并接入；沙漠 / 雪原 / 火山 6 件已生成源图集，等群系接入；基础地面仍走 tile。
 - **G3 收尾**：4 只世界 Boss、远征结局主视觉、3 个成就图标。
 
 ## 批 13 产出（2026-11-23）
@@ -64,6 +64,36 @@ cd /home/user/Doubao/chats/38454996042111490/game-repo
 INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio \
 node art-src/hub/render-hub.cjs
 python3 tools/crop_hub.py
+```
+
+## G2-1 产出（2026-11-24）
+
+源目录 `art-src/g2/`，固定 seed；运行时只读导出的 PNG / 图集，不接 ink-studio。
+
+| 件 | 源 | 源图集 | 正式输出 | 运行时状态 |
+|---|---|---|---|---|
+| 竹林竹丛 | `art-src/g2/bamboo-grove.cjs` | 64×96，1 向 | `assets/01-primary/world/bamboo-grove.png` | 已接入 `bamboo` 摆件 |
+| 竹林石门 | `art-src/g2/bamboo-gate.cjs` | 96×128，1 向 | `assets/01-primary/world/bamboo-gate.png` | 已接入 `bambooGate`；两根柱碰撞，中间可走 |
+| 竹隐 | `art-src/g2/bamboo-hermit.cjs` | 256×64，4 向 | `assets/01-primary/world/bamboo-hermit.png`（正面 64×64） | 已接入竹林 NPC；运行只用正面帧 |
+| 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×80，1 向 | `assets/01-primary/world/desert-arch.png` | 已入图集，未接沙漠屏 |
+| 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | 已入图集，未接沙漠屏 |
+| 雪松 | `art-src/g2/snow-pine.cjs` | 64×96，1 向 | `assets/01-primary/world/snow-pine.png` | 已入图集，未接雪原屏 |
+| 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 64×80，1 向 | `assets/01-primary/world/snow-shrine.png` | 已入图集，未接雪原屏 |
+| 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `assets/01-primary/world/volcano-spire.png` | 已入图集，未接火山屏 |
+| 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | 已入图集，未接火山屏 |
+
+- 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`；9 个 `*-atlas.png/json` 同目录。
+- 竹林石门从最初的 96×64 回炉到 96×128，解决“横梁偏低像桌子”的剪影问题。
+- 竹隐源图 4 向保留；正式 PNG 只取正面首帧 64×64，运行时显示 1.5 倍，避免透明边过多导致角色显小。
+- 正式输出已登记 `assets/CREDITS.md`；MIT 原文随包 `assets/01-primary/world/ink-studio-LICENSE.txt`。
+
+复现：
+
+```bash
+cd /home/user/Doubao/chats/38454996042111490/game-repo
+INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio \
+node art-src/g2/render-g2.cjs
+# 再从 docs/revamp/g2-3d/*-atlas.png 用最近邻裁到正式尺寸
 ```
 
 ## 定位与复现
