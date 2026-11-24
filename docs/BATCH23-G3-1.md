@@ -151,6 +151,12 @@ node art-src/g3/render-g3.cjs
 | PWA | `na-b18-6719a767` / 12 条 |
 | 冒烟 | 9 项 PASS |
 
+### 4.4 Pages 线上
+
+- 入口 `https://elijah-lin-dancer.github.io/game-dev/` → `game.09389bb4.js` + `assets.5d1e6b5b.js`；Boss `x300 / y170`，`field-6` `deco=0`，脚底 origin 生效；
+- 960 / 640 / 844×390 七张 `g3-online-boss-*`：入场 / 待机 / 战斗 / 胜利 / 失败 / 640 / 触屏；`labelVisible=false`，844 `touchItems=3`、桌面攻击块隐藏；
+- 击杀 `boss='done' / tokens=3 / victory=true`；失败面板 / 重试正常；三档 `errs=[]`。
+
 ---
 
 ## 5. 已知边界 / 下一步

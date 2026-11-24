@@ -387,6 +387,6 @@
 | W-59 | 单文件 / PWA | `file://` 单文件；SW controller → `setOffline(true)` reload | 通过；单文件 `field-6 / boss hp64 / mossBeastIdle=true / sw=false`；PWA 断网同屏同 Boss，`errs=[]`；`g3-boss-single-960.png`、`g3-boss-pwa-offline-960.png` |
 | W-60 | 构建 / 冒烟 / 比例 | `npm run build`、`npm run build:single`、`npm run smoke`、`python3 tools/audit_scale.py` | 通过；首屏 1943 KB / gzip 801 KB；151 切片 / 216 KB；`game.09389bb4.js` 327,151 B + `assets.5d1e6b5b.js` 123,728 B；单文件 2,106,726 B；9 项 PASS；**144 实例 / 0 FAIL**（Boss idle 2.61× / charge 3.03× / roar 2.54×） |
 
-| W-61 | Pages 线上 | 推送后读入口 hash / PWA / 线上截图 | 待推送后回填 |
+| W-61 | Pages 线上 | 推送后读入口 hash / 线上截图 | 通过；入口 `game.09389bb4.js` + `assets.5d1e6b5b.js`；Boss `x300 / y170`、`deco=0`、脚底 origin、左向 1；960 / 640 / 844 七张线上截图；击杀 / 失败 / 触屏均通过，`errs=[]`（`g3-online-boss-*.png`） |
 
-证据：`docs/revamp/g3/` 9 张本地 / 单文件 / PWA 截图，`docs/revamp/g3-3d/moss-beast-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-1.md`。G3 世界 Boss 仍 1/5，剩余 4 只未做。
+证据：`docs/revamp/g3/` 9 张本地 / 单文件 / PWA 截图 + 7 张线上截图，`docs/revamp/g3-3d/moss-beast-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-1.md`。G3 世界 Boss 仍 1/5，剩余 4 只未做。
