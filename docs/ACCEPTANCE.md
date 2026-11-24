@@ -337,3 +337,20 @@
 | W-30 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.016492e8.js` + `assets.4021e544.js`；24 屏 / 4 NPC / 雪原 6；`snow-3` 取景正常；守灯人 `active/0 → active/2 → active/5 → done/0 / tokens 2`；PWA `na-b18-1ff21147` / 12 条，断网 24 屏；844×390 逻辑 779×360；`errs=[]`（`g2-online-snow-*.png`） |
 
 证据：雪原六屏 `g2-snow-1..6-960.png`、`g2-snow-3-final-960.png`、640 / 844 / 单文件 / PWA 各一张、`g2-snow-quest-960.png`、`g2-snow-done-960.png`、比例板 `scale-baseline-board.png`、三张群系比例图 `g2-scale-*.png`；源图集 / 15 件总览在 `docs/revamp/g2-3d/`；详见 `docs/BATCH20-G2-3.md`。
+
+## W-31～W-40. 批 21 / G2-4 火山群系与 v6 存档（2026-11-24 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| W-31 | 30 屏、6 火山、5 NPC | 进 world 读 `screens / ids / npcs / herbs` | 通过；`field / bamboo / desert / snow / volcano` 各 6，NPC 村医 / 竹隐 / 沙婆 / 守灯人 / 熔匠；30 屏 / 5 NPC / 65 采集点，`errs=[]` |
+| W-32 | 火山 6 屏与落灰 / 晴切换 | 逐屏 `applyScreen` + `weather / ashVeil / ashFall` + 960 截图 | 通过；`焦原/熔河/铁砧/黑曜坡/灰口/火心`；`volcano-3=clear`，其余 `ash`；`ashVeil α0.10`、`ashFall=true` |
+| W-33 | 熔匠委托全流程 | 对话接取 → 5 个节点 → 10 枚面板 → 交付 | 通过；`active/0 → 10 枚 → done / 剩余 5 / tokens 2`；面板「需要 5 枚火种，当前 10 枚」；交付对白「火种够了。」 |
+| W-34 | 比例基线（硬约束） | `python3 tools/audit_scale.py`；锻炉 / 熔匠 / 火种 / 熔岩 / 尖柱 / 篝火 | 通过；**139 实例 / 0 FAIL**；锻炉 3.59×、熔匠 1.28×、火种 0.73×、熔岩池 0.75–1.20×、尖柱 2.46–3.36×、裂口 0.75–1.22×、篝火 1.04× |
+| W-35 | v5→v6 迁移 | v5 24 屏种子 reload，读 `save` 与 `localStorage` | 通过；`v=6 / screens=30 / visited` 保留，`snowQuest=active / tokens=7` 保留，补 `volcanoHerbs=0 / volcanoQuest=none` 并即时落盘 |
+| W-36 | 960 / 640 / 844×390 | 三档 Playwright；读 canvas / 布局 | 通过；960×540、640×360、844×390 逻辑 779×360；30 屏 / 5 NPC；HUD / 面板无溢出；world 仍无触屏（已知限制） |
+| W-37 | 单文件 | `web/game.html?world` + `file://` 双击 | 通过；30 屏 / 5 NPC / 65 点；`__SINGLE__` 守卫不注册 `./sw.js`，`errs=[]` |
+| W-38 | 构建 / 冒烟 | `npm run build`、`npm run build:single`、`npm run smoke` | 通过；148 切片 / 203 KB；首屏 1914 KB / gzip 785 KB；9 项 PASS；单文件 2,072,254 B；`assets.db63aacd.js` + `game.19501372.js` |
+| W-39 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-64a58679` / 12 条；断网仍 30 屏 / 5 NPC，`errs=[]`（`g2-volcano-pwa-960.png`） |
+| W-40 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 待推送后回填；本地候选入口 `game.19501372.js` + `assets.db63aacd.js` |
+
+证据：火山六屏 `g2-volcano-1..6-960.png`、`g2-volcano-3-final-960.png`、`g2-volcano-npc-960.png`、`g2-volcano-quest-960.png`、`g2-volcano-done-960.png`、640 / 844 / 单文件 / PWA 各一张、`volcano-props-board.png`；详见 `docs/BATCH21-G2-4.md`。

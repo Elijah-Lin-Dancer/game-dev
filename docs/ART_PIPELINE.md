@@ -40,7 +40,7 @@
 - **批 15 剧情**：6 张过场卡、结局主视觉、引路人/铁匠/商人对话头像。
 - **批 16 元进度**：20 个成就图标、第二技能图标、周目词条图标。
 - **批 17 工程化**：PWA 图标 / 启动图 / 分享图；不进入游戏内 tile。
-- **G2 五群系**：G2-1 已完成竹林 3 件并接入；沙漠 / 雪原 / 火山 6 件已生成源图集，等群系接入；基础地面仍走 tile。
+- **G2 五群系**：G2-1 竹林、G2-2 沙漠、G2-3 雪原、G2-4 火山均已接入；五群系 30 屏完成，基础地面仍走 16px tile 调色。
 - **G3 收尾**：4 只世界 Boss、远征结局主视觉、3 个成就图标。
 
 ## 批 13 产出（2026-11-23）
@@ -81,6 +81,27 @@ python3 tools/crop_hub.py
 - `desertPalm` 与 `desertTile` 均来自 NinjaAdventure CC0 原包；沙地只做颜色重映射，不重绘 16px tile。
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
 
+
+## G2-4 产出（2026-11-24）
+
+火山群系。玩家基线仍是 **32px 可见高度**，所有件按 PNG alpha bbox 审计。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 熔岩锻炉 | `art-src/g2/volcano-forge.cjs`（seed242） | 96×128，1 向 | `volcano-forge.png` 96×128 | `volcanoForge`；3.59×玩家 |
+| 熔匠 赤砧 | `art-src/g2/volcano-smith.cjs`（seed243） | 256×64，4 向 | `volcano-smith.png` 64×64 正面 | 火山 NPC；1.28×玩家 |
+| 火种 | `art-src/g2/volcano-ember.cjs`（seed244） | 32×48，1 向 | `volcano-ember.png` 32×48 | 火山采集；0.73×玩家 |
+| 熔岩池 | `art-src/g2/volcano-lava.cjs`（seed245） | 64×48，1 向 | `volcano-lava.png` 64×48 | `volcanoLava`；0.75–1.20×玩家 |
+| 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `volcano-spire.png` 64×96 | `volcanoSpire`；2.46–3.36×玩家 |
+| 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `volcano-vent.png` 64×48 | `volcanoVent`；0.75–1.22×玩家 |
+| 16px 火山地 | NinjaAdventure CC0 `TilesetField.png` 帧 21 | 16×16 | `volcano-tile.png` 16×16 | `volcanoTile`；只做色 remap |
+
+- 对照板：`docs/revamp/g2-3d/volcano-props-board.png`，6 件 + 比例 + 来源。
+- 源图集：`volcano-forge / smith / ember / lava / spire / vent` 的 `*-atlas.png/json`。
+- 审计：`python3 tools/audit_scale.py`，**139 实例 / 0 FAIL**；`PROP_SCALE` 为 `volcanoSpire 1.2 / volcanoVent 2.0 / volcanoForge 1.0 / volcanoLava 3.0`。
+- 复现：`node art-src/g2/render-g2.cjs` → `python3 tools/crop_volcano.py`。
+- 素材出处：4 件新 3D + 2 件重导为 ink-studio 生成；火山地是 NinjaAdventure CC0 调色；篝火是 krial CC0。
+
 ## G2-3 产出（2026-11-24）
 
 雪原与比例基线重做。所有运行时尺寸按 **alpha 可见 bbox** 校准，不以画布留白为准；玩家基线 `16×16 ×2 = 32px`。
@@ -113,8 +134,8 @@ python3 tools/crop_hub.py
 | 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | G2-2 已接入 `desertDeadTree` |
 | 雪松 | `art-src/g2/snow-pine.cjs` | 96×128，1 向 | `assets/01-primary/world/snow-pine.png` | G2-3 已接入 `snowPine`；树干碰撞 |
 | 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 96×128，1 向 | `assets/01-primary/world/snow-shrine.png` | G2-3 已接入 `snowShrine`；3.37×玩家 |
-| 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `assets/01-primary/world/volcano-spire.png` | 已入图集，未接火山屏 |
-| 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | 已入图集，未接火山屏 |
+| 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `assets/01-primary/world/volcano-spire.png` | G2-4 已接入 `volcanoSpire`；2.46–3.36×玩家 |
+| 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | G2-4 已接入 `volcanoVent`；0.75–1.22×玩家 |
 
 - 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`；G2-1 的 9 个 `*-atlas.png/json` + G2-2 的 `desert-nomad / desert-shrub` 同目录。
 - 竹林石门从 96×64 两次回炉到 96×160，最终改为石拱门：两柱 + 弧形拱券 + 拱心石 + 低门槛，解决 1x 下“横梁像桌子”的剪影问题。

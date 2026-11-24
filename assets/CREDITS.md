@@ -26,6 +26,8 @@
 
 | 归途 G2-3 雪原 / 完整沙棕 3D 像素（雪松 / 雪中小祠 / 守灯人 阿霁 / 雪灯草 / 完整沙棕） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
 | 归途 G2-3 雪地 16px 调色（snow-tile） | Pixel-Boy / AAA | CC0 1.0（原包 LICENSE 全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存；原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（CC0；作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
+| 归途 G2-4 火山 3D 像素（熔岩锻炉 / 熔匠 赤砧 / 火种 / 熔岩池；黑曜尖柱 / 熔岩裂口重导） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
+| 归途 G2-4 火山地 16px 调色（volcano-tile） | Pixel-Boy / AAA | CC0 1.0（原包 LICENSE 全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存；原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（CC0；作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
 
 更正（G2-3）：`desert-palm.png` 已从 G2-2 的 `TilesetDesert` 48×48 树冠切片替换为 ink-studio 生成的 64×96 完整树；上表 `TilesetDesert 沙棕切片` 行仅保留为 G2-2 历史记录。雪松 / 雪中小祠的源文件未变，正式尺寸由 64×96 / 64×80 改为 96×128；运行时与来源仍为 ink-studio 生成。
 
