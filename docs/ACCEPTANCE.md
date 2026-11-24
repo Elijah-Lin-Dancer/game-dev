@@ -391,7 +391,7 @@
 
 证据：`docs/revamp/g3/` 9 张本地 / 单文件 / PWA 截图 + 7 张线上截图，`docs/revamp/g3-3d/moss-beast-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-1.md`。G3 世界 Boss 仍 1/5，剩余 4 只未做。
 
-## W-62～W-70. 批 23 / G3-2 雾竹蜃 3D 重制与多 Boss 存档（2026-11-24 追加）
+## W-62～W-71. 批 23 / G3-2 雾竹蜃 3D 重制与多 Boss 存档（2026-11-24 追加）
 
 | 编号 | 判据 | 验证方式 | 结果 |
 |---|---|---|---|
@@ -404,5 +404,6 @@
 | W-68 | 844×390 触屏 | `hasTouch=true / isMobile=true`；读 `touchCtl.items / hudHint` | 通过；`touch=true / touchItems=3`；桌面攻击块隐藏；顶部「点按「攻」· 击败雾竹蜃」，底部「点按「攻」击败雾竹蜃 · 点按「返」回小屋」；`g3-bamboo-touch-844x390.png` |
 | W-69 | 单文件 / PWA / 构建 / 审计 / 冒烟 | `file://` 单文件；SW controller → `setOffline(true)` reload；`npm run build:single`；`audit_scale.py`；`npm run smoke` | 通过；单文件 `bambooMirage / hp72 / tex=bambooMirageIdle / sw=false`；PWA `na-b18-ba98e423` / 12 条断网仍 `bambooMirage`；首屏 1958 KB / gzip814 KB；154 切片 / 233,083 B；`game.f3072417.js` 330,145 B + `assets.cf099f61.js` 124,157 B；单文件 2,126,381 B；**145 实例 / 0 FAIL**（雾竹蜃 idle 2.98× / charge 2.70× / roar 3.26×）；9 项 PASS |
 | W-70 | Pages 线上 | 推送后读入口 hash / 线上截图 | 通过；入口 `game.f3072417.js` + `assets.cf099f61.js`，PWA `na-b18-ba98e423` / 12 条；线上 `applyScreen(11)` 为 `bambooMirage / hp72 / active / scale1.8084 / originY0.7604 / tex=bambooMirageIdle / standoff104 / pounceGap48 / pounceR58`；扑击 `HP20→15`；24 次 3 伤击杀 `hp72→0 / tokens4 / bosses.bambooMirage=done / victory`；640 `scrollWidth=640`；844 `touchCtl=true / touchItems=3`；PWA 断网 `online=false / 30 屏 / bambooMirage / cache 12 条`；`errs=[]`；7 张 `g3-online-bamboo-*` |
+| W-71 | 四向转身 / 站定扫视 | 线上 960：`applyScreen(11)` → `startBossFight` 正面；玩家靠近站定，连续读 `dir` / `pose` / `HP` | 通过；`intro` 为 `pose=roar / dir=0 / tex=bambooMirageRoar`；站定 `dir` 序列 `1→2→3→0→1`（`60034 / 61651 / 63284 / 64901`，1.6s/步），HP 保持 20，`errs=[]`；正面 / 左侧 / 背面 / 右侧四向板 + GIF 见 `g3-online-bamboo-turn-board.png` / `.gif`，本地同版见 `g3-bamboo-turn-board.png` / `.gif` |
 
-证据：本地 `docs/revamp/g3/g3-bamboo-intro-960.png`、`g3-bamboo-idle-960.png`、`g3-bamboo-pounce-960.png`、`g3-bamboo-victory-960.png`、`g3-bamboo-down-960.png`、`g3-bamboo-640.png`、`g3-bamboo-touch-844x390.png`、`g3-bamboo-single-960.png`、`g3-bamboo-pwa-offline-960.png`，线上 `g3-online-bamboo-intro-960.png`、`g3-online-bamboo-idle-960.png`、`g3-online-bamboo-pounce-960.png`、`g3-online-bamboo-victory-960.png`、`g3-online-bamboo-640.png`、`g3-online-bamboo-touch-844x390.png`、`g3-online-bamboo-pwa-offline-960.png`，`docs/revamp/g3-3d/bamboo-mirage-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-2.md`。G3 世界 Boss 2/5，沙漠 / 雪原 / 火山三只未做。
+证据：本地 `docs/revamp/g3/g3-bamboo-intro-960.png`、`g3-bamboo-idle-960.png`、`g3-bamboo-pounce-960.png`、`g3-bamboo-victory-960.png`、`g3-bamboo-down-960.png`、`g3-bamboo-640.png`、`g3-bamboo-touch-844x390.png`、`g3-bamboo-single-960.png`、`g3-bamboo-pwa-offline-960.png`、`g3-bamboo-turn-board.png` / `.gif`；线上 `g3-online-bamboo-intro-960.png`、`g3-online-bamboo-idle-960.png`、`g3-online-bamboo-pounce-960.png`、`g3-online-bamboo-victory-960.png`、`g3-online-bamboo-640.png`、`g3-online-bamboo-touch-844x390.png`、`g3-online-bamboo-pwa-offline-960.png`、`g3-online-bamboo-turn-board.png` / `.gif`；`docs/revamp/g3-3d/bamboo-mirage-board.png`、三套 atlas + json。W-69 / W-70 是 `game.f3072417.js` 基线，W-71 是 `game.4aaa2e55.js` 的四向转身增量；详见 `docs/BATCH23-G3-2.md`。G3 世界 Boss 2/5，沙漠 / 雪原 / 火山三只未做。
