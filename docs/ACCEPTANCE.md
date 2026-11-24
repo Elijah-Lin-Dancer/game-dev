@@ -372,19 +372,21 @@
 
 证据：本地 `docs/revamp/g2/g2-volcano-quest2-accept-960.png`、`g2-volcano-quench-glow-960.png`、`g2-volcano-quench-960.png`、`g2-volcano-quest2-960.png`、`g2-volcano-quest2-done-960.png`、`g2-travel-960.png`、`g2-travel-field-960.png`、`g2-volcano-3-640.png`、`g2-volcano-touch-844x390.png`、`g2-volcano-touch-joystick-844x390.png`、`g2-volcano-single-960.png`、`g2-volcano-pwa-960.png`；线上 `g2-online-volcano-quest2-accept-960.png`、`g2-online-volcano-quench-960.png`、`g2-online-volcano-quest2-960.png`、`g2-online-volcano-quest2-done-960.png`、`g2-online-travel-960.png`、`g2-online-travel-field-960.png`、`g2-online-touch-844x390.png`、`g2-online-pwa-960.png`；详见 `docs/BATCH22-G2-5.md`。
 
-## W-51～W-60. 批 23 / G3-1 苔背巨兽 3D 重制（2026-11-24 追加）
+## W-51～W-61. 批 23 / G3-1 苔背巨兽 3D 重制（2026-11-24 追加）
 
 | 编号 | 判据 | 验证方式 | 结果 |
 |---|---|---|---|
 | W-51 | 专属 Boss 资产 | 读 `assets/01-primary/world/moss-beast-*.png`、`docs/revamp/g3-3d/*.json` | 通过；3 张 384×96 RGBA atlas；源 `art-src/g3/moss-beast.cjs` seed 301；非 Ninja Adventure 二次改色 |
 | W-52 | 四向帧序 | 图集逐帧 bbox + 运行时 `bossDirection()`：below / above / left / right | 通过；0 前 / 1 左 / 2 后 / 3 右；实测 `below=0 / above=2 / left=3 / right=1` |
 | W-53 | 三姿态 | 进入 Boss 屏读 `pose / texture / frame`；截 intro / idle / fight | 通过；`intro=roar (mossBeastRoar) → chase=idle (mossBeastIdle)`；蓄力 `charge`，落地 / 死亡 `roar`；`g3-boss-intro-960.png`、`g3-boss-idle-960.png`、`g3-boss-fight-960.png` |
-| W-54 | 入场与 HUD | 960×540 进入 `field-6`；读 banner / world label / boss bar | 通过；banner「苔背巨兽 · 星火守巢者」；世界名在 Boss 上方 `y-152`，不再压背甲；底部 `苔背巨兽 64/64` |
+| W-54 | 入场与 HUD | 960×540 进入 `field-6`；读 banner / world label / boss bar | 通过；banner「苔背巨兽 · 星火守巢者」；Boss 战隐藏世界名标签，顶部不再压 HUD；底栏 `苔背巨兽 64/64` 可读；战位 `screen.x+150 / WORLD_Y+185` |
 | W-55 | 击杀与存档 | 近身 22 × 3 伤；读 `victory / bossDead / save` | 通过；`bossDead=true / save.boss=done / tokens 3 / victory=true`；胜利面板「草原的星火 · 已归位」 |
 | W-56 | 失败与重试 | HP 归零 → 失败面板；`retryBoss()` | 通过；`dead=true / panelOpen=true / hp=0`；重试后 `hp=20 / bossHp=64 / state=intro→chase / pose=idle` |
-| W-57 | 960 / 640 | 960×540、640×360 截图；读 label / HUD | 通过；640 逻辑 640×360，Boss 名屏幕位 75.5，HUD / 攻击块无溢出；`g3-boss-640.png` |
+| W-57 | 960 / 640 | 960×540、640×360 截图；读 label / HUD | 通过；640 逻辑 640×360，底栏 Boss 名可见，HUD 血条 / 攻击块无溢出，玩家在血条上方；`g3-boss-640.png` |
 | W-58 | 844×390 触屏 | `hasTouch=true`；读 `touchCtl / attackBtn / hudHint` | 通过；`touchItems=3`；桌面攻击块 `visible=false`，只保留右下「攻」；提示「点按「攻」击败苔背巨兽 · 点按「返」回小屋」；`g3-boss-touch-844x390.png` |
 | W-59 | 单文件 / PWA | `file://` 单文件；SW controller → `setOffline(true)` reload | 通过；单文件 `field-6 / boss hp64 / mossBeastIdle=true / sw=false`；PWA 断网同屏同 Boss，`errs=[]`；`g3-boss-single-960.png`、`g3-boss-pwa-offline-960.png` |
-| W-60 | 构建 / 冒烟 / 比例 | `npm run build`、`npm run build:single`、`npm run smoke`、`python3 tools/audit_scale.py` | 通过；首屏 1943 KB / gzip 801 KB；151 切片 / 216 KB；`game.e9ba84a2.js` 326,900 B + `assets.b857b62a.js` 123,888 B；单文件 2,106,723 B；9 项 PASS；**144 实例 / 0 FAIL**（Boss idle 2.61× / charge 3.03× / roar 2.54×） |
+| W-60 | 构建 / 冒烟 / 比例 | `npm run build`、`npm run build:single`、`npm run smoke`、`python3 tools/audit_scale.py` | 通过；首屏 1943 KB / gzip 801 KB；151 切片 / 216 KB；`game.958c009c.js` 327,071 B + `assets.e45baf55.js` 123,728 B；单文件 2,106,634 B；9 项 PASS；**144 实例 / 0 FAIL**（Boss idle 2.61× / charge 3.03× / roar 2.54×） |
+
+| W-61 | Pages 线上 | 推送后读入口 hash / PWA / 线上截图 | 待推送后回填 |
 
 证据：`docs/revamp/g3/` 9 张本地 / 单文件 / PWA 截图，`docs/revamp/g3-3d/moss-beast-board.png`、三套 atlas + json；详见 `docs/BATCH23-G3-1.md`。G3 世界 Boss 仍 1/5，剩余 4 只未做。

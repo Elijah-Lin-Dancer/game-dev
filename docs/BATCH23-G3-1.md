@@ -62,7 +62,7 @@ node art-src/g3/render-g3.cjs
   "name": "苔背巨兽",
   "screen": "field-6",
   "x": 252,
-  "y": 182,
+  "y": 210,
   "hp": 64,
   "dmg": 4,
   "rewardTokens": 3
@@ -72,6 +72,7 @@ node art-src/g3/render-g3.cjs
 - `id` 从 `racoon` 改为 `mossBeast`；`world.js` 的默认值同步。
 - `hp` 56 → 64（22 次玩家攻击），`dmg 4` 不变，`rewardTokens 3` 不变。
 - `na.world` 仍是 v7：Boss 进度原为 `boss: none|done`，本轮不添加假的“多 Boss 进度”字段；等下一只 Boss 真正接入时再升存档。
+- `field-6` 地面 `deco` 从 12 条清空：Boss 战场只留草纹 / 光束 / 跨屏左侧树框，避免灌木与树冠盖住玩家；场景名仍是「草原 · 苔背巢」。
 
 ### 3.2 朝向与姿态
 
@@ -92,7 +93,9 @@ node art-src/g3/render-g3.cjs
 - **落地反馈**：`bossImpact()` 环形冲击波 + 8–16 个苔屑方块飞散，配 70–200ms 镜头震动；
 - **环境苔尘**：Boss 激活时每 300ms 从背脊附近升起 1–2px 苔光碎屑，不遮挡判定；
 - **地面**：新增 118×20 黑色投影 + 102×22 苔色贴地环，Boss 不再像贴纸浮空；
-- **名字**：世界空间 Boss 名从 `y-74` 提到 `y-152`，不再压在背甲上；入场 banner 和底部血条仍分离；
+- **名字**：世界名标签在 Boss 战中隐藏，名字交给底部血条，避免顶栏压字；入场 banner 仍独立显示「苔背巨兽 · 星火守巢者」；
+- **入场站位**：`startBossFight / retryBoss` 把玩家放在 `screen.x+150 / WORLD_Y+185`，避开左侧跨屏树冠与底栏 Boss 血条；`field-6` 地面 deco 清空，保留草纹、光束与跨屏树框，战场中心不再有前景树盖住玩家；
+- **结算清理**：胜利时清掉入场 banner / toast，失败面板同样独占视线，避免残留「SPACE / J 攻击」压住结算；
 - **触屏**：Boss 战隐藏桌面“攻击”大块，只保留右下「攻」触控键；HUD 提示改“点按「攻」击败…”；解决 844×390 下两个攻击按钮重叠；
 - **文案**：banner / HUD / 失败面板 / 胜利面板的“苔背巨兽”改为从 `this.boss.name` 读取，为下一只 Boss 留口，不再硬编码。
 
@@ -123,7 +126,7 @@ node art-src/g3/render-g3.cjs
 ### 4.2 三档与离线
 
 - **960×540**：`docs/revamp/g3/g3-boss-intro-960.png`、`g3-boss-idle-960.png`、`g3-boss-fight-960.png`、`g3-boss-victory-960.png`、`g3-boss-down-960.png`；`errs=[]`。
-- **640×360**：`g3-boss-640.png`；逻辑 640×360，Boss 名 75.5px 屏幕位置，HUD 血条 / 攻击块无溢出；`errs=[]`。
+- **640×360**：`g3-boss-640.png`；逻辑 640×360，底栏 Boss 名可见，HUD 血条 / 攻击块无溢出；`errs=[]`。
 - **844×390 hasTouch**：`g3-boss-touch-844x390.png`；逻辑 779×360；`touchCtl=true / touchItems=3`；桌面攻击块 `visible=false`，`hudHint` 为“点按「攻」击败苔背巨兽 · 点按「返」回小屋”；`errs=[]`。
 - **单文件**：`web/game.html?world=1&debug`（`file://`）→ `field-6 / boss 苔背巨兽 / hp 64 / mossBeastIdle=true / sw=false`；`errs=[]`；`g3-boss-single-960.png`。
 - **PWA 断网**：SW controller → `setOffline(true)` → reload → `field-6 / boss hp 64 / mossBeastIdle=true`；`errs=[]`；`g3-boss-pwa-offline-960.png`。
@@ -135,10 +138,10 @@ node art-src/g3/render-g3.cjs
 |---|---|
 | 首屏预算 | **1943 KB / gzip 801 KB**（<2 MiB） |
 | 图集 | **151 切片 / 216 KB**（新增 3 张 384×96 Boss atlas） |
-| 游戏逻辑 | `dist/game.e9ba84a2.js` **326,900 B** |
-| 素材数据 | `dist/assets.b857b62a.js` **123,888 B** |
-| 单文件 | `web/game.html` **2,106,723 B** |
-| PWA | `na-b18-3f66ad26` / 12 条 |
+| 游戏逻辑 | `dist/game.958c009c.js` **327,071 B** |
+| 素材数据 | `dist/assets.e45baf55.js` **123,728 B** |
+| 单文件 | `web/game.html` **2,106,634 B** |
+| PWA | `na-b18-a235847f` / 12 条 |
 | 冒烟 | 9 项 PASS |
 
 ---

@@ -866,7 +866,7 @@ export class World extends Phaser.Scene {
   buildPlayer() {
     const skin = this.charId;
     const startX = this.screens[0].x + 72;
-    const startY = WORLD_Y + 232;
+    const startY = WORLD_Y + 185;
     this.player = this.add.sprite(startX, startY, 'walk', 0)
       .setOrigin(0.5, 1).setScale(2).setDepth(30);
     this.player.shadow = this.add.ellipse(startX, startY - 2, 22, 6, 0x000000, 0.25)
@@ -1918,6 +1918,8 @@ export class World extends Phaser.Scene {
   startBossFight() {
     const b = this.world.boss;
     if (!b || !this.boss) return;
+    // 避开上一屏跨过来的树冠：把入场站位放到巢心左下空地。
+    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 185);
     this.bossActive = true;
     this.bossDead = false;
     this.victory = false;
@@ -1939,7 +1941,7 @@ export class World extends Phaser.Scene {
     this.boss.glow.setVisible(true);
     this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
-    this.boss.label.setVisible(true);
+    this.boss.label.setVisible(false);
     this.setBossPose('roar');
     if (!this.arenaLine) {
       const s = this.screens[this.boss.screenIndex];
@@ -2227,7 +2229,7 @@ export class World extends Phaser.Scene {
     this.iframe = 0;
     this.lastHurtAt = -9999;
     this.player.setAlpha(1);
-    this.player.setPosition(this.bossSpawn.screen.x + 74, WORLD_Y + 232);
+    this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 185);
     this.boss.hp = this.boss.maxHp;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y);
     this.boss.state = 'intro';
@@ -2241,7 +2243,7 @@ export class World extends Phaser.Scene {
     this.boss.glow.setVisible(true);
     this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
-    this.boss.label.setVisible(true);
+    this.boss.label.setVisible(false);
     if (this.hudHint) this.hudHint.setVisible(true);
     this.updateHud();
     this.banner((this.boss.name || '苔背巨兽') + ' · 再战');
@@ -2253,6 +2255,9 @@ export class World extends Phaser.Scene {
     this.victory = true;
     this.panelOpen = true;
     this.pointerTarget = null;
+    // 胜利面板要独占视线：把入场 banner / 攻击提示 toast 清掉。
+    if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
+    if (this.toastT) { this.toastT.destroy(); this.toastT = null; }
     if (this.hudHint) this.hudHint.setVisible(false);
     const W = Math.min(400, VIEW_W - 40);
     const H = 184;
