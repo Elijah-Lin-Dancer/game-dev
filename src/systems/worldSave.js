@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G2-5 v7：
+ *   - 新增 volcanoQuest2 / volcanoVents；篝火传送由 volcanoQuest2 完成解锁；
+ *   - 30 屏和旧群系字段保持不变；
+ *
  * G2-4 v6：
  *   - 草原 6 + 竹林 6 + 沙漠 6 + 雪原 6 + 火山 6（field-1 … volcano-6）；
  *   - 新增 volcanoQuest / volcanoHerbs；前四群系字段保持不变；
@@ -8,7 +12,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 6;
+const VERSION = 7;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -18,6 +22,12 @@ const SCREENS = [
 ];
 const LEGACY_SCREEN = { field: 'field-1', bamboo: 'field-3', desert: 'field-6' };
 const QUESTS = ['none', 'active', 'done'];
+const VENTS = new Set(['vent-jiao', 'vent-hei', 'vent-hui']);
+
+function sanitizeVents(v) {
+  if (!Array.isArray(v)) return [];
+  return [...new Set(v.filter((id) => VENTS.has(id)))];
+}
 const BOSSES = ['none', 'done'];
 
 const defaults = () => ({
@@ -33,6 +43,8 @@ const defaults = () => ({
   snowQuest: 'none',
   volcanoHerbs: 0,
   volcanoQuest: 'none',
+  volcanoQuest2: 'none',
+  volcanoVents: [],
   boss: 'none',
   tokens: 0,
   updatedAt: 0,
@@ -62,6 +74,8 @@ function migrate(old) {
     snowQuest: QUESTS.includes(old.snowQuest) ? old.snowQuest : 'none',
     volcanoHerbs: Math.min(99, Math.round(num(old.volcanoHerbs))),
     volcanoQuest: QUESTS.includes(old.volcanoQuest) ? old.volcanoQuest : 'none',
+    volcanoQuest2: QUESTS.includes(old.volcanoQuest2) ? old.volcanoQuest2 : 'none',
+    volcanoVents: sanitizeVents(old.volcanoVents),
     boss: BOSSES.includes(old.boss) ? old.boss : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),
     updatedAt: num(old.updatedAt),

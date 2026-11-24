@@ -4,12 +4,14 @@
  *   - 单屏 480×272（30×17 格 ×16px），镜头仍是 640×360，能看到相邻屏边缘；
  *   - 五种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
  *   - 世界 Boss 仍只在 field-6，任务不跨群系记账；
+ *   - 火山第二委托完成后解锁篝火传送，只去已访问过的篝火；
  *   - 仍只写 na.world，不碰主线 na.save。
  */
 import { S, VEC, ANGLE } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 import { loadWorldSave, patchWorldSave } from '../systems/worldSave.js';
+import { TouchControls, isTouchDevice } from '../systems/input.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
 
@@ -28,6 +30,12 @@ const ATTACK_RANGE = 62;
 const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
+const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
+const WORLD_TOUCH = [
+  { id: 'attack', label: '攻', r: 22, fx: 38, fy: 42 },
+  { id: 'interact', label: 'E', r: 18, fx: 84, fy: 28 },
+  { id: 'escape', label: '返', r: 15, fx: 34, fy: 112 },
+];
 
 const TINT = {
   field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert,
@@ -83,6 +91,9 @@ const QUEST_PROFILE = {
     glowScale: 1.2, labelY: 46, promptY: 60,
     readyHint: '火种够了 · 去铁砧找赤砧交付',
     respawn: '一枚火种在灰里重新亮了',
+    quest2Def: 'volcanoQuest2', quest2Save: 'volcanoQuest2', ventSave: 'volcanoVents',
+    item2: '炉眼', unit2: '处',
+    readyHint2: '三处炉眼已淬 · 回铁砧找赤砧',
   },
 };
 
@@ -171,9 +182,24 @@ function normalizeWorld(raw) {
   const dq = raw && raw.desertQuest ? raw.desertQuest : {};
   const sq = raw && raw.snowQuest ? raw.snowQuest : {};
   const vq = raw && raw.volcanoQuest ? raw.volcanoQuest : {};
+  const vq2 = raw && raw.volcanoQuest2 ? raw.volcanoQuest2 : {};
   const bossRaw = raw && raw.boss ? raw.boss : null;
+  const screenIds = new Set(screens.map((s) => s.id));
+  const quenches = (Array.isArray(raw && raw.quenches) ? raw.quenches : [])
+    .filter((q) => q && q.id && screenIds.has(String(q.screen)))
+    .map((q) => ({
+      id: String(q.id), name: String(q.name || q.id), screen: String(q.screen),
+      x: asNumber(q.x, 0), y: asNumber(q.y, 0),
+    }));
+  const campfires = (Array.isArray(raw && raw.campfires) ? raw.campfires : [])
+    .filter((c) => c && c.id && screenIds.has(String(c.screen)))
+    .map((c) => ({
+      id: String(c.id), name: String(c.name || c.id), screen: String(c.screen),
+      x: asNumber(c.x, 0), y: asNumber(c.y, 0),
+      spawnX: asNumber(c.spawnX, asNumber(c.x, 0) - 36), spawnY: asNumber(c.spawnY, asNumber(c.y, 0) - 2),
+    }));
   return {
-    screens,
+    screens, quenches, campfires,
     quest: {
       id: String(q.id || 'herb5'),
       name: String(q.name || '草药五株'),
@@ -208,6 +234,12 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(vq.need, 5))),
       yield: Math.max(1, Math.round(asNumber(vq.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(vq.rewardTokens, 2))),
+    },
+    volcanoQuest2: {
+      id: String(vq2.id || 'volcanoForge3'),
+      name: String(vq2.name || '三淬归火'),
+      need: Math.max(1, Math.round(asNumber(vq2.need, 3))),
+      rewardTokens: Math.max(0, Math.round(asNumber(vq2.rewardTokens, 3))),
     },
     boss: bossRaw ? {
       id: String(bossRaw.id || 'racoon'),
@@ -262,6 +294,11 @@ export class World extends Phaser.Scene {
     this.gathering = null;
     this.npc = null;
     this.npcs = [];
+    this.quenches = [];
+    this.campfires = [];
+    this.touchCtl = null;
+    this.stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
+    this.travelPanel = null;
 
     if (!this.screens.length) {
       this.add.text(VIEW_W / 2, VIEW_H / 2, 'world.json 缺失', {
@@ -275,10 +312,13 @@ export class World extends Phaser.Scene {
     this.buildTerrain();
     this.buildNPC();
     this.buildHerbs();
+    this.buildQuenches();
+    this.buildCampfires();
     this.buildPlayer();
     this.buildWeather();
     this.buildHud();
     this.bindInput();
+    this.buildTouch();
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, VIEW_H);
     // 0.1/帧 在 60fps 下约 0.45s 收敛；镜头可以同时看到两屏边缘。
@@ -634,6 +674,191 @@ export class World extends Phaser.Scene {
     });
   }
 
+  /* ---------- 火山第二委托：三处炉眼 ---------- */
+  buildQuenches() {
+    this.quenches = [];
+    const quenchedIds = this.save.volcanoVents || [];
+    this.world.quenches.forEach((q) => {
+      const si = this.screens.findIndex((s) => s.id === q.screen);
+      if (si < 0) return;
+      const s = this.screens[si];
+      const x = s.x + q.x;
+      const y = WORLD_Y + q.y;
+      const glow = this.add.image(x, y - 12, 'aura', 0)
+        .setScale(1.1).setAlpha(0).setTint(UI.world.snowLight)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(16).setVisible(false);
+      const ring = this.add.circle(x, y - 8, 19, 0xbfe9ff, 0)
+        .setStrokeStyle(1, 0xbfe9ff, 0.55).setDepth(17).setVisible(false);
+      const prompt = this.add.text(x, y - 40, 'E 淬火', {
+        fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
+        backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
+      }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
+      const zone = this.add.circle(x, y - 8, 26, 0x000000, 0.001)
+        .setDepth(45).setInteractive({ useHandCursor: true });
+      const quench = { ...q, x, y, screenIndex: si, glow, ring, prompt, zone, quenched: quenchedIds.includes(q.id) };
+      zone.on('pointerdown', () => {
+        if (this.talking || this.panelOpen || this.gathering || this.bossActive) return;
+        if (!quench.quenched && this.distPlayer(x, y) <= 48) this.quenchAt(quench);
+      });
+      this.quenches.push(quench);
+    });
+    this.refreshQuenchVisuals();
+  }
+
+  refreshQuenchVisuals() {
+    const active = this.save.volcanoQuest2 === 'active';
+    this.quenches.forEach((q) => {
+      const show = active && !q.quenched;
+      q.glow.setVisible(show || q.quenched).setAlpha(q.quenched ? 0.03 : 0.18);
+      q.ring.setVisible(show);
+      q.prompt.setVisible(false);
+    });
+  }
+
+  /* ---------- 篝火传送点 ---------- */
+  buildCampfires() {
+    this.campfires = [];
+    this.world.campfires.forEach((c) => {
+      const si = this.screens.findIndex((s) => s.id === c.screen);
+      if (si < 0) return;
+      const s = this.screens[si];
+      const x = s.x + c.x;
+      const y = WORLD_Y + c.y;
+      const prompt = this.add.text(x, y - 42, 'E 传送', {
+        fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
+        backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
+      }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
+      const zone = this.add.circle(x, y - 10, 26, 0x000000, 0.001)
+        .setDepth(45).setInteractive({ useHandCursor: true });
+      const camp = { ...c, x, y, screenIndex: si, prompt, zone };
+      zone.on('pointerdown', () => {
+        if (this.talking || this.panelOpen || this.gathering || this.bossActive || this.dead || this.victory) return;
+        if (this.distPlayer(x, y) <= 48) this.interactCampfire();
+      });
+      this.campfires.push(camp);
+    });
+  }
+
+  nearestCampfire() {
+    let best = null;
+    let bestD = 999;
+    this.campfires.forEach((c) => {
+      const d = this.distPlayer(c.x, c.y);
+      if (d < bestD) { bestD = d; best = c; }
+    });
+    return bestD <= 60 ? best : null;
+  }
+
+  nearestQuench() {
+    let best = null;
+    let bestD = 999;
+    this.quenches.forEach((q) => {
+      if (q.quenched) return;
+      const d = this.distPlayer(q.x, q.y);
+      if (d < bestD) { bestD = d; best = q; }
+    });
+    return bestD <= 56 ? best : null;
+  }
+
+  travelUnlocked() {
+    return this.save.volcanoQuest2 === 'done';
+  }
+
+  interactCampfire() {
+    if (!this.travelUnlocked()) {
+      this.toast('篝火还没记住你 · 先完成熔匠的三淬归火');
+      return;
+    }
+    this.openTravel();
+  }
+
+  quenchAt(q) {
+    if (!q || q.quenched) return;
+    if (this.save.volcanoQuest2 !== 'active') {
+      this.toast('炉眼还没醒 · 先接赤砧的三淬归火');
+      return;
+    }
+    const ids = [...(this.save.volcanoVents || []), q.id];
+    this.save = patchWorldSave({ volcanoVents: ids });
+    q.quenched = true;
+    q.prompt.setVisible(false);
+    q.zone.disableInteractive();
+    q.glow.setTint(UI.world.ember).setAlpha(0.04).setVisible(true);
+    q.ring.setVisible(false);
+    const flash = this.add.circle(q.x, q.y - 10, 18, 0xbfe9ff, 0.55)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(27);
+    this.tweens.add({ targets: flash, scale: 2.2, alpha: 0, duration: 420, onComplete: () => flash.destroy() });
+    const count = ids.length;
+    const need = this.world.volcanoQuest2.need;
+    this.toast('炉眼已淬 · ' + count + '/' + need);
+    if (count >= need) this.toast(profileFor('volcano').readyHint2);
+    this.updateHud();
+  }
+
+  openTravel() {
+    if (!this.travelUnlocked()) return;
+    if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
+    const W = Math.min(390, VIEW_W - 40);
+    const H = 70 + this.campfires.length * 30 + 34;
+    const x = VIEW_W / 2 - W / 2;
+    const y = VIEW_H / 2 - H / 2;
+    this.panelOpen = true;
+    this.pointerTarget = null;
+    if (this.hudHint) this.hudHint.setVisible(false);
+    const dim = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.color.overlay, UI.alpha.disabled)
+      .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
+    const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
+    p.add(makeText(this, 14, 12, '篝火 · 已记住的路', 'h2', { color: UI.text.heading }));
+    p.add(makeText(this, 14, 34, '只去已经走过的篝火 · 点击落点传送', 'caption', { color: UI.text.muted }));
+    const rows = this.campfires.map((c, i) => {
+      const screen = this.screens[c.screenIndex];
+      const visited = this.save.visited.includes(c.screen);
+      const here = c.screenIndex === this.screenIndex;
+      const label = c.name + ' · ' + (BIOME_LABEL[screen.biome] || screen.biome) + (here ? ' · 此处' : (visited ? '' : ' · 未点亮'));
+      const accent = here ? UI.color.selected : (visited ? UI.color.gold : UI.color.lineMuted);
+      const card = makeCard(this, {
+        x: x + 16, y: y + 62 + i * 30, w: W - 32, h: 26,
+        accent, state: visited ? 'default' : 'locked', depth: 104,
+        onClick: visited ? () => this.travelTo(c) : undefined,
+      });
+      card.container.setScrollFactor(0);
+      card.hit.setScrollFactor(0);
+      card.add(makeText(this, 12, 7, label, 'body', {
+        color: visited ? (here ? UI.text.gold : UI.text.primary) : UI.text.disabled,
+      }));
+      return { card };
+    });
+    const close = makeCard(this, {
+      x: x + 16, y: y + H - 40, w: W - 32, h: 26,
+      accent: UI.color.lineMuted, depth: 104, onClick: () => this.closePanel(),
+    });
+    close.container.setScrollFactor(0);
+    close.hit.setScrollFactor(0);
+    close.add(makeText(this, 12, 7, '留在原地', 'body', { color: UI.text.muted }));
+    rows.push({ card: close });
+    this.panel = { dim, panel: p, rows, type: 'travel' };
+    this.updateHud();
+  }
+
+  travelTo(camp) {
+    if (!camp) return;
+    if (camp.screenIndex === this.screenIndex) {
+      this.toast('已经在这里了');
+      this.closePanel();
+      return;
+    }
+    this.closePanel();
+    const s = this.screens[camp.screenIndex];
+    this.player.setPosition(s.x + camp.spawnX, WORLD_Y + camp.spawnY);
+    this.player.shadow.setPosition(this.player.x, this.player.y - 2);
+    this.applyScreen(camp.screenIndex);
+    this.cameras.main.scrollX = clamp(this.player.x - VIEW_W / 2, 0, this.worldWidth - VIEW_W);
+    this.cameras.main.scrollY = 0;
+    this.updateLayer(true);
+    this.updateHud();
+    this.toast('篝火已记住 · ' + camp.name);
+  }
+
   /* ---------- 玩家 ---------- */
   buildPlayer() {
     const skin = this.charId;
@@ -860,16 +1085,30 @@ export class World extends Phaser.Scene {
     const q = this.world[prof.questDef];
     const questState = this.save[prof.questSave];
     const herbCount = this.save[prof.herbSave];
+    const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
+    const q2State = q2 ? this.save[prof.quest2Save] : 'none';
+    const ventCount = q2 ? (this.save[prof.ventSave] || []).length : 0;
     this.hudTitle.setText('远征 · ' + (s.short || s.name));
     const layerName = this.layer === 'cave' ? ' · 地穴' : (this.layer === 'plateau' ? ' · 台地' : '');
     this.hudPlace.setText(s.weatherName + ' · 第 ' + (this.screenIndex + 1) + '/' + this.screens.length + ' 屏' + layerName);
+    let item = prof.item;
+    let count = herbCount;
     let qs = QUEST_LABEL[questState] || QUEST_LABEL.none;
-    if (questState === 'active') {
+    if (q2 && questState === 'done') {
+      item = prof.item2;
+      count = ventCount;
+      qs = q2State === 'done' ? '已淬' : (q2State === 'active' ? '淬火' : '待接');
+      if (q2State === 'active') {
+        qs = '淬火 ' + Math.min(ventCount, q2.need) + '/' + q2.need;
+        if (ventCount >= q2.need) qs = '可交付 ' + q2.need + '/' + q2.need;
+      }
+    } else if (questState === 'active') {
       qs = '采集 ' + Math.min(herbCount, q.need) + '/' + q.need;
       if (herbCount >= q.need) qs = '可交付 ' + q.need + '/' + q.need;
     }
-    this.hudQuest.setText(prof.item + ' ' + herbCount + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
-    this.hudQuest.setColor(questState === 'done' ? UI.text.gold : UI.text.body);
+    this.hudQuest.setText(item + ' ' + count + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
+    const gold = questState === 'done' && (!q2 || q2State === 'done');
+    this.hudQuest.setColor(gold ? UI.text.gold : UI.text.body);
     this.hudHint.setText(this.hudHintText());
     this.updateHp();
     this.updateBossBar();
@@ -889,9 +1128,21 @@ export class World extends Phaser.Scene {
     const q = this.world[prof.questDef];
     const questState = this.save[prof.questSave];
     const herbCount = this.save[prof.herbSave];
+    const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
+    const q2State = q2 ? this.save[prof.quest2Save] : 'none';
+    const ventCount = q2 ? (this.save[prof.ventSave] || []).length : 0;
+    if (q2 && questState === 'done') {
+      if (q2State === 'none') return '找赤砧接「' + q2.name + '」 · ESC 回小屋';
+      if (q2State === 'active' && ventCount < q2.need) {
+        return '靠近炉眼按 E 淬火 · 还差 ' + (q2.need - ventCount) + ' 处 · ESC 回小屋';
+      }
+      if (q2State === 'active' && ventCount >= q2.need) return prof.readyHint2 + ' · ESC 回小屋';
+      return '篝火旁按 E 传送 · ESC 回小屋';
+    }
     if (questState === 'active' && herbCount >= q.need) {
       return prof.readyHint + ' · ESC 回小屋';
     }
+    if (this.touchCtl) return '摇杆移动 · E 采集 / 交谈 · 攻 攻击 · 返 回小屋';
     return 'WASD / 方向键 移动 · E 采集 / 交谈 · SPACE / J 攻击 · ESC 回小屋';
   }
 
@@ -915,6 +1166,22 @@ export class World extends Phaser.Scene {
     this.tweens.add({
       targets: this.bannerT, alpha: 1, duration: 220, yoyo: true, hold: 700,
       onComplete: () => { if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; } },
+    });
+  }
+
+  buildTouch() {
+    if (!isTouchDevice()) return;
+    this.touchCtl = new TouchControls(this, {
+      attack: () => {
+        if (!this.talking && !this.panelOpen && !this.dead && !this.victory) this.attack();
+      },
+      interact: () => {
+        if (!this.talking && !this.panelOpen && !this.dead && !this.victory && !this.gathering) this.onAction();
+      },
+      escape: () => this.onEsc(),
+    }, WORLD_TOUCH);
+    this.events.once('shutdown', () => {
+      if (this.touchCtl) { this.touchCtl.destroy(); this.touchCtl = null; }
     });
   }
 
@@ -958,12 +1225,40 @@ export class World extends Phaser.Scene {
       if (this.dead) this.retryBoss();
     });
     this.input.mouse?.disableContextMenu();
+    this.stickRing = this.add.graphics().setScrollFactor(0).setDepth(700);
     this.input.on('pointerdown', (pointer, currentlyOver) => {
+      if (this.touchCtl && this.touchCtl.hitTest(pointer.x, pointer.y)) return;
+      if (this.talking) { this.advanceTalk(); return; }
+      if (this.panelOpen || this.gathering || this.dead || this.victory) return;
+      if (isTouchDevice() && pointer.y >= 38 && pointer.y <= VIEW_H - 58) {
+        this.stick = { active: true, ox: pointer.x, oy: pointer.y, dx: 0, dy: 0 };
+      }
       if (currentlyOver && currentlyOver.length) return;
-      if (this.talking || this.panelOpen || this.gathering || this.dead || this.victory) return;
       if (pointer.y < 38 || pointer.y > VIEW_H - 58) return;
       this.pointerTarget = { x: pointer.worldX, y: pointer.worldY };
     });
+    this.input.on('pointermove', (pointer) => {
+      if (!this.stick.active) return;
+      const v = new Phaser.Math.Vector2(pointer.x - this.stick.ox, pointer.y - this.stick.oy);
+      const limit = Math.min(this.scale.width, this.scale.height) * 0.18;
+      const len = v.length();
+      if (len > 10) {
+        const mag = Math.min(len, limit);
+        v.normalize();
+        this.stick.dx = (v.x * mag) / limit;
+        this.stick.dy = (v.y * mag) / limit;
+        this.pointerTarget = null;
+      } else {
+        this.stick.dx = 0; this.stick.dy = 0;
+      }
+    });
+    const releaseStick = () => {
+      this.stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
+      if (this.stickRing) this.stickRing.clear();
+    };
+    this.input.on('pointerup', releaseStick);
+    this.input.on('pointerupoutside', releaseStick);
+    this.input.addPointer(1);
     ['W', 'A', 'S', 'D'].forEach((k) => {
       this.input.keyboard.on('keydown-' + k, () => { this.pointerTarget = null; });
     });
@@ -989,9 +1284,23 @@ export class World extends Phaser.Scene {
     if (this.talking) { this.advanceTalk(); return; }
     if (this.panelOpen || this.gathering) return;
     if (this.bossActive) { this.attack(); return; }
+    const quench = this.nearestQuench();
+    if (quench && this.distPlayer(quench.x, quench.y) <= 48) {
+      this.quenchAt(quench);
+      return;
+    }
+    const camp = this.nearestCampfire();
+    if (camp && this.travelUnlocked() && this.distPlayer(camp.x, camp.y) <= 48) {
+      this.openTravel();
+      return;
+    }
     const herb = this.nearestHerb();
     if (herb && this.distPlayer(herb.x, herb.y) <= 46) {
       this.startGather(herb);
+      return;
+    }
+    if (camp && this.distPlayer(camp.x, camp.y) <= 48) {
+      this.toast('篝火还没记住你 · 先完成熔匠的三淬归火');
       return;
     }
     const npc = this.nearestNpc();
@@ -999,12 +1308,14 @@ export class World extends Phaser.Scene {
       this.interactNpc(npc);
       return;
     }
-    this.toast('走近草药或村医再按 E');
+    this.toast('走近草药、炉眼、篝火或村民再按 E');
   }
 
   /* ---------- 移动与每帧 ---------- */
   update(time, delta) {
     if (!this.player || !this.screens) return;
+    if (this.touchCtl) this.touchCtl.setEnabled(!this.panelOpen && !this.talking && !this.gathering && !this.dead && !this.victory);
+    this.drawStickRing();
     if (this.dead || this.victory) return;
     if (this.panelOpen) return;
     if (this.talking) return;
@@ -1020,6 +1331,7 @@ export class World extends Phaser.Scene {
     if (k.right.isDown || k.d.isDown) vx += 1;
     if (k.up.isDown || k.w.isDown) vy -= 1;
     if (k.down.isDown || k.s.isDown) vy += 1;
+    if (this.stick.active) { vx += this.stick.dx; vy += this.stick.dy; }
 
     if (vx || vy) {
       this.pointerTarget = null;
@@ -1046,6 +1358,16 @@ export class World extends Phaser.Scene {
     this.updateBoss(time, delta);
     const next = clamp(Math.floor((this.player.x + 2) / SCREEN_W), 0, this.screens.length - 1);
     if (next !== this.screenIndex) this.applyScreen(next);
+  }
+
+  drawStickRing() {
+    if (!this.stickRing) return;
+    this.stickRing.clear();
+    if (!this.stick.active || this.panelOpen || this.talking || this.gathering) return;
+    const limit = Math.min(this.scale.width, this.scale.height) * 0.18;
+    this.stickRing.lineStyle(1, 0xffffff, 0.3).strokeCircle(this.stick.ox, this.stick.oy, limit);
+    this.stickRing.fillStyle(0xffffff, 0.55)
+      .fillCircle(this.stick.ox + this.stick.dx * limit, this.stick.oy + this.stick.dy * limit, 4);
   }
 
   movePlayer(vx, vy, delta) {
@@ -1120,11 +1442,26 @@ export class World extends Phaser.Scene {
     const busy = this.talking || this.panelOpen || !!this.gathering || this.dead || this.victory || this.bossActive;
     this.herbs.forEach((n) => n.prompt.setVisible(false));
     this.npcs.forEach((n) => n.prompt.setVisible(false));
+    this.quenches.forEach((q) => q.prompt.setVisible(false));
+    this.campfires.forEach((c) => c.prompt.setVisible(false));
     if (busy) return;
+    const quench = this.nearestQuench();
+    if (quench && this.save.volcanoQuest2 === 'active' && this.distPlayer(quench.x, quench.y) <= 48) {
+      quench.prompt.setVisible(true);
+      return;
+    }
+    const camp = this.nearestCampfire();
+    if (camp && this.travelUnlocked() && this.distPlayer(camp.x, camp.y) <= 48) {
+      camp.prompt.setVisible(true);
+      return;
+    }
     const herb = this.nearestHerb();
+    if (herb && this.distPlayer(herb.x, herb.y) <= 46) {
+      herb.prompt.setVisible(true);
+      return;
+    }
     const npc = this.nearestNpc();
-    if (herb && this.distPlayer(herb.x, herb.y) <= 46) herb.prompt.setVisible(true);
-    else if (npc && this.distPlayer(npc.x, npc.y) <= 52) npc.prompt.setVisible(true);
+    if (npc && this.distPlayer(npc.x, npc.y) <= 52) npc.prompt.setVisible(true);
   }
 
   updateRespawns(time) {
@@ -1230,6 +1567,31 @@ export class World extends Phaser.Scene {
     return profileForNpc(npc).questSave;
   }
 
+  secondQuestFor(npc) {
+    const prof = profileForNpc(npc);
+    return prof.quest2Def ? this.world[prof.quest2Def] : null;
+  }
+
+  secondStateFor(npc) {
+    const prof = profileForNpc(npc);
+    return prof.quest2Save ? this.save[prof.quest2Save] : 'none';
+  }
+
+  ventCountFor(npc) {
+    const prof = profileForNpc(npc);
+    return prof.ventSave ? (this.save[prof.ventSave] || []).length : 0;
+  }
+
+  npcLines2(npc, state, count) {
+    if (npc.quest !== 'volcano') return [];
+    const q = this.secondQuestFor(npc);
+    if (!q) return [];
+    const missing = q.need - count;
+    if (state === 'done') return ['三淬归火。铁砧记住了你的手。', '以后在篝火旁按 E，五片地的火会替你引路。'];
+    if (state === 'none') return ['火稳了，可铁砧还差三口气。', '去焦原、黑曜坡、灰口各找一处炉眼，按 E 淬火。'];
+    return ['炉眼还差 ' + missing + ' 处。', '焦原、黑曜坡、灰口的旧裂口都能淬，走近按 E。'];
+  }
+
   npcLines(npc, state, count) {
     const q = this.questFor(npc);
     const missing = q.need - count;
@@ -1263,6 +1625,30 @@ export class World extends Phaser.Scene {
     const prof = profileForNpc(npc);
     const q = this.questFor(npc);
     const state = this.questStateFor(npc);
+    if (state === 'done' && this.secondQuestFor(npc)) {
+      const q2 = this.secondQuestFor(npc);
+      const s2 = this.secondStateFor(npc);
+      if (s2 === 'done') {
+        this.say(npc.name, this.npcLines2(npc, 'done', this.ventCountFor(npc)));
+        return;
+      }
+      if (s2 === 'none') {
+        this.say(npc.name, this.npcLines2(npc, 'none', 0), () => {
+          this.save = patchWorldSave({ [prof.quest2Save]: 'active' });
+          this.refreshQuenchVisuals();
+          this.updateHud();
+          this.toast('新委托 · ' + q2.name);
+        });
+        return;
+      }
+      const count2 = this.ventCountFor(npc);
+      if (count2 < q2.need) {
+        this.say(npc.name, this.npcLines2(npc, 'active', count2));
+        return;
+      }
+      this.showQuestChoice(npc, 2);
+      return;
+    }
     if (state === 'done') {
       this.say(npc.name, this.npcLines(npc, state, this.herbCountFor(npc)));
       return;
@@ -1283,11 +1669,13 @@ export class World extends Phaser.Scene {
     this.showQuestChoice(npc);
   }
 
-  showQuestChoice(npc) {
+  showQuestChoice(npc, stage = 1) {
+    if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
     const prof = profileForNpc(npc);
-    const q = this.questFor(npc);
-    const count = this.herbCountFor(npc);
-    const unit = prof.unit || '株';
+    const q = stage === 2 ? this.secondQuestFor(npc) : this.questFor(npc);
+    const count = stage === 2 ? this.ventCountFor(npc) : this.herbCountFor(npc);
+    const unit = stage === 2 ? (prof.unit2 || '处') : (prof.unit || '株');
+    const item = stage === 2 ? (prof.item2 || '炉眼') : prof.item;
     const W = Math.min(390, VIEW_W - 40);
     const H = 154;
     const x = VIEW_W / 2 - W / 2;
@@ -1299,11 +1687,11 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     p.add(makeText(this, 14, 12, '委托 · ' + q.name, 'h2', { color: UI.text.heading }));
-    p.add(makeText(this, 14, 34, npc.name + ' 需要 ' + q.need + ' ' + unit + prof.item + '，当前 ' + count + ' ' + unit + '。', 'body', {
+    p.add(makeText(this, 14, 34, npc.name + ' 需要 ' + q.need + ' ' + unit + item + '，当前 ' + count + ' ' + unit + '。', 'body', {
       color: UI.text.body,
     }));
     const rows = [
-      ['交付 ' + q.need + ' ' + unit + prof.item, () => this.deliverQuest(npc)],
+      ['交付 ' + q.need + ' ' + unit + item, () => this.deliverQuest(npc, stage)],
       ['再等等', () => this.closePanel()],
     ].map(([label, cb], i) => {
       const card = makeCard(this, {
@@ -1318,12 +1706,27 @@ export class World extends Phaser.Scene {
       }));
       return { card };
     });
-    this.panel = { dim, panel: p, rows, npc };
+    this.panel = { dim, panel: p, rows, npc, stage };
     this.updateHud();
   }
 
-  deliverQuest(npc) {
+  deliverQuest(npc, stage = 1) {
     const prof = profileForNpc(npc);
+    if (stage === 2) {
+      const q2 = this.secondQuestFor(npc);
+      if (!q2) return;
+      this.save = patchWorldSave({
+        [prof.quest2Save]: 'done',
+        tokens: this.save.tokens + q2.rewardTokens,
+      });
+      this.closePanel();
+      this.refreshQuenchVisuals();
+      this.updateHud();
+      this.toast('委托完成 · 星火碎片 +' + q2.rewardTokens);
+      this.banner('篝火 · 已记住五片地');
+      this.say(npc.name, this.npcLines2(npc, 'done', this.ventCountFor(npc)));
+      return;
+    }
     const q = this.questFor(npc);
     const count = this.herbCountFor(npc);
     const herbKey = prof.herbSave;

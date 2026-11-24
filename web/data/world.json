@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "biome": "field",
   "tile": 16,
   "grid": [
@@ -108,6 +108,12 @@
           446,
           150,
           0.9
+        ],
+        [
+          "campfire",
+          380,
+          246,
+          1.3
         ]
       ],
       "plateau": null,
@@ -1150,6 +1156,12 @@
           420,
           246,
           0.8
+        ],
+        [
+          "campfire",
+          180,
+          246,
+          1.3
         ]
       ],
       "herbs": [
@@ -3541,5 +3553,82 @@
     "need": 5,
     "yield": 2,
     "rewardTokens": 2
-  }
+  },
+  "volcanoQuest2": {
+    "id": "volcanoForge3",
+    "name": "三淬归火",
+    "npc": "volcanoSmith",
+    "need": 3,
+    "rewardTokens": 3
+  },
+  "quenches": [
+    {
+      "id": "vent-jiao",
+      "name": "焦原炉眼",
+      "screen": "volcano-1",
+      "x": 190,
+      "y": 232
+    },
+    {
+      "id": "vent-hei",
+      "name": "黑曜炉眼",
+      "screen": "volcano-4",
+      "x": 200,
+      "y": 240
+    },
+    {
+      "id": "vent-hui",
+      "name": "灰口炉眼",
+      "screen": "volcano-5",
+      "x": 240,
+      "y": 232
+    }
+  ],
+  "campfires": [
+    {
+      "id": "field-1",
+      "name": "村口",
+      "screen": "field-1",
+      "x": 380,
+      "y": 246,
+      "spawnX": 344,
+      "spawnY": 244
+    },
+    {
+      "id": "bamboo-4",
+      "name": "旧祠",
+      "screen": "bamboo-4",
+      "x": 180,
+      "y": 246,
+      "spawnX": 144,
+      "spawnY": 244
+    },
+    {
+      "id": "desert-4",
+      "name": "旧门",
+      "screen": "desert-4",
+      "x": 386,
+      "y": 244,
+      "spawnX": 350,
+      "spawnY": 242
+    },
+    {
+      "id": "snow-3",
+      "name": "破祠",
+      "screen": "snow-3",
+      "x": 386,
+      "y": 244,
+      "spawnX": 350,
+      "spawnY": 242
+    },
+    {
+      "id": "volcano-3",
+      "name": "铁砧",
+      "screen": "volcano-3",
+      "x": 420,
+      "y": 244,
+      "spawnX": 384,
+      "spawnY": 242
+    }
+  ]
 }

@@ -25,9 +25,10 @@ const BUTTONS = [
 ];
 
 export class TouchControls {
-  constructor(scene, handlers = {}) {
+  constructor(scene, handlers = {}, specs = BUTTONS) {
     this.scene = scene;
     this.handlers = handlers;
+    this.specs = specs;
     this.items = [];
     this.enabled = true;
     this._resize = () => this.layout();
@@ -37,7 +38,7 @@ export class TouchControls {
   }
 
   build() {
-    for (const spec of BUTTONS) {
+    for (const spec of this.specs) {
       const bg = this.scene.add.circle(0, 0, spec.r, UI.color.panel, 0.86)
         .setStrokeStyle(1, UI.color.line, 0.9)
         .setScrollFactor(0)
