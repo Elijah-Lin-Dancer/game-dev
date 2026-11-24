@@ -29,6 +29,7 @@ const ATTACK_CD = 320;
 const ATTACK_RANGE = 62;
 const ATTACK_DMG = 3;
 const IFRAME = 700;
+const BOSS_TURN_MS = 1600;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
 /* G3 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。
@@ -1909,7 +1910,7 @@ export class World extends Phaser.Scene {
       maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
       scale: art.scale, standoff: art.standoff,
       state: 'idle', stateEnd: 0, nextAt: 0, target: null, warning: null, flash: 0,
-      pose: 'idle', dir: 0, faceAt: 0, moteAt: 0,
+      pose: 'idle', dir: 0, faceAt: 0, moteAt: 0, turnAt: 0, turnDir: 0,
       screenIndex: spawn.screenIndex, arena: {
         x1: spawn.screen.x + 44, x2: spawn.screen.x + SCREEN_W - 44,
         y1: WORLD_Y + 104, y2: WORLD_Y + SCREEN_H - 22,
@@ -1920,7 +1921,8 @@ export class World extends Phaser.Scene {
     this.setBossPose('idle', 0);
   }
 
-  /* 四向帧：0 前 / 1 左 / 2 后 / 3 右（以图集实际画面为准）。苔背巨兽只换静态姿势，不做旋转动画。 */
+  /* 四向帧：0 前 / 1 左 / 2 后 / 3 右（以图集实际画面为准）。
+   * 追击时朝玩家；站定等待时每 BOSS_TURN_MS 转 90°，让 3D 件的正面 / 侧面 / 背面都能在场上读到。 */
   bossDirection() {
     if (!this.boss) return 0;
     const dx = this.player.x - this.boss.spr.x;
@@ -1995,6 +1997,8 @@ export class World extends Phaser.Scene {
     this.boss.nextAt = this.time.now + 900;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(1);
     this.boss.spr.setScale(this.boss.scale * 0.92);
+    this.boss.turnDir = 0;
+    this.boss.turnAt = this.time.now + BOSS_TURN_MS;
     this.tweens.add({
       targets: this.boss.spr, scale: this.boss.scale, duration: 520, ease: 'Back.easeOut',
       onComplete: () => { if (this.bossActive) this.startBossBreath(); },
@@ -2003,7 +2007,7 @@ export class World extends Phaser.Scene {
     this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
     this.boss.label.setVisible(false);
-    this.setBossPose('roar');
+    this.setBossPose('roar', 0);
     if (this.arenaLine) { this.arenaLine.destroy(); this.arenaLine = null; }
     const arenaScreen = this.screens[this.boss.screenIndex];
     this.arenaLine = this.add.rectangle(arenaScreen.x + 6, WORLD_Y + 6, 5, SCREEN_H - 12, UI.world.boss, 0.45)
@@ -2048,12 +2052,27 @@ export class World extends Phaser.Scene {
       if (time >= B.stateEnd) {
         B.state = 'chase';
         B.nextAt = time + 720;
-        this.setBossPose('idle');
+        B.turnDir = 0;
+        B.turnAt = time + BOSS_TURN_MS;
+        this.setBossPose('idle', 0);
       }
       return;
     }
     if (B.state === 'chase') {
-      if (time >= B.faceAt) { B.faceAt = time + 90; this.setBossPose('idle'); }
+      if (time >= B.faceAt) {
+        B.faceAt = time + 90;
+        if (dist <= B.standoff + 4) {
+          if (time >= B.turnAt) {
+            B.turnDir = (B.turnDir + 1) % 4;
+            B.turnAt = time + BOSS_TURN_MS;
+          }
+          this.setBossPose('idle', B.turnDir);
+        } else {
+          this.setBossPose('idle');
+          B.turnDir = B.dir;
+          B.turnAt = time + BOSS_TURN_MS;
+        }
+      }
       if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
       if (time >= B.nextAt) {
         if (dist < 104) this.startSwipe();
@@ -2104,6 +2123,8 @@ export class World extends Phaser.Scene {
     if (B.state === 'recover') {
       if (time >= B.stateEnd) {
         this.setBossPose('idle');
+        B.turnDir = B.dir;
+        B.turnAt = time + BOSS_TURN_MS;
         B.state = 'chase';
         B.nextAt = time + 760;
       }
@@ -2116,6 +2137,8 @@ export class World extends Phaser.Scene {
     B.state = 'swipeWindup';
     B.stateEnd = this.time.now + 320;
     this.setBossPose('charge');
+    B.turnDir = B.dir;
+    B.turnAt = this.time.now + BOSS_TURN_MS;
     if (B.warning) B.warning.destroy();
     B.warning = this.add.circle(B.spr.x, B.spr.y - 22, B.art.swipeWarn, UI.world.boss, 0.26)
       .setDepth(37);
@@ -2134,6 +2157,8 @@ export class World extends Phaser.Scene {
     const d = Math.hypot(dx, dy) || 1;
     B.target = { x: this.player.x + (dx / d) * gap, y: this.player.y + (dy / d) * gap };
     this.setBossPose('charge');
+    B.turnDir = B.dir;
+    B.turnAt = this.time.now + BOSS_TURN_MS;
     if (B.warning) B.warning.destroy();
     B.warning = this.add.circle(B.target.x, B.target.y - 10, 32, UI.world.boss, 0.3)
       .setDepth(37);
@@ -2200,7 +2225,7 @@ export class World extends Phaser.Scene {
     this.boss.state = 'dead';
     if (this.boss.warning) { this.boss.warning.destroy(); this.boss.warning = null; }
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
-    this.setBossPose('roar');
+    this.setBossPose('roar', 0);
     this.bossImpact(this.boss.spr.x, this.boss.spr.y, true);
     this.cameras.main.shake(200, 0.014);
     this.tweens.add({
@@ -2316,7 +2341,9 @@ export class World extends Phaser.Scene {
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
     this.boss.spr.setVisible(true).setAlpha(1).setScale(this.boss.scale);
     this.startBossBreath();
-    this.setBossPose('roar');
+    this.boss.turnDir = 0;
+    this.boss.turnAt = this.time.now + BOSS_TURN_MS;
+    this.setBossPose('roar', 0);
     this.boss.glow.setVisible(true);
     this.boss.shadow.setVisible(true);
     this.boss.ring.setVisible(true);
