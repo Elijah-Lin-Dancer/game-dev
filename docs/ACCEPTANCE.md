@@ -317,6 +317,6 @@
 | W-17 | 窄屏 / 单文件 | 640×360、960×540、844×390 hasTouch、`web/game.html` | 通过；18 屏 / 3 NPC；单文件 `?world` 可进，`errs=[]`（`g2-desert-single-960.png`、`g2-desert-mobile-844x390.png`） |
 | W-18 | 构建 / 冒烟 | `npm run build`、`build:single`、`npm run smoke` | 通过；140 切片 / 198,729 B，首屏 1,891 KB / gzip 772 KB，9 项 PASS；`build:single` 自测 1,998 KB |
 | W-19 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-b0baeb7b` / 12 条；断网仍 18 屏 / 3 NPC，`errs=[]`（`g2-desert-pwa-offline-960.png`） |
-| W-20 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 待推送后补验 |
+| W-20 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.c6eead2a.js` + `assets.fc823a9d.js`；18 屏 / 3 NPC；`desert-1` / `desert-4` 取景正常；沙婆面板「需要 5 颗沙枣，当前 5 颗」→ 交付 `done/0 / tokens 2`；844×390 布局 18/3，线上 `touchCtl=false`（world 触屏未接，已知限制）；`errs=[]`（`g2-online-desert-*.png`） |
 
-证据：本地 960 六屏 `g2-desert-1..6-960.png`、`g2-desert-dust-960.png`、`g2-desert-quest-960.png`、`g2-desert-done-960.png`、640 两张、拖屏一张、单文件一张、PWA 一张；详见 `docs/BATCH19-G2-2.md`。
+证据：本地 960 六屏 `g2-desert-1..6-960.png`、`g2-desert-dust-960.png`、`g2-desert-quest-960.png`、`g2-desert-done-960.png`、640 两张、移动一张、单文件一张、PWA 一张；线上 `g2-online-desert-1-960.png`、`g2-online-desert-4-960.png`、`g2-online-desert-quest-960.png`、`g2-online-desert-done-960.png`、`g2-online-desert-mobile-844x390.png`；详见 `docs/BATCH19-G2-2.md`。

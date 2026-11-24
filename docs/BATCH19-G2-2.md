@@ -100,14 +100,15 @@ HUD、就绪提示、采集 toast、重生 toast、委托面板、交付对话�
 | W-17 | 640×360 / 960×540 / 844×390 hasTouch / `web/game.html` 单文件：18 屏 / 3 NPC，`errs=[]` |
 | W-18 | `npm run build` / `build:single` / `npm run smoke`：140 切片、9 项 PASS、单文件自测通过 |
 | W-19 | PWA：SW `na-b18-b0baeb7b` / 12 条；在线 reload 后断网再 reload 仍进 world，18 屏 / 3 NPC，`errs=[]` |
-| W-20 | Pages 线上：待推送后补验（见 `docs/ACCEPTANCE.md` W-20） |
+| W-20 | Pages 线上：入口 `game.c6eead2a.js` + `assets.fc823a9d.js`；18 屏 / 3 NPC；沙婆面板「交付 5 颗沙枣」；交付 `done/0 / tokens 2`；844×390 布局；线上 960×540 / 844×390 均 `errs=[]`；844 线上 `touchCtl=false`，仅验证 HUD / 取景，world 触屏仍未接（见 `docs/ACCEPTANCE.md` W-20） |
 
 证据：
 - 960：`docs/revamp/g2/g2-desert-1..6-960.png`、`g2-desert-dust-960.png`、`g2-desert-quest-960.png`、`g2-desert-done-960.png`
 - 640：`g2-desert-1-640.png`、`g2-desert-4-640.png`
 - 移动：`g2-desert-mobile-844x390.png`
 - 单文件：`g2-desert-single-960.png`
-- PWA 断网：`g2-desert-pwa-offline-960.png`
+- PWA 断网：`g2-desert-pwa-offline-960.png`（离线下到 desert-4）
+- 线上：`g2-online-desert-1-960.png`、`g2-online-desert-4-960.png`、`g2-online-desert-quest-960.png`、`g2-online-desert-done-960.png`、`g2-online-desert-mobile-844x390.png`
 - 素材：`docs/revamp/g2-3d/g2-props-board.png`、`desert-*-atlas.png/json`
 
 ## 6. 已知限制
