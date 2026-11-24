@@ -334,6 +334,6 @@
 | W-27 | 单文件 | `web/game.html?world` + `file://` 双击 | 通过；24 屏 / 4 NPC；`__SINGLE__` 守卫不再注册 `./sw.js`，`errs=[]` |
 | W-28 | 构建 / 冒烟 | `npm run build`、`npm run build:single`、`npm run smoke` | 通过；143 切片 / 202,244 B；首屏 1901 KB / gzip 778 KB；9 项 PASS；单文件 2,057,162 B |
 | W-29 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-1ff21147` / 12 条；断网仍 24 屏 / 4 NPC，`errs=[]`（`g2-snow-pwa-offline-960.png`） |
-| W-30 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | **待推送后验收**（代码 / 文档提交后补填） |
+| W-30 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.016492e8.js` + `assets.4021e544.js`；24 屏 / 4 NPC / 雪原 6；`snow-3` 取景正常；守灯人 `active/0 → active/2 → active/5 → done/0 / tokens 2`；PWA `na-b18-1ff21147` / 12 条，断网 24 屏；844×390 逻辑 779×360；`errs=[]`（`g2-online-snow-*.png`） |
 
 证据：雪原六屏 `g2-snow-1..6-960.png`、`g2-snow-3-final-960.png`、640 / 844 / 单文件 / PWA 各一张、`g2-snow-quest-960.png`、`g2-snow-done-960.png`、比例板 `scale-baseline-board.png`、三张群系比例图 `g2-scale-*.png`；源图集 / 15 件总览在 `docs/revamp/g2-3d/`；详见 `docs/BATCH20-G2-3.md`。

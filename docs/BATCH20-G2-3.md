@@ -142,7 +142,7 @@ python3 tools/crop_desert.py
 | 单文件 | 通过；`web/game.html` 24 屏 / 4 NPC；`file://` 双击 24 屏，`errs=[]`；`__SINGLE__` 下不注册 SW |
 | PWA | 通过；`na-b18-1ff21147` / 12 条；断网 reload 仍 24 屏 / 4 NPC，`errs=[]` |
 | 构建 / 冒烟 | 通过；`npm run build`、`npm run build:single`、`npm run smoke` 9 项 PASS |
-| 线上 | **待 Pages 推送后验收**（W-30） |
+| 线上 | 通过；`https://elijah-lin-dancer.github.io/game-dev/` 入口 `game.016492e8.js + assets.4021e544.js`；24 屏 / 4 NPC；`snow-3` 取景、守灯人 `active/0 → active/2 → active/5 → done/0 / tokens 2`；PWA `na-b18-1ff21147` / 12 条，断网 24 屏；844×390 逻辑 779×360；`errs=[]`（W-30） |
 
 ## 6. 构建
 
@@ -168,6 +168,14 @@ python3 tools/crop_desert.py
 - `docs/revamp/g2/g2-snow-pwa-offline-960.png`
 - `docs/revamp/g2/scale-baseline-board.png`
 - `docs/revamp/g2/g2-scale-field-1-960.png`、`g2-scale-bamboo-4-960.png`、`g2-scale-desert-4-960.png`
+
+线上：
+
+- `docs/revamp/g2/g2-online-snow-3-960.png`
+- `docs/revamp/g2/g2-online-snow-quest-960.png`
+- `docs/revamp/g2/g2-online-snow-done-960.png`
+- `docs/revamp/g2/g2-online-snow-mobile-844x390.png`
+- `docs/revamp/g2/g2-online-snow-pwa-960.png`
 
 源图集 / 总览：
 
