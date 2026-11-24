@@ -1,9 +1,9 @@
-/* G1 草原群系：六屏 30×17 / 台地 / 洞穴 / 三种天气 / 世界 Boss
+/* G2 开放世界：草原 / 竹林 / 沙漠群系，18 屏 30×17
  *
  * 设计边界：
  *   - 单屏 480×272（30×17 格 ×16px），镜头仍是 640×360，能看到相邻屏边缘；
- *   - 六屏全部是草原，台地抬高一层、洞穴凹下一层，不是垂直多层世界；
- *   - 走 / 打 / 采 / 谈四个动词，战斗只服务第六屏的世界 Boss；
+ *   - 三种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
+ *   - 世界 Boss 仍只在 field-6，任务不跨群系记账；
  *   - 仍只写 na.world，不碰主线 na.save。
  */
 import { S, VEC, ANGLE } from '../core/config.js';
@@ -13,7 +13,7 @@ import { loadWorldSave, patchWorldSave } from '../systems/worldSave.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
 
-/* G0 的 640×360 是“镜头尺寸”；G1 单屏改为 30×17 格的 480×272，镜头仍按 S 尺寸。 */
+/* G0 的 640×360 是“镜头尺寸”；单屏改为 30×17 格的 480×272，镜头仍按 S 尺寸。 */
 const SCREEN_W = 480;
 const SCREEN_H = 272;
 const WORLD_Y = Math.max(32, Math.round((S.H - SCREEN_H) / 2));
@@ -29,7 +29,36 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
 
-const TINT = { field: UI.world.field, bamboo: UI.world.bamboo };
+const TINT = { field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert };
+
+/* 群系任务配置：数据键、存档键、HUD 文案、NPC 素材都在这里对齐。
+ * 不再用 bamboo 单布尔分派；沙漠和后续雪原 / 火山复用同一结构。 */
+const QUEST_PROFILE = {
+  field: {
+    biome: 'field', questDef: 'quest', questSave: 'quest', herbSave: 'herbs',
+    item: '草药', unit: '株', npcAsset: 'villager2', npcScale: 2, glowTint: UI.world.herbGold,
+    glowScale: 1.4, labelY: 48, promptY: 68,
+    readyHint: '草药够了 · 去找村医阿杏交付',
+    respawn: '一丛草药重新长成了',
+  },
+  bamboo: {
+    biome: 'bamboo', questDef: 'bambooQuest', questSave: 'bambooQuest', herbSave: 'bambooHerbs',
+    item: '雾竹', unit: '株', npcAsset: 'bambooHermit', npcScale: 1.5, glowTint: UI.world.herb,
+    glowScale: 1.6, labelY: 56, promptY: 76,
+    readyHint: '雾竹够了 · 去找竹隐交付',
+    respawn: '一丛雾竹重新长成了',
+  },
+  desert: {
+    biome: 'desert', questDef: 'desertQuest', questSave: 'desertQuest', herbSave: 'desertHerbs',
+    item: '沙枣', unit: '颗', npcAsset: 'desertNomad', npcScale: 1.7, glowTint: UI.world.herbGold,
+    glowScale: 1.6, labelY: 56, promptY: 76,
+    readyHint: '沙枣够了 · 去找沙婆阿砾交付',
+    respawn: '一丛沙枣重新长成了',
+  },
+};
+
+function profileFor(biome) { return QUEST_PROFILE[biome] || QUEST_PROFILE.field; }
+function profileForNpc(npc) { return QUEST_PROFILE[npc && npc.quest] || QUEST_PROFILE.field; }
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
@@ -110,6 +139,7 @@ function normalizeWorld(raw) {
   }));
   const q = raw && raw.quest ? raw.quest : {};
   const bq = raw && raw.bambooQuest ? raw.bambooQuest : {};
+  const dq = raw && raw.desertQuest ? raw.desertQuest : {};
   const bossRaw = raw && raw.boss ? raw.boss : null;
   return {
     screens,
@@ -126,6 +156,13 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(bq.need, 4))),
       yield: Math.max(1, Math.round(asNumber(bq.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(bq.rewardTokens, 2))),
+    },
+    desertQuest: {
+      id: String(dq.id || 'desert5'),
+      name: String(dq.name || '沙海拾味'),
+      need: Math.max(1, Math.round(asNumber(dq.need, 5))),
+      yield: Math.max(1, Math.round(asNumber(dq.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(dq.rewardTokens, 2))),
     },
     boss: bossRaw ? {
       id: String(bossRaw.id || 'racoon'),
@@ -243,24 +280,31 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setDepth(-0.5);
     this.screens.forEach((s) => {
       const tint = TINT[s.biome] || TINT.field;
+      const ground = s.biome === 'desert' ? 'desertTile' : 'field';
+      const groundFrame = s.biome === 'desert' ? 0 : 21;
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, tint, 1)
         .setOrigin(0).setDepth(-0.4);
-      this.add.tileSprite(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 'field', 21)
-        .setOrigin(0).setTint(tint).setDepth(0);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, 0.07)
+      this.add.tileSprite(s.x, WORLD_Y, SCREEN_W, SCREEN_H, ground, groundFrame)
+        .setOrigin(0).setTint(s.biome === 'desert' ? 0xffffff : tint).setDepth(0);
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, s.biome === 'desert' ? 0.10 : 0.07)
         .setOrigin(0).setDepth(1);
-      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, UI.world.fieldLight, 0.16)
+      this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, s.biome === 'desert' ? 0xe5c37d : UI.world.fieldLight, s.biome === 'desert' ? 0.20 : 0.16)
         .setOrigin(0).setDepth(1.4);
       s.deco.forEach((d) => {
         const [dx, dy, frame = 0, scale = 1] = d;
         this.add.image(s.x + dx, WORLD_Y + dy, 'floorDetail', frame)
-          .setScale(scale).setAlpha(0.42).setTint(tint).setDepth(2);
+          .setScale(scale).setAlpha(s.biome === 'desert' ? 0.32 : 0.42).setTint(tint).setDepth(2);
       });
       if (s.biome === 'field') {
         const beam = this.add.image(s.x + 330, WORLD_Y + 20, 'ray', 0)
           .setOrigin(0.5, 0).setScale(1.2, 1.7).setRotation(0.16)
           .setAlpha(0.06).setTint(0xd8f0c8).setBlendMode(Phaser.BlendModes.ADD).setDepth(3);
         this.tweens.add({ targets: beam, alpha: 0.03, duration: 1800, yoyo: true, repeat: -1 });
+      }
+      if (s.biome === 'desert') {
+        const dune = this.add.ellipse(s.x + 238, WORLD_Y + 254, 300, 34, 0xdfbf82, 0.12)
+          .setOrigin(0.5, 0.5).setDepth(2.4);
+        dune.setBlendMode(Phaser.BlendModes.ADD);
       }
       this.add.text(s.x + 16, WORLD_Y + 12, s.name, {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
@@ -385,6 +429,39 @@ export class World extends Phaser.Scene {
       // Only the two posts block; the gate opening stays walkable.
       this.addBlock(s, p.x - 46, p.y - 12, 8, 12);
       this.addBlock(s, p.x + 38, p.y - 12, 8, 12);
+    } else if (p.kind === 'desertArch') {
+      const x = s.x + p.x;
+      const y = WORLD_Y + p.y;
+      this.add.ellipse(x, y - 2, 92 * p.scale, 12 * p.scale, 0x000000, 0.24).setDepth(17);
+      this.add.image(x, y, 'desertArch')
+        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+      this.addBlock(s, p.x - 42, p.y - 14, 10, 14);
+      this.addBlock(s, p.x + 32, p.y - 14, 10, 14);
+    } else if (p.kind === 'desertDeadTree') {
+      const x = s.x + p.x;
+      const y = WORLD_Y + p.y;
+      this.add.ellipse(x, y - 3, 36 * p.scale, 9 * p.scale, 0x000000, 0.24).setDepth(17);
+      this.add.image(x, y, 'desertDeadTree')
+        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+      this.addBlock(s, p.x - 8, p.y - 18, 16, 16);
+    } else if (p.kind === 'desertPalm') {
+      const x = s.x + p.x;
+      const y = WORLD_Y + p.y;
+      this.add.ellipse(x, y - 2, 30 * p.scale, 8 * p.scale, 0x000000, 0.2).setDepth(17);
+      this.add.image(x, y, 'desertPalm')
+        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18);
+      this.addBlock(s, p.x - 7, p.y - 9, 14, 9);
+    } else if (p.kind === 'campfire') {
+      const x = s.x + p.x;
+      const y = WORLD_Y + p.y;
+      this.add.circle(x, y - 8, 28 * p.scale, 0xff9a4a, 0.10)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
+      this.add.ellipse(x, y - 1, 24 * p.scale, 7 * p.scale, 0x000000, 0.22).setDepth(17);
+      this.add.sprite(x, y, 'campfire', 0)
+        .setOrigin(0.5, 1).setScale(p.scale).setDepth(18).play('campfire-burn');
+      this.add.text(x, y - 28 * p.scale, '篝火', {
+        fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
+      }).setOrigin(0.5, 1).setAlpha(0.65).setDepth(19);
     }
   }
 
@@ -396,19 +473,19 @@ export class World extends Phaser.Scene {
       const n = s.npc;
       const x = s.x + asNumber(n.x, 300);
       const y = WORLD_Y + asNumber(n.y, 200);
-      const bamboo = n.quest === 'bamboo';
+      const p = profileForNpc(n);
       const glow = this.add.image(x, y - 10, 'aura', 0)
-        .setScale(bamboo ? 1.6 : 1.4).setAlpha(0.16).setTint(bamboo ? UI.world.herb : UI.world.herbGold)
+        .setScale(p.glowScale).setAlpha(0.16).setTint(p.glowTint)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(22);
-      this.tweens.add({ targets: glow, alpha: 0.06, scale: bamboo ? 2.0 : 1.8, duration: 900, yoyo: true, repeat: -1 });
-      const sprite = this.add.sprite(x, y, bamboo ? 'bambooHermit' : 'villager2', 0)
-        .setOrigin(0.5, 1).setScale(bamboo ? 1.5 : 2).setDepth(25);
+      this.tweens.add({ targets: glow, alpha: 0.06, scale: p.glowScale + 0.4, duration: 900, yoyo: true, repeat: -1 });
+      const sprite = this.add.sprite(x, y, p.npcAsset, 0)
+        .setOrigin(0.5, 1).setScale(p.npcScale).setDepth(25);
       this.tweens.add({ targets: sprite, y: y - 2, duration: 620, yoyo: true, repeat: -1 });
-      const label = this.add.text(x, y - (bamboo ? 56 : 48), String(n.name || '村医'), {
+      const label = this.add.text(x, y - p.labelY, String(n.name || '村民'), {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.primary,
         backgroundColor: UI.hud.bgSoft, padding: { x: 4, y: 2 },
       }).setOrigin(0.5, 1).setDepth(40);
-      const prompt = this.add.text(x, y - (bamboo ? 76 : 68), 'E 交谈', {
+      const prompt = this.add.text(x, y - p.promptY, 'E 交谈', {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
         backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
       }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -435,15 +512,17 @@ export class World extends Phaser.Scene {
   /* ---------- 草药 ---------- */
   buildHerbs() {
     this.screens.forEach((s) => {
+      const prof = profileFor(s.biome);
       s.herbs.forEach((h, i) => {
         const x = s.x + asNumber(h[0], 0);
         const y = WORLD_Y + asNumber(h[1], 0);
-        const glow = this.add.circle(x, y - 6, 13, UI.world.herb, 0.13)
+        const desert = s.biome === 'desert';
+        const glow = this.add.circle(x, y - 6, desert ? 15 : 13, prof.glowTint, desert ? 0.08 : 0.13)
           .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
-        const sprite = this.add.sprite(x, y, 'herb', 0)
-          .setOrigin(0.5, 1).setScale(2).setDepth(24);
+        const sprite = this.add.sprite(x, y, desert ? 'desertShrub' : 'herb', 0)
+          .setOrigin(0.5, 1).setScale(desert ? 1.25 : 2).setDepth(24);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 760 + i * 90, yoyo: true, repeat: -1 });
-        const prompt = this.add.text(x, y - 28, 'E 采集', {
+        const prompt = this.add.text(x, y - (desert ? 42 : 28), 'E 采集', {
           fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
           backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
         }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -526,6 +605,24 @@ export class World extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(795);
     this.fogMist.stop();
 
+    // 沙尘：横向风沙 + 褐色近地层，遮住远景但不改判定。
+    this.dustStorm = this.add.particles(0, 0, 'dust', {
+      x: { min: VIEW_W + 20, max: VIEW_W + 80 },
+      y: { min: 44, max: VIEW_H - 18 },
+      lifespan: { min: 900, max: 1600 },
+      speedX: { min: -110, max: -42 },
+      speedY: { min: 8, max: 34 },
+      scaleX: { min: 0.4, max: 1.1 },
+      scaleY: { min: 0.2, max: 0.5 },
+      alpha: { start: 0.7, end: 0.05 },
+      quantity: 2,
+      frequency: 26,
+      tint: UI.world.dust,
+    }).setScrollFactor(0).setDepth(796);
+    this.dustStorm.stop();
+
+    this.dustVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.dustVeil, 0.13)
+      .setOrigin(0).setScrollFactor(0).setDepth(791).setAlpha(0);
     this.fogVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.fogVeil, 0.16)
       .setOrigin(0).setScrollFactor(0).setDepth(790).setAlpha(0);
     this.caveShade = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.caveVeil, 0.52)
@@ -538,12 +635,18 @@ export class World extends Phaser.Scene {
     this.weather = s.weather;
     this.rain.stop();
     this.fogMist.stop();
+    this.dustStorm.stop();
     this.fogVeil.setAlpha(0);
-    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48 : 0.12);
+    this.dustVeil.setAlpha(0);
+    this.worldVig.setAlpha(s.weather === 'fog' ? 0.48 : (s.weather === 'dust' ? 0.34 : 0.12));
     if (s.weather === 'rain') this.rain.start();
     if (s.weather === 'fog') {
       this.fogMist.start();
       this.fogVeil.setAlpha(0.15);
+    }
+    if (s.weather === 'dust') {
+      this.dustStorm.start();
+      this.dustVeil.setAlpha(0.13);
     }
   }
 
@@ -610,11 +713,10 @@ export class World extends Phaser.Scene {
   updateHud() {
     if (!this.hudTitle) return;
     const s = this.screens[this.screenIndex] || this.screens[0];
-    const bamboo = s.biome === 'bamboo';
-    const q = bamboo ? this.world.bambooQuest : this.world.quest;
-    const questState = bamboo ? this.save.bambooQuest : this.save.quest;
-    const herbCount = bamboo ? this.save.bambooHerbs : this.save.herbs;
-    const herbLabel = bamboo ? '雾竹 ' : '草药 ';
+    const prof = profileFor(s.biome);
+    const q = this.world[prof.questDef];
+    const questState = this.save[prof.questSave];
+    const herbCount = this.save[prof.herbSave];
     this.hudTitle.setText('远征 · ' + (s.short || s.name));
     const layerName = this.layer === 'cave' ? ' · 地穴' : (this.layer === 'plateau' ? ' · 台地' : '');
     this.hudPlace.setText(s.weatherName + ' · 第 ' + (this.screenIndex + 1) + '/' + this.screens.length + ' 屏' + layerName);
@@ -623,7 +725,7 @@ export class World extends Phaser.Scene {
       qs = '采集 ' + Math.min(herbCount, q.need) + '/' + q.need;
       if (herbCount >= q.need) qs = '可交付 ' + q.need + '/' + q.need;
     }
-    this.hudQuest.setText(herbLabel + herbCount + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
+    this.hudQuest.setText(prof.item + ' ' + herbCount + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
     this.hudQuest.setColor(questState === 'done' ? UI.text.gold : UI.text.body);
     this.hudHint.setText(this.hudHintText());
     this.updateHp();
@@ -640,12 +742,12 @@ export class World extends Phaser.Scene {
     if (this.dead) return '星火熄灭 · R 重新挑战 / ESC 回小屋';
     if (this.bossActive) return 'SPACE / J 攻击 · 击败苔背巨兽 · ESC 回小屋';
     const s = this.screens[this.screenIndex] || this.screens[0];
-    const bamboo = s.biome === 'bamboo';
-    const q = bamboo ? this.world.bambooQuest : this.world.quest;
-    const questState = bamboo ? this.save.bambooQuest : this.save.quest;
-    const herbCount = bamboo ? this.save.bambooHerbs : this.save.herbs;
+    const prof = profileFor(s.biome);
+    const q = this.world[prof.questDef];
+    const questState = this.save[prof.questSave];
+    const herbCount = this.save[prof.herbSave];
     if (questState === 'active' && herbCount >= q.need) {
-      return (bamboo ? '雾竹够了 · 去找竹隐交付' : '草药够了 · 去找村医阿杏交付') + ' · ESC 回小屋';
+      return prof.readyHint + ' · ESC 回小屋';
     }
     return 'WASD / 方向键 移动 · E 采集 / 交谈 · SPACE / J 攻击 · ESC 回小屋';
   }
@@ -805,7 +907,7 @@ export class World extends Phaser.Scene {
 
   movePlayer(vx, vy, delta) {
     const d = Math.hypot(vx, vy) || 1;
-    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92 : 1);
+    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92 : (this.weather === 'dust' ? 0.94 : 1));
     if (this.layer === 'cave') mul *= 0.9;
     const step = SPEED * mul * (delta / 1000);
     let nx = this.player.x + (vx / d) * step;
@@ -889,7 +991,7 @@ export class World extends Phaser.Scene {
         n.respawnAt = 0;
         n.sprite.setVisible(true);
         n.glow.setVisible(true);
-        this.toast('一丛草药重新长成了');
+        this.toast(profileFor(n.biome).respawn);
       }
     });
   }
@@ -952,55 +1054,69 @@ export class World extends Phaser.Scene {
     node.respawnAt = this.time.now + RESPAWN_MS;
     node.sprite.setVisible(false);
     node.glow.setVisible(false);
-    const bamboo = node.biome === 'bamboo';
-    const q = bamboo ? this.world.bambooQuest : this.world.quest;
-    const key = bamboo ? 'bambooHerbs' : 'herbs';
+    const prof = profileFor(node.biome);
+    const q = this.world[prof.questDef];
+    const key = prof.herbSave;
     const count = this.save[key] + q.yield;
     this.save = patchWorldSave({ [key]: count });
-    this.toast((bamboo ? '采到雾竹 ×' : '采到草药 ×') + q.yield);
+    this.toast('采到' + prof.item + ' ×' + q.yield);
     this.updateHud();
-    const questKey = bamboo ? 'bambooQuest' : 'quest';
-    if (this.save[questKey] === 'active' && count >= q.need) {
-      this.toast((bamboo ? '雾竹够了 · 去找竹隐交付' : '草药够了 · 去找村医阿杏交付'));
+    if (this.save[prof.questSave] === 'active' && count >= q.need) {
+      this.toast(prof.readyHint);
     }
   }
 
-  /* ---------- 村医 / 竹隐与委托 ---------- */
+  /* ---------- 村医 / 竹隐 / 沙婆与委托 ---------- */
   questFor(npc) {
-    return npc && npc.quest === 'bamboo' ? this.world.bambooQuest : this.world.quest;
+    return this.world[profileForNpc(npc).questDef];
   }
 
   questStateFor(npc) {
-    return npc && npc.quest === 'bamboo' ? this.save.bambooQuest : this.save.quest;
+    return this.save[profileForNpc(npc).questSave];
   }
 
   herbCountFor(npc) {
-    return npc && npc.quest === 'bamboo' ? this.save.bambooHerbs : this.save.herbs;
+    return this.save[profileForNpc(npc).herbSave];
   }
 
   herbKeyFor(npc) {
-    return npc && npc.quest === 'bamboo' ? 'bambooHerbs' : 'herbs';
+    return profileForNpc(npc).herbSave;
   }
 
   questKeyFor(npc) {
-    return npc && npc.quest === 'bamboo' ? 'bambooQuest' : 'quest';
+    return profileForNpc(npc).questSave;
+  }
+
+  npcLines(npc, state, count) {
+    const q = this.questFor(npc);
+    const missing = q.need - count;
+    if (npc.quest === 'bamboo') {
+      if (state === 'done') return ['雾竹的味道，和五十年前一样。', '路还长，别把灯熄了。'];
+      if (state === 'none') return ['这片竹林最近起了雾，旧祠的灯也暗了。', '帮我采四株雾竹回来，我要熬一锅汤。'];
+      return ['还差 ' + missing + ' 株雾竹。', '旧祠后面的竹丛，采完会重新长出来。'];
+    }
+    if (npc.quest === 'desert') {
+      if (state === 'done') return ['沙枣够甜，井水也活了。', '收下碎片，别在沙暴里回头。'];
+      if (state === 'none') return ['风把沙枣吹到旧门那边了。', '帮我拾五颗回来，井里还有一盏灯。'];
+      return ['还差 ' + missing + ' 颗沙枣。', '旧门附近的沙丘上还有，采完会重新长出来。'];
+    }
+    if (state === 'done') return ['这些草药救了不少人。', '路上小心，星火会记得你。'];
+    if (state === 'none') return ['你来得正好。村东的草药被雨泡坏了不少。', '能帮我采 5 株回来吗？草原上还有三丛。'];
+    return ['还差 ' + missing + ' 株。', '草原上那几丛，采完会重新长出来。'];
   }
 
   interactNpc(npc) {
     if (!npc || this.talking || this.panelOpen || this.bossActive) return;
+    const prof = profileForNpc(npc);
     const q = this.questFor(npc);
     const state = this.questStateFor(npc);
     if (state === 'done') {
-      this.say(npc.name, npc.quest === 'bamboo'
-        ? ['雾竹的味道，和五十年前一样。', '路还长，别把灯熄了。']
-        : ['这些草药救了不少人。', '路上小心，星火会记得你。']);
+      this.say(npc.name, this.npcLines(npc, state, this.herbCountFor(npc)));
       return;
     }
     if (state === 'none') {
-      this.say(npc.name, npc.quest === 'bamboo'
-        ? ['这片竹林最近起了雾，旧祠的灯也暗了。', '帮我采四株雾竹回来，我要熬一锅汤。']
-        : ['你来得正好。村东的草药被雨泡坏了不少。', '能帮我采 5 株回来吗？草原上还有三丛。'], () => {
-        this.save = patchWorldSave({ [this.questKeyFor(npc)]: 'active' });
+      this.say(npc.name, this.npcLines(npc, state, 0), () => {
+        this.save = patchWorldSave({ [prof.questSave]: 'active' });
         this.updateHud();
         this.toast('委托已接受 · ' + q.name);
       });
@@ -1008,18 +1124,17 @@ export class World extends Phaser.Scene {
     }
     const count = this.herbCountFor(npc);
     if (count < q.need) {
-      this.say(npc.name, npc.quest === 'bamboo'
-        ? ['还差 ' + (q.need - count) + ' 株雾竹。', '旧祠后面的竹丛，采完会重新长出来。']
-        : ['还差 ' + (q.need - count) + ' 株。', '草原上那几丛，采完会重新长出来。']);
+      this.say(npc.name, this.npcLines(npc, state, count));
       return;
     }
     this.showQuestChoice(npc);
   }
 
   showQuestChoice(npc) {
+    const prof = profileForNpc(npc);
     const q = this.questFor(npc);
     const count = this.herbCountFor(npc);
-    const herbName = npc.quest === 'bamboo' ? '雾竹' : '草药';
+    const unit = prof.unit || '株';
     const W = Math.min(390, VIEW_W - 40);
     const H = 154;
     const x = VIEW_W / 2 - W / 2;
@@ -1031,11 +1146,11 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     p.add(makeText(this, 14, 12, '委托 · ' + q.name, 'h2', { color: UI.text.heading }));
-    p.add(makeText(this, 14, 34, npc.name + ' 需要 ' + q.need + ' 株' + herbName + '，当前 ' + count + ' 株。', 'body', {
+    p.add(makeText(this, 14, 34, npc.name + ' 需要 ' + q.need + ' ' + unit + prof.item + '，当前 ' + count + ' ' + unit + '。', 'body', {
       color: UI.text.body,
     }));
     const rows = [
-      ['交付 ' + q.need + ' 株' + herbName, () => this.deliverQuest(npc)],
+      ['交付 ' + q.need + ' ' + unit + prof.item, () => this.deliverQuest(npc)],
       ['再等等', () => this.closePanel()],
     ].map(([label, cb], i) => {
       const card = makeCard(this, {
@@ -1055,10 +1170,11 @@ export class World extends Phaser.Scene {
   }
 
   deliverQuest(npc) {
+    const prof = profileForNpc(npc);
     const q = this.questFor(npc);
     const count = this.herbCountFor(npc);
-    const herbKey = this.herbKeyFor(npc);
-    const questKey = this.questKeyFor(npc);
+    const herbKey = prof.herbSave;
+    const questKey = prof.questSave;
     this.save = patchWorldSave({
       [herbKey]: Math.max(0, count - q.need),
       [questKey]: 'done',
@@ -1069,7 +1185,9 @@ export class World extends Phaser.Scene {
     this.toast('委托完成 · 星火碎片 +' + q.rewardTokens);
     this.say(npc.name, npc.quest === 'bamboo'
       ? ['雾竹够了。', '收下这枚星火碎片，旧祠的灯就拜托你了。']
-      : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。']);
+      : (npc.quest === 'desert'
+        ? ['沙枣够了。', '收下这枚星火碎片，旧门的灯就拜托你了。']
+        : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。']));
   }
 
   closePanel() {

@@ -303,3 +303,20 @@
 | W-10 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 通过；入口 `game.d2e34f5f.js` + `assets.87a5fab8.js`；12 屏 / 2 NPC；竹林 1 / 4、委托 / 交付、mobile 均通过，`errs=[]`（`g2-online-*.png`） |
 
 证据：`docs/revamp/g2/` 9 张本地截图 + 5 张线上截图 + `docs/revamp/g2-3d/` 9 组源图集 / 对照板；详见 `docs/BATCH18-G2-1.md`。
+
+## W-11～W-20. 批 19 / G2-2 沙漠群系（2026-11-24 追加）
+
+| 编号 | 判据 | 验证方式 | 结果 |
+|---|---|---|---|
+| W-11 | 18 屏、6 沙漠、3 NPC | 进 world 读 `screens / ids / npcs` | 通过；`field-1..6 + bamboo-1..6 + desert-1..6`，NPC 村医 / 竹隐 / 沙婆，`errs=[]` |
+| W-12 | 沙漠 6 屏与沙尘 / 晴切换 | 逐屏 `applyScreen` + `weather / dustVeil.alpha` + 960 截图 | 通过；`沙口/枯井/旧门/无旗` dust veil 0.13，`风蚀/流沙` clear veil 0；`g2-desert-1..6-960.png` |
+| W-13 | 沙婆委托全流程 | 对话接取 → 采 1 丛 → 5 颗面板 → 交付 | 通过；`active/0 → active/2 → active/5 → done/0 / tokens 2`；面板「沙海拾味 / 5 颗」；`errs=[]` |
+| W-14 | 摆件 / 地表 / 素材库 | 960 / 640 实机截图 + 图集尺寸 | 通过；旧门 96×128、枯木、沙棕 48×48、沙枣丛、篝火、16px 沙地；两柱可走 |
+| W-15 | 草原 / 竹林委托回归 | 村医 5 株面板 + 竹隐 4 株面板 | 通过；`草药五株 / 5 株`、`雾竹三味 / 4 株`，`errs=[]` |
+| W-16 | v3→v4 迁移 | v3 种子 reload，读 `save` 与 `localStorage` | 通过；`v=4`，保留 `herbs=3 / quest=active / bambooHerbs=2 / bambooQuest=active / boss=done / tokens=4`，补 `desertHerbs=0 / desertQuest=none` 并即时落盘 |
+| W-17 | 窄屏 / 单文件 | 640×360、960×540、844×390 hasTouch、`web/game.html` | 通过；18 屏 / 3 NPC；单文件 `?world` 可进，`errs=[]`（`g2-desert-single-960.png`、`g2-desert-mobile-844x390.png`） |
+| W-18 | 构建 / 冒烟 | `npm run build`、`build:single`、`npm run smoke` | 通过；140 切片 / 198,729 B，首屏 1,891 KB / gzip 772 KB，9 项 PASS；`build:single` 自测 1,998 KB |
+| W-19 | PWA 缓存 / 断网 | SW ready / controller；cache 列表；`setOffline(true)` reload | 通过；`na-b18-b0baeb7b` / 12 条；断网仍 18 屏 / 3 NPC，`errs=[]`（`g2-desert-pwa-offline-960.png`） |
+| W-20 | Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 线上 Playwright；960×540 / 844×390 | 待推送后补验 |
+
+证据：本地 960 六屏 `g2-desert-1..6-960.png`、`g2-desert-dust-960.png`、`g2-desert-quest-960.png`、`g2-desert-done-960.png`、640 两张、拖屏一张、单文件一张、PWA 一张；详见 `docs/BATCH19-G2-2.md`。

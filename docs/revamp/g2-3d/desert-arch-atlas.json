@@ -1,8 +1,8 @@
 {
   "width": 96,
-  "height": 80,
+  "height": 128,
   "tileWidth": 96,
-  "tileHeight": 80,
+  "tileHeight": 128,
   "directions": 1,
   "fps": 12,
   "pivot": [
@@ -16,7 +16,7 @@
       "direction": 0,
       "yaw": 0.12,
       "pitch": 0.13,
-      "unitsPerPixel": 0.046484227794104806,
+      "unitsPerPixel": 0.029052642371315503,
       "depthOrigin": 17.4,
       "time": 0,
       "duration": 0.08333333333333333,
@@ -24,11 +24,11 @@
         "x": 0,
         "y": 0,
         "width": 96,
-        "height": 80
+        "height": 128
       },
       "pivot": {
         "x": 48,
-        "y": 40
+        "y": 64
       }
     }
   ],

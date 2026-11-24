@@ -66,6 +66,21 @@ node art-src/hub/render-hub.cjs
 python3 tools/crop_hub.py
 ```
 
+## G2-2 产出（2026-11-24）
+
+| 件 | 源 | 源图集 | 正式输出 | 运行时状态 |
+|---|---|---|---|---|
+| 沙婆 | `art-src/g2/desert-nomad.cjs` | 256×64，4 向 | `desert-nomad.png` 64×64 | 沙漠 NPC，1.7 倍 |
+| 沙枣丛 | `art-src/g2/desert-shrub.cjs` | 32×48，1 向 | `desert-shrub.png` 32×48 | 沙漠采集点，1.25 倍 |
+| 沙海旧门（加高） | `art-src/g2/desert-arch.cjs` | 96×128，1 向 | `desert-arch.png` 96×128 | `desertArch`；两根柱碰撞、中间可走 |
+| 沙棕 | NinjaAdventure `TilesetDesert.png` 裁切 | 48×48 | `desert-palm.png` 48×48 | `desertPalm` 摆件；素材库原件 |
+| 16px 沙地 | NinjaAdventure `TilesetField.png` 帧 21 调色 | 16×16 | `desert-tile.png` 16×16 | `desertTile` 地表 |
+
+- 沙海旧门从 96×80 加高到 96×128，并删掉横在门洞底部的整条沙堤；两柱保留碰撞，中间可走。
+- 沙婆 / 沙枣丛沿用 ink-studio 固定 seed；`desert-nomad` 4 向源图集保留，运行时只取正面首帧。
+- `desertPalm` 与 `desertTile` 均来自 NinjaAdventure CC0 原包；沙地只做颜色重映射，不重绘 16px tile。
+- 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
+
 ## G2-1 产出（2026-11-24）
 
 源目录 `art-src/g2/`，固定 seed；运行时只读导出的 PNG / 图集，不接 ink-studio。
@@ -75,14 +90,14 @@ python3 tools/crop_hub.py
 | 竹林竹丛 | `art-src/g2/bamboo-grove.cjs` | 64×96，1 向 | `assets/01-primary/world/bamboo-grove.png` | 已接入 `bamboo` 摆件 |
 | 竹林石门 | `art-src/g2/bamboo-gate.cjs` | 96×160，1 向 | `assets/01-primary/world/bamboo-gate.png` | 已接入 `bambooGate`；两根柱碰撞，中间可走 |
 | 竹隐 | `art-src/g2/bamboo-hermit.cjs` | 256×64，4 向 | `assets/01-primary/world/bamboo-hermit.png`（正面 64×64） | 已接入竹林 NPC；运行只用正面帧 |
-| 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×80，1 向 | `assets/01-primary/world/desert-arch.png` | 已入图集，未接沙漠屏 |
-| 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | 已入图集，未接沙漠屏 |
+| 沙海旧门 | `art-src/g2/desert-arch.cjs` | 96×128，1 向 | `assets/01-primary/world/desert-arch.png` | G2-2 已接入 `desertArch`；两柱碰撞、中间可走 |
+| 枯沙木 | `art-src/g2/desert-dead-tree.cjs` | 64×80，1 向 | `assets/01-primary/world/desert-dead-tree.png` | G2-2 已接入 `desertDeadTree` |
 | 雪松 | `art-src/g2/snow-pine.cjs` | 64×96，1 向 | `assets/01-primary/world/snow-pine.png` | 已入图集，未接雪原屏 |
 | 雪中小祠 | `art-src/g2/snow-shrine.cjs` | 64×80，1 向 | `assets/01-primary/world/snow-shrine.png` | 已入图集，未接雪原屏 |
 | 黑曜尖柱 | `art-src/g2/volcano-spire.cjs` | 64×96，1 向 | `assets/01-primary/world/volcano-spire.png` | 已入图集，未接火山屏 |
 | 熔岩裂口 | `art-src/g2/volcano-vent.cjs` | 64×48，1 向 | `assets/01-primary/world/volcano-vent.png` | 已入图集，未接火山屏 |
 
-- 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`；9 个 `*-atlas.png/json` 同目录。
+- 图集对照板：`docs/revamp/g2-3d/g2-props-board.png`；G2-1 的 9 个 `*-atlas.png/json` + G2-2 的 `desert-nomad / desert-shrub` 同目录。
 - 竹林石门从 96×64 两次回炉到 96×160，最终改为石拱门：两柱 + 弧形拱券 + 拱心石 + 低门槛，解决 1x 下“横梁像桌子”的剪影问题。
 - 竹隐源图 4 向保留；正式 PNG 只取正面首帧 64×64，运行时显示 1.5 倍，避免透明边过多导致角色显小。
 - 正式输出已登记 `assets/CREDITS.md`；MIT 原文随包 `assets/01-primary/world/ink-studio-LICENSE.txt`。

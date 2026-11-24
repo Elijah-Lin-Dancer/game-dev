@@ -26,7 +26,9 @@ module.exports = ({ makeBuilder, makeSculpt, KIT: K }) => ({
     // A broken notch in the lintel: subtract a rough ball.
     S.ball([0.42, 2.04, 0.18], [0.24, 0.12, 0.16], stone, { neg: true, res: 0.02 });
     // Sand drift and fallen blocks
-    S.ball([0, 0.06, 0.08], [0.96, 0.08, 0.30], sand, { res: 0.04, rd: 0.04 });
+    // Two irregular sand drifts at the feet instead of one flat beam across the opening.
+    S.ball([-1.02, 0.06, 0.10], [0.26, 0.06, 0.18], sand, { res: 0.03, rd: 0.03 });
+    S.ball([1.02, 0.05, 0.08], [0.22, 0.05, 0.16], sand, { res: 0.03, rd: 0.03 });
     S.box([-1.58, 0.10, 0.10], [0.30, 0.16, 0.26], stone, { res: 0.02, rd: 0.03 });
     S.box([1.60, 0.12, 0.08], [0.24, 0.20, 0.20], stone, { res: 0.02, rd: 0.03 });
     // A single warm rune still alive.

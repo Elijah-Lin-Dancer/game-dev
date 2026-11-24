@@ -21,6 +21,8 @@
 
 | 归途小屋 3D 像素件（引路人 / 铁匠 / 商人 / 铁砧 / 木桩） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/hub/ink-studio-LICENSE.txt` |
 | 归途 G2-1 竹林 / G2 后备群系 3D 像素摆件（竹丛 / 石门 / 竹隐 / 沙海旧门 / 枯沙木 / 雪松 / 雪中小祠 / 黑曜尖柱 / 熔岩裂口） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
+| 归途 G2-2 沙漠 3D 像素（沙婆 / 沙枣丛） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
+| NinjaAdventure - TilesetDesert 沙棕切片 / TilesetField 16px 沙地改色 | Pixel-Boy / AAA | CC0 1.0（原包 LICENSE 全文） | https://github.com/MarioLDD/Kuroshiro-adventure （转存；原始页 https://pixel-boy.itch.io/ninja-adventure-asset-pack ） | 否（CC0；作者希望保留主页链接） | `Assets by Pixel-Boy — https://pixel-boy.itch.io/ninja-adventure-asset-pack` | `assets/00-raw/NinjaAdventure/LICENSE.txt` |
 
 ## 鸣谢页生成
 

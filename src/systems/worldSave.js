@@ -1,14 +1,18 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
- * G2-1 v3：
- *   - 草原 6 屏 + 竹林 6 屏（field-1 … bamboo-6），旧 G0 的 field/bamboo/desert 映射到 field-1/field-3/field-6；
- *   - 新增 bambooQuest / bambooHerbs，草原 quest / herbs 保持原字段；
+ * G2-2 v4：
+ *   - 草原 6 屏 + 竹林 6 屏 + 沙漠 6 屏（field-1 … desert-6），旧 G0 的 field/bamboo/desert 仍映射到 field-1/field-3/field-6；
+ *   - 新增 desertQuest / desertHerbs；草原 quest / herbs、竹林 bambooQuest / bambooHerbs 保持原字段；
  *   - 战斗中的 HP、Boss 血量、坐标都是场景态，不进档；
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 3;
-const SCREENS = ['field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6', 'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6'];
+const VERSION = 4;
+const SCREENS = [
+  'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
+  'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
+  'desert-1', 'desert-2', 'desert-3', 'desert-4', 'desert-5', 'desert-6',
+];
 const LEGACY_SCREEN = { field: 'field-1', bamboo: 'field-3', desert: 'field-6' };
 const QUESTS = ['none', 'active', 'done'];
 const BOSSES = ['none', 'done'];
@@ -20,6 +24,8 @@ const defaults = () => ({
   quest: 'none',
   bambooHerbs: 0,
   bambooQuest: 'none',
+  desertHerbs: 0,
+  desertQuest: 'none',
   boss: 'none',
   tokens: 0,
   updatedAt: 0,
@@ -43,6 +49,8 @@ function migrate(old) {
     quest: QUESTS.includes(old.quest) ? old.quest : 'none',
     bambooHerbs: Math.min(99, Math.round(num(old.bambooHerbs))),
     bambooQuest: QUESTS.includes(old.bambooQuest) ? old.bambooQuest : 'none',
+    desertHerbs: Math.min(99, Math.round(num(old.desertHerbs))),
+    desertQuest: QUESTS.includes(old.desertQuest) ? old.desertQuest : 'none',
     boss: BOSSES.includes(old.boss) ? old.boss : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),
     updatedAt: num(old.updatedAt),
@@ -76,6 +84,8 @@ export function patchWorldSave(patch) {
   next.quest = QUESTS.includes(next.quest) ? next.quest : 'none';
   next.bambooHerbs = Math.min(99, Math.round(num(next.bambooHerbs)));
   next.bambooQuest = QUESTS.includes(next.bambooQuest) ? next.bambooQuest : 'none';
+  next.desertHerbs = Math.min(99, Math.round(num(next.desertHerbs)));
+  next.desertQuest = QUESTS.includes(next.desertQuest) ? next.desertQuest : 'none';
   next.boss = BOSSES.includes(next.boss) ? next.boss : 'none';
   next.tokens = Math.min(99, Math.round(num(next.tokens)));
   return writeWorldSave(next);
