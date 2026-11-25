@@ -484,3 +484,11 @@
 | W-115 | 640 / 844 / 单文件 / PWA / 构建 | 640×360；844×390 hasTouch；`file://` 单文件；PWA cache 安装后全网络请求 abort 重载；`npm run build` / `build:single` / `smoke` / `audit_scale.py` | 通过；640 `scrollWidth=640`；844 `scrollWidth=844 / touchCtl=true / touchItems=3 / canvas779×360`；单文件 `__SINGLE__ / sw=false / v11 / 四 q2 数据可读 / errs=[]`；PWA `na-b18-686abf47` / 12 条 / controller=true / abort 后 reload 仍 `field-1 / v11 / fieldQuest2 雨后药圃`；首屏 **2027 KB / gzip859 KB**，图集 **267 KB / 166 切片**，`game.af68aa30.js` **357,526 B** + `assets.272a87b6.js` **127,090 B**，单文件 **2,210,407 B**；`smoke` 9 PASS；`audit_scale.py` **170 / 0 FAIL** |
 
 证据：`docs/revamp/g2-6/g2-6-field-active-960.png`、`g2-6-field-panel-960.png`、`g2-6-field-done-960.png`、`g2-6-field-gather-960.png`、`g2-6-bamboo-active-960.png`、`g2-6-desert-active-960.png`、`g2-6-snow-active-960.png`、`g2-6-field-640.png`、`g2-6-field-844.png`、`g2-6-single-field-960.png`、`g2-6-pwa-field-960.png`；详见 `docs/BATCH25-G2-6.md`。G2 30 屏 / 5 群系 / **10 委托**完成；G3 5/5 保持。
+
+## W-116. 批 25 / G2-6 Pages 线上验收（2026-11-25 追加）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-116 | G2-6 Pages 线上 | `https://elijah-lin-dancer.github.io/game-dev/` 960×540 四群系；草原 panel / done；640×360；844×390 hasTouch；PWA 离线模式重载 | 通过；入口 `game.af68aa30.js` + `assets.272a87b6.js` / PWA `na-b18-686abf47` 12 条；线上 `worldData.version=8 / save.v=11`；草原 `6/8 → panel 8/8 → done / tokens3 / herbs0`，竹林 / 沙漠 / 雪原 `6/7 → 7/7 → done / tokens3`；640 `scrollWidth=640`；844 `scrollWidth=844 / touchCtl=true / touchItems=3 / canvas779×360`；PWA controller=true，`set_offline(true)` 后重载仍 `field-1 / v11 / fieldQuest2 active / HUD 6/8`，`errs=[]` |
+
+证据：`docs/revamp/g2-6/g2-6-online-field-active-960.png`、`g2-6-online-field-panel-960.png`、`g2-6-online-field-done-960.png`、`g2-6-online-bamboo-active-960.png`、`g2-6-online-desert-active-960.png`、`g2-6-online-snow-active-960.png`、`g2-6-online-field-640.png`、`g2-6-online-field-844.png`、`g2-6-online-field-pwa-960.png`；详见 `docs/BATCH25-G2-6.md` 7.1。

@@ -87,6 +87,16 @@ G2 总量：**30 屏 / 5 群系 / 10 委托 / 5 只世界 Boss / 23 条成就**�
 - `g2-6-field-640.png`、`g2-6-field-844.png`：640 / 844 触屏。
 - `g2-6-single-field-960.png`、`g2-6-pwa-field-960.png`：单文件 / PWA。
 
+## 7.1 线上验收
+
+Pages 入口已切到 `game.af68aa30.js` + `assets.272a87b6.js`，PWA `na-b18-686abf47` / 12 条。
+
+- 线上 `worldData.version=8`、`save.v=11`；v10 旧档载入后四个 q2 均 `none`，`herbs12 / visited` 保留。
+- 960×540：草原 / 竹林 / 沙漠 / 雪原四屏正确；草原第二条 `6/8 → panel 8/8 → done / tokens3 / herbs0`；竹林 / 沙漠 / 雪原均 `6/7 → 7/7 → done / tokens3`，HUD 与 NPC 对白正常。
+- 线上 640×360：`scrollWidth=640`；844×390：`scrollWidth=844 / touchCtl=true / touchItems=3 / canvas779×360`；均无横向溢出。
+- 线上 PWA：cache `na-b18-686abf47`、controller=true；Playwright `set_offline(true)` 后重载仍进入 `field-1 / v11 / fieldQuest2 active / HUD 6/8`。注意 Playwright 下 `navigator.onLine` 仍为 `true`，本轮只写“离线模式重载成功”，不写 `online=false`。
+- 线上截图：`g2-6-online-field-active-960.png`、`g2-6-online-field-panel-960.png`、`g2-6-online-field-done-960.png`、`g2-6-online-bamboo-active-960.png`、`g2-6-online-desert-active-960.png`、`g2-6-online-snow-active-960.png`、`g2-6-online-field-640.png`、`g2-6-online-field-844.png`、`g2-6-online-field-pwa-960.png`。
+
 ## 8. 已知边界
 
 - 四条新委托是**同群系加量采集**，不新增采集点、不新增美术、不新增战斗；与第一条的差异主要体现在 NPC 第二轮叙事、HUD 状态、交付扣减和奖励（3 碎片）。
