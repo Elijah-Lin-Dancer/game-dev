@@ -41,7 +41,7 @@
 - **批 16 元进度**：20 个成就图标、第二技能图标、周目词条图标。
 - **批 17 工程化**：PWA 图标 / 启动图 / 分享图；不进入游戏内 tile。
 - **G2 五群系**：G2-1 竹林、G2-2 沙漠、G2-3 雪原、G2-4 火山、G2-5 火山第二委托与篝火均已接入；五群系 30 屏完成，基础地面仍走 16px tile 调色。G2-5 不新增美术，只补 campfire 落点。
-- **G3 收尾**：4 只世界 Boss、远征结局主视觉、3 个成就图标。
+- **G3 收尾（已完成）**：5 只世界 Boss（苔背巨兽 / 雾竹蜃 / 沙海蜃 / 霜灯巨鸮 / 熔心巨像）均为 ink-studio 3D 四向件，配套远征结局与 3 条成就；基础地面仍走 16px tile 调色。
 
 ## 批 13 产出（2026-11-23）
 
@@ -238,3 +238,24 @@ node art-src/3d-pixel-pilot/render.cjs
 1. 不直接替换现有 16px 基础 tile；3D 只做“可独立摆放的物件”。
 2. 任何资产先在目标显示尺寸过剪影；不能靠外描边或放大后才好看。
 3. 不进运行时；所有产物最终都是 PNG / atlas / 静态图。
+
+## G3-4 / G3-5 产出（2026-11-25）
+
+G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只都没有使用 Ninja Adventure 原 Boss 图，也不是 image-to-image；按 ink-studio 离线 SDF → 像素 → 四向图集生成，运行时只读成品 PNG。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 霜灯巨鸮 待机 | `art-src/g3/frost-owl.cjs`（seed 306，`pose=idle`） | 384×96，4 向 | `frost-owl-idle.png` 384×96 | 世界 Boss；3.09× 玩家，98.8px |
+| 霜灯巨鸮 蓄力 | 同上，`pose=charge` | 384×96，4 向 | `frost-owl-charge.png` 384×96 | 蓄力 / 扑击；2.89× 玩家，92.3px |
+| 霜灯巨鸮 咆哮 | 同上，`pose=roar` | 384×96，4 向 | `frost-owl-roar.png` 384×96 | 入场 / 霜锥 / 死亡；3.24× 玩家，103.7px |
+| 熔心巨像 待机 | `art-src/g3/magma-colossus.cjs`（seed 307，`pose=idle`） | 384×96，4 向 | `magma-colossus-idle.png` 384×96 | 世界 Boss；3.11× 玩家，99.4px |
+| 熔心巨像 蓄力 | 同上，`pose=charge` | 384×96，4 向 | `magma-colossus-charge.png` 384×96 | 蓄力 / 扑击；3.04× 玩家，97.2px |
+| 熔心巨像 咆哮 | 同上，`pose=roar` | 384×96，4 向 | `magma-colossus-roar.png` 384×96 | 入场 / 炉口 / 死亡；3.24× 玩家，103.7px |
+
+- 造型：霜灯巨鸮是直立守夜鸮，白色前半球面盘、深色眼窝、冰蓝眼、三叉冰枝角、厚羽胸腹、霜刃翼缘、胸口旧雪灯、雪岩基座；熔心巨像是冷灰蓝黑曜岩人形，宽肩窄腰、胸口炉膛 / 背面热缝、后掠黑角、肩部烟管、铁砧拳、黑曜台基座。
+- 帧序：0 前 / 1 左 / 2 后 / 3 右；脚底霜鸮 **75/96**、熔像 **70/96**；运行时 `scale=1.62 / 2.16`，静态姿态切帧 + 呼吸 tween。
+- 取景：两只均单独建模、分别取景；没有把苔背巨兽 / 沙海蜃换色复用。
+- 对照板：`docs/revamp/g3-3d/frost-owl-board.png`、`magma-colossus-board.png`；源元数据：`frost-owl-{idle,charge,roar}.json`、`magma-colossus-{idle,charge,roar}.json`。
+- 审计：`python3 tools/audit_scale.py` **170 实例 / 0 FAIL**；霜鸮 idle 3.09× / charge 2.89× / roar 3.24×；熔像 idle 3.11× / charge 3.04× / roar 3.24×。
+- 复现：`INK_STUDIO=/.../toolchains/ink-studio node art-src/g3/render-g3.cjs`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。

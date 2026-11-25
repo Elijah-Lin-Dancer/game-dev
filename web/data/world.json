@@ -2596,20 +2596,35 @@
           452,
           188,
           0.9
+        ],
+        [
+          "snowPine",
+          105,
+          178,
+          0.85
+        ],
+        [
+          "snowPine",
+          388,
+          168,
+          0.8
         ]
       ],
       "herbs": [
         [
-          186,
-          218
+          64,
+          230,
+          1
         ],
         [
-          288,
-          230
+          424,
+          236,
+          1
         ],
         [
-          392,
-          204
+          246,
+          82,
+          1
         ]
       ],
       "npc": null
@@ -3399,10 +3414,16 @@
           1.2
         ],
         [
-          "campfire",
+          "volcanoLava",
           360,
           244,
-          1.6
+          1.1
+        ],
+        [
+          "volcanoSpire",
+          80,
+          200,
+          1.1
         ],
         [
           "volcanoSpire",
@@ -3413,16 +3434,19 @@
       ],
       "herbs": [
         [
-          150,
-          228
+          64,
+          226,
+          1
         ],
         [
-          240,
-          218
+          432,
+          232,
+          1
         ],
         [
-          390,
-          230
+          220,
+          78,
+          1
         ]
       ],
       "npc": null
@@ -3610,10 +3634,45 @@
           "hp": 7,
           "dmg": 2
         }
-      ]
-    ,
+      ],
       "minionRespawnMs": 9000,
       "minionDropChance": 0.45
+    },
+    {
+      "id": "frostOwl",
+      "name": "霜灯巨鸮",
+      "screen": "snow-6",
+      "x": 300,
+      "y": 170,
+      "hp": 88,
+      "dmg": 6,
+      "rewardTokens": 5,
+      "art": "frostOwl",
+      "title": "霜灯守夜者",
+      "victoryTitle": "雪原的星火 · 已归位",
+      "victoryBody": "白原的雪灯重新亮起，守夜者把最后一片霜羽留在你掌心。",
+      "memorialText": "雪原星火 · 已归位",
+      "pattern": "frost",
+      "speed": 29,
+      "specialGap": 5200
+    },
+    {
+      "id": "magmaColossus",
+      "name": "熔心巨像",
+      "screen": "volcano-6",
+      "x": 300,
+      "y": 170,
+      "hp": 96,
+      "dmg": 7,
+      "rewardTokens": 5,
+      "art": "magmaColossus",
+      "title": "熔心守炉者",
+      "victoryTitle": "火山的星火 · 已归位",
+      "victoryBody": "火心的炉膛慢慢冷却，巨像把最后一块烧红的铁留在你脚下。",
+      "memorialText": "火山星火 · 已归位",
+      "pattern": "magma",
+      "speed": 36,
+      "specialGap": 4800
     }
   ]
 }

@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G3-4/5 v10：
+ *   - bosses 增加 frostOwl（雪原 · 白原）与 magmaColossus（火山 · 火心）；
+ *   - v9 旧档补两只 none，其余字段与 v9 一致；G3 五只世界 Boss 全部有独立进度。
+ *
  * G3-3 v9：
  *   - bosses 增加第三只 sandMirage（沙海 · 无旗）；v8 旧档补 none，不迁移已访问；
  *   - 其余字段沿用 v8，仍是两值进度 none|done。
@@ -20,7 +24,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 9;
+const VERSION = 10;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -37,7 +41,7 @@ function sanitizeVents(v) {
   return [...new Set(v.filter((id) => VENTS.has(id)))];
 }
 const BOSS_STATES = ['none', 'done'];
-const BOSS_IDS = ['mossBeast', 'bambooMirage', 'sandMirage'];
+const BOSS_IDS = ['mossBeast', 'bambooMirage', 'sandMirage', 'frostOwl', 'magmaColossus'];
 const bossDefaults = () => Object.fromEntries(BOSS_IDS.map((id) => [id, 'none']));
 
 function sanitizeBosses(raw, legacy) {

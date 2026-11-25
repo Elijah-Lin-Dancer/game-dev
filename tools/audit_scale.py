@@ -65,6 +65,22 @@ BOSS_ART = {
             'roar': 'assets/01-primary/world/sand-mirage-roar.png',
         },
     },
+    'frostOwl': {
+        'name': '霜灯巨鸮', 'scale': 1.62,
+        'poses': {
+            'idle': 'assets/01-primary/world/frost-owl-idle.png',
+            'charge': 'assets/01-primary/world/frost-owl-charge.png',
+            'roar': 'assets/01-primary/world/frost-owl-roar.png',
+        },
+    },
+    'magmaColossus': {
+        'name': '熔心巨像', 'scale': 2.16,
+        'poses': {
+            'idle': 'assets/01-primary/world/magma-colossus-idle.png',
+            'charge': 'assets/01-primary/world/magma-colossus-charge.png',
+            'roar': 'assets/01-primary/world/magma-colossus-roar.png',
+        },
+    },
 }
 
 MINION_ART = {

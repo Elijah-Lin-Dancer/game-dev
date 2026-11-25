@@ -1,0 +1,104 @@
+{
+  "width": 384,
+  "height": 96,
+  "tileWidth": 96,
+  "tileHeight": 96,
+  "directions": 4,
+  "fps": 12,
+  "pivot": [
+    0,
+    1.82,
+    0.12
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.08,
+      "pitch": 0.11,
+      "unitsPerPixel": 0.07173491943534692,
+      "depthOrigin": 22,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 1,
+      "yaw": 1.6507963267948966,
+      "pitch": 0.11,
+      "unitsPerPixel": 0.07173491943534692,
+      "depthOrigin": 22,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 96,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 2,
+      "yaw": 3.221592653589793,
+      "pitch": 0.11,
+      "unitsPerPixel": 0.07173491943534692,
+      "depthOrigin": 22,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 192,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    },
+    {
+      "frame": 0,
+      "direction": 3,
+      "yaw": 4.79238898038469,
+      "pitch": 0.11,
+      "unitsPerPixel": 0.07173491943534692,
+      "depthOrigin": 22,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 288,
+        "y": 0,
+        "width": 96,
+        "height": 96
+      },
+      "pivot": {
+        "x": 48,
+        "y": 48
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "frost-owl.cjs",
+  "pose": "roar",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}

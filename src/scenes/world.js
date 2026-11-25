@@ -11,6 +11,7 @@ import { S, VEC, ANGLE } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
 import { loadWorldSave, patchWorldSave } from '../systems/worldSave.js';
+import { evaluateAchievements } from '../systems/ach.js';
 import { TouchControls, isTouchDevice } from '../systems/input.js';
 import { UI } from '../systems/ui/tokens.js';
 import { makePanel, makeCard, makeText } from '../systems/ui/primitives.js';
@@ -27,6 +28,14 @@ const GATHER_MS = 2000;
 const RESPAWN_MS = 90000;
 const BATTLE_HERB_RESPAWN_MS = 45000;
 const MOB_HEAL = 3;
+/* Boss 战场里的快采点：不读条、不冻 Boss，按群系换名字和提示。 */
+const BATTLE_HERB_LABEL = {
+  field: { name: '草药', prompt: 'E 采草药', use: '草药入药', respawn: '草药重新长成' },
+  bamboo: { name: '雾竹', prompt: 'E 采雾竹', use: '雾竹入药', respawn: '雾竹重新抽叶' },
+  desert: { name: '沙蓬', prompt: 'E 采沙蓬', use: '沙蓬入药', respawn: '沙蓬重新抽叶' },
+  snow: { name: '雪灯', prompt: 'E 采雪灯', use: '雪灯暖身', respawn: '雪灯重新亮起' },
+  volcano: { name: '火种', prompt: 'E 拾火种', use: '火种暖身', respawn: '火种重新燃起' },
+};
 const ATTACK_CD = 320;
 const ATTACK_RANGE = 62;
 const ATTACK_DMG = 3;
@@ -61,6 +70,24 @@ const BOSS_ART = {
     tint: UI.world.desert, mirage: true,
     // 原 3D 件在沙底上偏亮，战斗里压一档暖褐，保住蜃的沙色又不至于和地面融成一片。
     bodyTint: 0xa68f73,
+  },
+  /* G3-4 雪原：直立巨鸮，胸口雪灯是识别点；翅展比沙海蜃窄，站位更近。 */
+  frostOwl: {
+    tex: { idle: 'frostOwlIdle', charge: 'frostOwlCharge', roar: 'frostOwlRoar' },
+    origin: { idle: 75 / 96, charge: 75 / 96, roar: 75 / 96 },
+    scale: 1.62, standoff: 108, swipeAt: 96,
+    pounceGap: 84, pounceR: 98, swipeR: 106, swipeWarn: 96,
+    shadow: [102, 15], glowY: 28, labelY: 104,
+    tint: UI.world.snow, warnColor: 0x9fe8ff,
+  },
+  /* G3-5 火山：宽肩铁炉巨像，炉心与右拳是识别点；重、慢、近身压迫强。 */
+  magmaColossus: {
+    tex: { idle: 'magmaColossusIdle', charge: 'magmaColossusCharge', roar: 'magmaColossusRoar' },
+    origin: { idle: 70 / 96, charge: 70 / 96, roar: 70 / 96 },
+    scale: 2.16, standoff: 108, swipeAt: 102,
+    pounceGap: 84, pounceR: 104, swipeR: 116, swipeWarn: 104,
+    shadow: [132, 18], glowY: 34, labelY: 112,
+    tint: UI.world.volcanoLight, warnColor: 0xffa24a,
   },
 };
 const bossArt = (id) => BOSS_ART[id] || BOSS_ART.mossBeast;
@@ -260,6 +287,9 @@ function normalizeWorld(raw) {
       victoryTitle: String(b.victoryTitle || '星火的碎片 · 已归位'),
       victoryBody: String(b.victoryBody || '这片群系的远征，暂时告一段落。'),
       memorialText: String(b.memorialText || '星火已归位'),
+      pattern: ['frost', 'magma'].includes(b.pattern) ? b.pattern : '',
+      speed: Math.min(60, Math.max(14, asNumber(b.speed, 34))),
+      specialGap: Math.max(2200, Math.round(asNumber(b.specialGap, 5200))),
       minionRespawnMs: Math.max(2000, Math.round(asNumber(b.minionRespawnMs, 9000))),
       minionDropChance: Math.min(1, Math.max(0, asNumber(b.minionDropChance, 0.35))),
       minions: (Array.isArray(b.minions) ? b.minions : []).filter((m) => m && m.kind).map((m) => ({
@@ -353,6 +383,8 @@ export class World extends Phaser.Scene {
     this.arenaLine = null;
     this.bossHidden = [];
     this.bossEdge = [];
+    this.bossHazards = [];
+    this.bossArena = [];
     this.mobs = [];
     this.loot = [];
     this.minionMax = 0;
@@ -749,7 +781,8 @@ export class World extends Phaser.Scene {
         const sprite = this.add.sprite(x, y, herbAsset, 0)
           .setOrigin(0.5, 1).setScale(herbScale).setDepth(24);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 760 + i * 90, yoyo: true, repeat: -1 });
-        const prompt = this.add.text(x, y - (desert || snow || volcano ? 32 : 24), battle ? 'E 采沙蓬' : 'E 采集', {
+        const battleLabel = BATTLE_HERB_LABEL[s.biome] || BATTLE_HERB_LABEL.field;
+        const prompt = this.add.text(x, y - (desert || snow || volcano ? 32 : 24), battle ? battleLabel.prompt : 'E 采集', {
           fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
           backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
         }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -757,6 +790,7 @@ export class World extends Phaser.Scene {
         const node = {
           id: s.id + '-' + i, screen: s.id, screenIndex: this.screens.indexOf(s), biome: s.biome,
           x, y, sprite, glow, prompt, active: true, respawnAt: 0, battle, heal: battle ? 2 : 0,
+          herbName: battleLabel.name, herbUse: battleLabel.use,
         };
         sprite.on('pointerdown', () => {
           if (this.talking || this.panelOpen || this.gathering) return;
@@ -1483,6 +1517,7 @@ export class World extends Phaser.Scene {
     this.updatePrompts();
     this.updateRespawns(time);
     this.updateBoss(time, delta);
+    this.updateBossHazards(time);
     this.updateMobs(time, delta);
     this.updateLoot();
     const next = clamp(Math.floor((this.player.x + 2) / SCREEN_W), 0, this.screens.length - 1);
@@ -1574,7 +1609,7 @@ export class World extends Phaser.Scene {
     this.quenches.forEach((q) => q.prompt.setVisible(false));
     this.campfires.forEach((c) => c.prompt.setVisible(false));
     if (busy) return;
-    // Boss 战里保留一处“沙蓬”风险采集：E 快采回血，不冻结 Boss。
+    // Boss 战里保留一处快采点：E 快采回血，不冻结 Boss。
     if (this.bossActive) {
       const battle = this.nearestHerb(true);
       if (battle && this.distPlayer(battle.x, battle.y) <= 48) battle.prompt.setVisible(true);
@@ -1606,7 +1641,7 @@ export class World extends Phaser.Scene {
         n.respawnAt = 0;
         n.sprite.setVisible(true);
         n.glow.setVisible(true);
-        this.toast(n.battle ? '沙蓬重新抽叶' : profileFor(n.biome).respawn);
+        this.toast(n.battle ? (BATTLE_HERB_LABEL[n.biome] || BATTLE_HERB_LABEL.field).respawn : profileFor(n.biome).respawn);
       }
     });
   }
@@ -1647,7 +1682,7 @@ export class World extends Phaser.Scene {
     if (g.t >= g.dur) this.completeGather();
   }
 
-  /* 战斗中的沙蓬快采：不进入 gathering，Boss / 小怪继续行动。 */
+  /* 战场快采：不进入 gathering，Boss / 小怪继续行动；按群系换名。 */
   pickBattleHerb(node) {
     if (!node || !node.active || this.gathering) return;
     node.active = false;
@@ -1676,7 +1711,9 @@ export class World extends Phaser.Scene {
     }
     this.updateHp();
     this.updateHud();
-    this.toast(healed > 0 ? '沙蓬入药 · 回 ' + healed + ' 点生命' : '沙蓬 · 生命已满');
+    const name = node.herbUse || '沙蓬入药';
+    const herbName = node.herbName || '沙蓬';
+    this.toast(healed > 0 ? name + ' · 回 ' + healed + ' 点生命' : herbName + ' · 生命已满');
   }
 
   cancelGather(msg) {
@@ -2230,6 +2267,7 @@ export class World extends Phaser.Scene {
       this.boss = null;
     }
     this.clearMobs();
+    this.clearBossHazards();
     const spawn = this.bossSpawnFor(b);
     if (!spawn) return;
     this.bossSpawn = spawn;
@@ -2258,7 +2296,8 @@ export class World extends Phaser.Scene {
       name: b.name, spr, mirror, glow, shadow, ring, label, x, y,
       maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
       scale: art.scale, standoff: art.standoff,
-      state: 'idle', stateEnd: 0, nextAt: 0, target: null, warning: null, flash: 0,
+      speed: b.speed || 34, pattern: b.pattern || '', specialGap: b.specialGap || 5200,
+      state: 'idle', stateEnd: 0, nextAt: 0, specialAt: 0, target: null, warning: null, flash: 0,
       pose: 'idle', dir: 0, faceAt: 0, moteAt: 0, turnAt: 0, turnDir: 0,
       screenIndex: spawn.screenIndex, arena: {
         x1: spawn.screen.x + 44, x2: spawn.screen.x + SCREEN_W - 44,
@@ -2332,14 +2371,15 @@ export class World extends Phaser.Scene {
     });
   }
 
-  /* desert-6 右边是雪原；Boss 战把邻屏暂时藏起来，补一段同群系沙海，
-     让镜头里的边界仍是沙漠，而不是雪松。打完立刻恢复。 */
+  /* Boss 战镜头会越过屏边界：把右邻屏暂时藏起来，补一段同群系景物，
+     让雪原 / 沙漠 / 火山战场在镜头里收束成同一片地貌，而不是露出下一种群系。
+     火山-6 是最后一屏，没有右邻屏，也照样补出收边。 */
   buildBossEdge(screen) {
     this.restoreBossEdge();
     if (!screen) return;
     const idx = this.screens.indexOf(screen);
     const next = this.screens[idx + 1];
-    if (!next || next.biome === screen.biome) return;
+    if (next && next.biome === screen.biome) return;
     const right = screen.x + SCREEN_W;
     this.bossHidden = [];
     this.children.list.forEach((o) => {
@@ -2349,6 +2389,56 @@ export class World extends Phaser.Scene {
       o.setVisible(false);
       this.bossHidden.push(o);
     });
+
+    if (screen.biome === 'snow') {
+      const tile = this.add.tileSprite(right, WORLD_Y, SCREEN_W, SCREEN_H, 'snowTile', 0)
+        .setOrigin(0).setDepth(0.2);
+      this.bossEdge.push(tile);
+      const driftA = this.add.ellipse(right + 128, WORLD_Y + SCREEN_H - 10, 180, 30, 0xeaf6ff, 0.42).setDepth(2.4);
+      const driftB = this.add.ellipse(right + 32, WORLD_Y + SCREEN_H - 6, 110, 20, 0xc5dce8, 0.34).setDepth(2.5);
+      const pineA = this.add.image(right + 102, WORLD_Y + SCREEN_H - 10, 'snowPine')
+        .setOrigin(0.5, 1).setScale(0.94).setDepth(18).setTint(0xdbeaf2);
+      const pineB = this.add.image(right + 392, WORLD_Y + SCREEN_H - 12, 'snowPine')
+        .setOrigin(0.5, 1).setScale(0.82).setDepth(18).setTint(0xe3f1f7);
+      const shrine = this.add.image(right + 306, WORLD_Y + SCREEN_H - 11, 'snowShrine')
+        .setOrigin(0.5, 1).setScale(0.78).setDepth(18).setTint(0xd5e7ef);
+      const lantern = this.add.image(right + 222, WORLD_Y + SCREEN_H - 12, 'snowLantern')
+        .setOrigin(0.5, 1).setScale(1.2).setDepth(19).setTint(0xf2fbff);
+      this.bossEdge.push(driftA, driftB, pineA, pineB, shrine, lantern);
+      const haze = this.add.rectangle(right, WORLD_Y, SCREEN_W, SCREEN_H, 0xd8eff9, 0.08)
+        .setOrigin(0).setDepth(19.2);
+      this.bossEdge.push(haze);
+      return;
+    }
+
+    if (screen.biome === 'volcano') {
+      const tile = this.add.tileSprite(right, WORLD_Y, SCREEN_W, SCREEN_H, 'volcanoTile', 0)
+        .setOrigin(0).setDepth(0.2);
+      this.bossEdge.push(tile);
+      const basaltA = this.add.ellipse(right + 146, WORLD_Y + SCREEN_H - 8, 190, 26, 0x241816, 0.55).setDepth(2.4);
+      const basaltB = this.add.ellipse(right + 30, WORLD_Y + SCREEN_H - 5, 120, 18, 0x34231e, 0.45).setDepth(2.5);
+      const spireA = this.add.image(right + 98, WORLD_Y + SCREEN_H - 10, 'volcanoSpire')
+        .setOrigin(0.5, 1).setScale(1.12).setDepth(18).setTint(0xa98778);
+      const spireB = this.add.image(right + 402, WORLD_Y + SCREEN_H - 12, 'volcanoSpire')
+        .setOrigin(0.5, 1).setScale(0.9).setDepth(18).setTint(0xb39383);
+      const vent = this.add.image(right + 236, WORLD_Y + SCREEN_H - 10, 'volcanoVent')
+        .setOrigin(0.5, 1).setScale(1.0).setDepth(18).setTint(0xb78d78);
+      const lava = this.add.image(right + 320, WORLD_Y + SCREEN_H - 8, 'volcanoLava')
+        .setOrigin(0.5, 1).setScale(1.25).setDepth(19);
+      this.bossEdge.push(basaltA, basaltB, spireA, spireB, vent, lava);
+      for (let i = 0; i < 8; i += 1) {
+        const ember = this.add.rectangle(
+          right + 70 + i * 42, WORLD_Y + SCREEN_H - 22 - (i % 3) * 9,
+          2, 2, i % 2 ? 0xffb15e : 0xff6a36, 0.7 - i * 0.035,
+        ).setDepth(19.4).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossEdge.push(ember);
+      }
+      const haze = this.add.rectangle(right, WORLD_Y, SCREEN_W, SCREEN_H, 0x5c2418, 0.11)
+        .setOrigin(0).setDepth(19.5);
+      this.bossEdge.push(haze);
+      return;
+    }
+
     const sand = this.add.tileSprite(right, WORLD_Y, SCREEN_W, SCREEN_H, 'desertTile', 0)
       .setOrigin(0).setDepth(0.2).setTint(TINT.desert || 0xffffff);
     this.bossEdge.push(sand);
@@ -2375,6 +2465,65 @@ export class World extends Phaser.Scene {
     this.bossHidden = [];
     for (const o of this.bossEdge || []) { if (o && o.destroy) o.destroy(); }
     this.bossEdge = [];
+    this.clearBossArena();
+  }
+
+  /* 本屏地表层次：雪原的雪脊 / 冰裂，火山的黑曜台 / 熔缝；不挡走位，只压暗部和反光。 */
+  buildBossArena(screen) {
+    this.clearBossArena();
+    if (!screen) return;
+    const sx = screen.x;
+    const sy = WORLD_Y;
+    if (screen.biome === 'snow') {
+      const driftA = this.add.ellipse(sx + 70, sy + SCREEN_H - 8, 170, 18, 0xeaf7ff, 0.28).setDepth(2.6);
+      const driftB = this.add.ellipse(sx + 420, sy + SCREEN_H - 10, 140, 16, 0xd6eaf4, 0.30).setDepth(2.6);
+      const driftC = this.add.ellipse(sx + 250, sy + 96, 180, 14, 0xf4fbff, 0.18).setDepth(2.5);
+      this.bossArena.push(driftA, driftB, driftC);
+      const cracks = [
+        [sx + 72, sy + 238, 68, -0.22], [sx + 376, sy + 244, 78, 0.18],
+        [sx + 130, sy + 104, 52, 0.42], [sx + 422, sy + 132, 46, -0.38],
+      ];
+      for (const [x, y, w, r] of cracks) {
+        const crack = this.add.rectangle(x, y, w, 2, 0xb8efff, 0.30)
+          .setOrigin(0.5).setDepth(2.7).setRotation(r);
+        const glint = this.add.circle(x + w * 0.44, y - 2, 3, 0xdffcff, 0.38)
+          .setDepth(2.75).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossArena.push(crack, glint);
+      }
+      // 三枚低矮冰簇：只做地标，玩家可以踩过去。
+      for (const [x, y, h] of [[sx + 58, sy + 256, 13], [sx + 402, sy + 258, 10], [sx + 232, sy + 112, 8]]) {
+        const shard = this.add.triangle(x, y, 0, 0, 4, -h, 8, 0, 0xc9f0ff, 0.52).setOrigin(0.5, 1).setDepth(3);
+        this.bossArena.push(shard);
+      }
+      return;
+    }
+    if (screen.biome === 'volcano') {
+      const slabA = this.add.ellipse(sx + 120, sy + SCREEN_H - 8, 210, 24, 0x160e0c, 0.42).setDepth(2.4);
+      const slabB = this.add.ellipse(sx + 390, sy + SCREEN_H - 10, 180, 20, 0x211512, 0.40).setDepth(2.4);
+      const slabC = this.add.ellipse(sx + 258, sy + 96, 210, 18, 0x1b110f, 0.35).setDepth(2.4);
+      this.bossArena.push(slabA, slabB, slabC);
+      const cracks = [
+        [sx + 52, sy + 244, 84, 0.16], [sx + 346, sy + 248, 96, -0.2],
+        [sx + 150, sy + 112, 58, -0.34], [sx + 420, sy + 128, 52, 0.3],
+      ];
+      for (const [x, y, w, r] of cracks) {
+        const crack = this.add.rectangle(x, y, w, 2, 0xff7a32, 0.36)
+          .setOrigin(0.5).setDepth(2.6).setRotation(r).setBlendMode(Phaser.BlendModes.ADD);
+        const coal = this.add.circle(x + w * 0.28, y + 1, 5, 0x6b1d0e, 0.34)
+          .setDepth(2.5).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossArena.push(crack, coal);
+      }
+      for (let i = 0; i < 5; i += 1) {
+        const glow = this.add.circle(sx + 60 + i * 78, sy + SCREEN_H - 20 - (i % 2) * 8, 3, 0xffb15e, 0.32)
+          .setDepth(2.8).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossArena.push(glow);
+      }
+    }
+  }
+
+  clearBossArena() {
+    for (const o of this.bossArena || []) { if (o && o.destroy) o.destroy(); }
+    this.bossArena = [];
   }
 
   startBossFight() {
@@ -2393,6 +2542,8 @@ export class World extends Phaser.Scene {
     this.boss.state = 'intro';
     this.boss.stateEnd = this.time.now + 900;
     this.boss.nextAt = this.time.now + 900;
+    this.boss.specialAt = this.time.now + 999999;
+    this.clearBossHazards();
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(1);
     if (this.boss.mirror) this.boss.mirror.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(0.1);
     this.boss.spr.setScale(this.boss.scale * 0.92);
@@ -2411,6 +2562,7 @@ export class World extends Phaser.Scene {
     // 不做“八角笼”式红边：Boss 场的边界交给沙尘幕、沙丘和镜头外自然收束。
     if (this.arenaLine) { this.arenaLine.destroy(); this.arenaLine = null; }
     this.buildBossEdge(this.bossSpawn.screen);
+    this.buildBossArena(this.bossSpawn.screen);
     this.updateHud();
     this.updateBossBar();
     this.banner((this.boss.name || '世界 Boss') + ' · ' + (this.boss.def.title || '星火守巢者'));
@@ -2459,6 +2611,7 @@ export class World extends Phaser.Scene {
       if (time >= B.stateEnd) {
         B.state = 'chase';
         B.nextAt = time + 720;
+        B.specialAt = time + 3600;
         B.turnDir = 0;
         B.turnAt = time + BOSS_TURN_MS;
         this.setBossPose('idle', 0);
@@ -2481,6 +2634,12 @@ export class World extends Phaser.Scene {
         }
       }
       if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
+      // G3-4 / G3-5 的专属攻击：雪原落霜锥，火山喷炉渣；先于普通扑 / 扫触发。
+      if (B.pattern && time >= B.specialAt) {
+        if (B.pattern === 'frost') this.startFrostVolley();
+        else this.startMagmaEruption();
+        return;
+      }
       if (time >= B.nextAt) {
         // 每只 Boss 的近身阈值不同；没有声明 swipeAt 的沿用旧全局 104。
         if (dist < (B.art.swipeAt || 104)) this.startSwipe();
@@ -2491,7 +2650,7 @@ export class World extends Phaser.Scene {
         const dx = this.player.x - B.spr.x;
         const dy = this.player.y - B.spr.y;
         const d = Math.hypot(dx, dy) || 1;
-        const step = 34 * (delta / 1000);
+        const step = B.speed * (delta / 1000);
         B.spr.x = clamp(B.spr.x + (dx / d) * step, B.arena.x1, B.arena.x2);
         B.spr.y = clamp(B.spr.y + (dy / d) * step, B.arena.y1, B.arena.y2);
       }
@@ -2528,6 +2687,14 @@ export class World extends Phaser.Scene {
       B.stateEnd = this.time.now + 460;
       return;
     }
+    if (B.state === 'frostWindup' && time >= B.stateEnd) {
+      this.resolveFrostVolley();
+      return;
+    }
+    if (B.state === 'magmaWindup' && time >= B.stateEnd) {
+      this.resolveMagmaEruption();
+      return;
+    }
     if (B.state === 'recover') {
       if (time >= B.stateEnd) {
         this.setBossPose('idle');
@@ -2535,7 +2702,154 @@ export class World extends Phaser.Scene {
         B.turnAt = time + BOSS_TURN_MS;
         B.state = 'chase';
         B.nextAt = time + 760;
+        B.specialAt = time + B.specialGap;
       }
+    }
+  }
+
+  /* ---------- G3-4 / G3-5 专属攻击 ---------- */
+  /* 雪原：三枚霜锥先落预警，再在落点炸开；不追踪，给玩家横向走位窗口。 */
+  startFrostVolley() {
+    const B = this.boss;
+    if (!B || !this.bossActive) return;
+    B.state = 'frostWindup';
+    B.stateEnd = this.time.now + 640;
+    B.specialAt = this.time.now + 999999;
+    this.setBossPose('charge');
+    B.turnDir = B.dir;
+    B.turnAt = this.time.now + BOSS_TURN_MS;
+    if (B.warning) { B.warning.destroy(); B.warning = null; }
+    B.volley = [];
+    const offsets = [[-62, 8], [52, -32], [0, 38]];
+    offsets.forEach(([dx, dy], i) => {
+      const x = clamp(this.player.x + dx, B.arena.x1, B.arena.x2);
+      const y = clamp(this.player.y + dy, B.arena.y1, B.arena.y2);
+      const warn = this.add.circle(x, y - 8, 26, 0x000000, 0)
+        .setDepth(38).setStrokeStyle(2, 0xbdf4ff, 0.9);
+      this.tweens.add({ targets: warn, scale: 1.12, alpha: 0.62, duration: 260 + i * 30, yoyo: true });
+      const mote = this.add.circle(x, y - 8, 4, 0xdffcff, 0.8)
+        .setDepth(37).setBlendMode(Phaser.BlendModes.ADD);
+      B.volley.push({ x, y, warn, mote, hit: false });
+    });
+    this.banner('霜灯巨鸮 · 霜锥');
+  }
+
+  resolveFrostVolley() {
+    const B = this.boss;
+    if (!B) return;
+    for (const t of B.volley || []) {
+      if (t.warn) t.warn.destroy();
+      if (t.mote) t.mote.destroy();
+      const shard = this.add.rectangle(t.x, t.y - 18, 8, 34, 0xd7fbff, 0.92)
+        .setDepth(39).setRotation(Phaser.Math.FloatBetween(-0.22, 0.22));
+      const glow = this.add.circle(t.x, t.y - 9, 18, 0x8fe8ff, 0.24)
+        .setDepth(38).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({
+        targets: shard, y: t.y - 38, alpha: 0, scaleY: 1.35, duration: 360,
+        ease: 'Quad.easeOut', onComplete: () => shard.destroy(),
+      });
+      this.tweens.add({
+        targets: glow, scale: 2.2, alpha: 0, duration: 420,
+        onComplete: () => glow.destroy(),
+      });
+      if (this.distPlayer(t.x, t.y) <= 34) this.hurtPlayer(B.spr.x, B.spr.y, Math.max(2, B.dmg - 2));
+      this.bossImpact(t.x, t.y, false);
+    }
+    B.volley = [];
+    B.state = 'recover';
+    B.stateEnd = this.time.now + 620;
+    this.setBossPose('roar');
+    this.cameras.main.shake(100, 0.007);
+  }
+
+  /* 火山：三处炉口先冒红圈，随后喷发成短时熔渣池；池内每 650ms 烫 2 点。 */
+  startMagmaEruption() {
+    const B = this.boss;
+    if (!B || !this.bossActive) return;
+    B.state = 'magmaWindup';
+    B.stateEnd = this.time.now + 720;
+    B.specialAt = this.time.now + 999999;
+    this.setBossPose('roar');
+    B.turnDir = B.dir;
+    B.turnAt = this.time.now + BOSS_TURN_MS;
+    if (B.warning) { B.warning.destroy(); B.warning = null; }
+    B.erupt = [];
+    const offsets = [[-54, 22], [58, 6], [4, -48]];
+    offsets.forEach(([dx, dy], i) => {
+      const x = clamp(this.player.x + dx, B.arena.x1, B.arena.x2);
+      const y = clamp(this.player.y + dy, B.arena.y1, B.arena.y2);
+      const warn = this.add.circle(x, y - 6, 28, 0x000000, 0)
+        .setDepth(38).setStrokeStyle(2, 0xffb066, 0.92);
+      const ember = this.add.circle(x, y - 6, 5, 0xffd27a, 0.85)
+        .setDepth(37).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: warn, scale: 1.15, alpha: 0.58, duration: 230 + i * 30, yoyo: true });
+      B.erupt.push({ x, y, warn, ember });
+    });
+    this.banner('熔心巨像 · 炉口喷发');
+  }
+
+  resolveMagmaEruption() {
+    const B = this.boss;
+    if (!B) return;
+    for (const t of B.erupt || []) {
+      if (t.warn) t.warn.destroy();
+      if (t.ember) t.ember.destroy();
+      const base = this.add.circle(t.x, t.y - 4, 28, 0x6e1b0d, 0.58).setDepth(28);
+      const glow = this.add.circle(t.x, t.y - 8, 24, 0xff6a26, 0.34)
+        .setDepth(29).setBlendMode(Phaser.BlendModes.ADD);
+      const crack = this.add.rectangle(t.x, t.y - 2, 42, 3, 0xff9a42, 0.42)
+        .setDepth(30).setRotation(Phaser.Math.FloatBetween(-0.35, 0.35));
+      this.bossHazards.push({
+        x: t.x, y: t.y, r: 30, nextAt: this.time.now + 350,
+        end: this.time.now + 2400, parts: [base, glow, crack],
+      });
+      this.bossImpact(t.x, t.y, true);
+      if (this.distPlayer(t.x, t.y) <= 32) this.hurtPlayer(B.spr.x, B.spr.y, 2);
+    }
+    B.erupt = [];
+    B.state = 'recover';
+    B.stateEnd = this.time.now + 720;
+    this.setBossPose('charge');
+    this.cameras.main.shake(180, 0.012);
+  }
+
+  updateBossHazards(time) {
+    if (!this.bossHazards || !this.bossHazards.length) return;
+    const keep = [];
+    for (const h of this.bossHazards) {
+      if (!h || !h.parts) continue;
+      if (time >= h.end) {
+        h.parts.forEach((o) => { if (o) o.destroy(); });
+        continue;
+      }
+      const pulse = 0.5 + 0.5 * Math.sin(time / 140);
+      if (h.parts[1]) h.parts[1].setAlpha(0.22 + pulse * 0.18);
+      if (time >= h.nextAt) {
+        if (this.distPlayer(h.x, h.y) <= h.r) this.hurtPlayer(h.x, h.y, 2);
+        h.nextAt = time + 650;
+      }
+      keep.push(h);
+    }
+    this.bossHazards = keep;
+  }
+
+  clearBossHazards() {
+    for (const h of this.bossHazards || []) {
+      (h.parts || []).forEach((o) => { if (o) o.destroy(); });
+    }
+    this.bossHazards = [];
+    const B = this.boss;
+    if (B) {
+      for (const t of B.volley || []) {
+        if (t.warn) t.warn.destroy();
+        if (t.mote) t.mote.destroy();
+      }
+      for (const t of B.erupt || []) {
+        if (t.warn) t.warn.destroy();
+        if (t.ember) t.ember.destroy();
+      }
+      B.volley = [];
+      B.erupt = [];
     }
   }
 
@@ -2550,7 +2864,7 @@ export class World extends Phaser.Scene {
     if (B.warning) B.warning.destroy();
     // 只画外圈描边：环在 Boss 身体之上，但不填色，避免把沙海蜃本体洗成红色。
     B.warning = this.add.circle(B.spr.x, B.spr.y - 22, B.art.swipeWarn, 0x000000, 0)
-      .setDepth(38).setStrokeStyle(3, 0xff7a6a, 0.9);
+      .setDepth(38).setStrokeStyle(3, B.art.warnColor || 0xff7a6a, 0.9);
     this.tweens.add({ targets: B.warning, scale: 1.03, duration: 160, yoyo: true });
   }
 
@@ -2570,7 +2884,7 @@ export class World extends Phaser.Scene {
     B.turnAt = this.time.now + BOSS_TURN_MS;
     if (B.warning) B.warning.destroy();
     B.warning = this.add.circle(B.target.x, B.target.y - 10, 32, 0x000000, 0)
-      .setDepth(38).setStrokeStyle(3, 0xff7a6a, 0.9);
+      .setDepth(38).setStrokeStyle(3, B.art.warnColor || 0xff7a6a, 0.9);
     this.tweens.add({ targets: B.warning, scale: 1.08, duration: 210, yoyo: true });
   }
 
@@ -2635,6 +2949,7 @@ export class World extends Phaser.Scene {
     this.bossDead = true;
     this.bossActive = false;
     this.boss.state = 'dead';
+    this.clearBossHazards();
     this.clearMobs(true);
     if (this.boss.warning) { this.boss.warning.destroy(); this.boss.warning = null; }
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
@@ -2654,9 +2969,13 @@ export class World extends Phaser.Scene {
     this.updateBossBar();
     const reward = this.boss.rewardTokens;
     this.save = patchWorldSave({ bosses: { ...this.save.bosses, [this.boss.id]: 'done' }, tokens: this.save.tokens + reward });
+    // 远征进度变化后立刻评估成就；不等回小屋再解锁。
+    const ev = evaluateAchievements();
+    this.newAch = ev.unlocked.filter((a) => a.id.indexOf('world_boss_') === 0).map((a) => a.name);
     this.updateHud();
     this.addAuraAtBoss();
-    this.showVictory(reward);
+    const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
+    this.showVictory(reward, allDone, this.newAch);
   }
 
   addAuraAtBoss() {
@@ -2694,6 +3013,7 @@ export class World extends Phaser.Scene {
     if (this.dead) return;
     this.dead = true;
     this.bossActive = false;
+    this.clearBossHazards();
     this.clearMobs(true);
     this.pointerTarget = null;
     // 死亡面板要独占视线：清掉入场 banner / toast，避免压住“星火熄灭”。
@@ -2738,6 +3058,7 @@ export class World extends Phaser.Scene {
 
   retryBoss() {
     if (!this.dead || !this.boss) return;
+    this.clearBossHazards();
     this.destroyModal();
     this.dead = false;
     this.victory = false;
@@ -2754,8 +3075,10 @@ export class World extends Phaser.Scene {
     this.boss.state = 'intro';
     this.boss.stateEnd = this.time.now + 650;
     this.boss.nextAt = this.time.now + 650;
+    this.boss.specialAt = this.time.now + 999999;
     this.bossActive = true;
     this.buildBossEdge(this.bossSpawn.screen);
+    this.buildBossArena(this.bossSpawn.screen);
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
     this.boss.spr.setVisible(true).setAlpha(1).setScale(this.boss.scale);
     if (this.boss.mirror) this.boss.mirror.setVisible(true).setAlpha(0.1);
@@ -2774,7 +3097,7 @@ export class World extends Phaser.Scene {
     this.updateBossBar();
   }
 
-  showVictory(reward) {
+  showVictory(reward, finale = false, newAch = []) {
     this.victory = true;
     this.panelOpen = true;
     this.pointerTarget = null;
@@ -2793,10 +3116,17 @@ export class World extends Phaser.Scene {
     const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, 34, UI.color.panelRaised, 0.92)
       .setOrigin(0).setScrollFactor(0).setDepth(103);
     const def = this.boss?.def || {};
-    p.add(makeText(this, 14, 12, def.victoryTitle || '星火的碎片 · 已归位', 'h2', { color: UI.text.gold }));
+    const title = finale ? '星火归途 · 远征完成' : (def.victoryTitle || '星火的碎片 · 已归位');
+    const body = finale
+      ? '五片群系的星火重新连成一线，归途在火心尽头亮起。'
+      : (def.victoryBody || '这片群系的远征，暂时告一段落。');
+    p.add(makeText(this, 14, 12, title, 'h2', { color: UI.text.gold }));
     p.add(makeText(this, 14, 36, (this.boss?.name || '世界 Boss') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
-    p.add(makeText(this, 14, 58, def.victoryBody || '这片群系的远征，暂时告一段落。', 'caption', { color: UI.text.muted }));
-    const rows = [['继续探索', () => this.closeVictory()]].map(([label, cb]) => {
+    p.add(makeText(this, 14, 58, body, 'caption', { color: UI.text.muted }));
+    if (newAch && newAch.length) {
+      p.add(makeText(this, 14, 78, '新成就 · ' + newAch.join(' / '), 'caption', { color: UI.text.info }));
+    }
+    const rows = [[finale ? '回到小屋' : '继续探索', finale ? () => this.leave() : () => this.closeVictory()]].map(([label, cb]) => {
       const card = makeCard(this, {
         x: x + 16, y: y + 100, w: W - 32, h: 34,
         accent: UI.color.gold, depth: 104, onClick: cb,

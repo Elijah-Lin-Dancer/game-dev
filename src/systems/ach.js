@@ -6,6 +6,7 @@
  * - evaluate 只在结算 / 回小屋时调用，不逐帧写盘。
  */
 import { loadSave, patchSave } from './save.js';
+import { loadWorldSave } from './worldSave.js';
 
 const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const starsTotal = (m) => Object.keys(m.stars || {})
@@ -22,6 +23,15 @@ const specialCount = (m) => Object.keys(m.stars || {})
   .filter((k) => k.indexOf('sp_') === 0 && num(m.stars[k]) > 0).length;
 const anyStar = (m) => Object.keys(m.stars || {}).some((k) => num(m.stars[k]) > 0);
 const anyMark = (m, key) => Object.keys(m[key] || {}).length > 0;
+/* 远征进度是独立 na.world；成就只读，不把世界存档搬进主线存档。 */
+const worldBossCount = () => {
+  try {
+    const w = loadWorldSave();
+    return Object.values(w.bosses || {}).filter((v) => v === 'done').length;
+  } catch (e) {
+    return 0;
+  }
+};
 
 export const ACHIEVEMENTS = [
   {
@@ -101,12 +111,26 @@ export const ACHIEVEMENTS = [
     accent: 0xffb86b, value: (m) => (num(m.cycle, 1) >= 2 ? 1 : 0),
   },
   {
+    id: 'world_boss_1', name: '远征初火', desc: '击败任意一只世界 Boss', cat: '远征', goal: 1,
+    accent: 0x9fe0a0, value: () => (worldBossCount() >= 1 ? 1 : 0),
+  },
+  {
+    id: 'world_boss_3', name: '三片星火', desc: '击败 3 只世界 Boss', cat: '远征', goal: 3,
+    accent: 0xffd479, value: () => worldBossCount(),
+  },
+  {
+    id: 'world_boss_5', name: '五火归位', desc: '五片群系的世界 Boss 全部归位', cat: '远征', goal: 5,
+    accent: 0xffb0d8, value: () => worldBossCount(),
+  },
+  {
     id: 'story_end', name: '星火归途', desc: '看完终章', cat: '剧情', goal: 1,
     accent: 0xffe9b0, value: (m) => (m.story && m.story.ended ? 1 : 0),
   },
 ];
 
 export function achDone(meta, id) {
+  // 成就一旦写进 ach 就永久点亮；value 只用于新档判定和进度显示。
+  if (meta && meta.ach && meta.ach[id]) return true;
   const a = ACHIEVEMENTS.find((x) => x.id === id);
   return !!a && num(a.value(meta || {})) >= a.goal;
 }
