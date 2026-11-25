@@ -11,7 +11,7 @@
 import { S, VEC, ANGLE } from '../core/config.js';
 import { loadSave } from '../systems/save.js';
 import { NAV } from '../systems/nav.js';
-import { loadWorldSave, patchWorldSave } from '../systems/worldSave.js';
+import { loadWorldSave, patchWorldSave, rekindleWorldSave } from '../systems/worldSave.js';
 import { evaluateAchievements } from '../systems/ach.js';
 import { TouchControls, isTouchDevice } from '../systems/input.js';
 import { UI } from '../systems/ui/tokens.js';
@@ -259,6 +259,16 @@ function normalizeProps(raw) {
   }));
 }
 
+function normalizeBossGate(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    x: asNumber(raw.x, 240),
+    y: asNumber(raw.y, 220),
+    prompt: String(raw.prompt || 'E 点燃归水灯'),
+    hint: String(raw.hint || '归水灯未燃 · 走近按 E 点燃'),
+  };
+}
+
 function normalizeWorld(raw) {
   const src = raw && Array.isArray(raw.screens) ? raw.screens : [];
   const screens = src.filter((s) => s && s.id).map((s, i) => ({
@@ -327,6 +337,7 @@ function normalizeWorld(raw) {
       victoryBody: String(b.victoryBody || '这片群系的远征，暂时告一段落。'),
       memorialText: String(b.memorialText || '星火已归位'),
       pattern: ['frost', 'magma', 'mire'].includes(b.pattern) ? b.pattern : '',
+      bossGate: normalizeBossGate(b.bossGate),
       speed: Math.min(60, Math.max(14, asNumber(b.speed, 34))),
       specialGap: Math.max(2200, Math.round(asNumber(b.specialGap, 5200))),
       minionRespawnMs: Math.max(2000, Math.round(asNumber(b.minionRespawnMs, 9000))),
@@ -1094,7 +1105,8 @@ export class World extends Phaser.Scene {
     if (!this.travelUnlocked()) return;
     if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
     const W = Math.min(390, VIEW_W - 40);
-    const H = 70 + this.campfires.length * 30 + 34;
+    const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
+    const H = 70 + this.campfires.length * 30 + 34 + (allDone ? 34 : 0);
     const x = VIEW_W / 2 - W / 2;
     const y = VIEW_H / 2 - H / 2;
     this.panelOpen = true;
@@ -1123,6 +1135,18 @@ export class World extends Phaser.Scene {
       }));
       return { card };
     });
+    if (allDone) {
+      const idx = this.campfires.length;
+      const card = makeCard(this, {
+        x: x + 16, y: y + 62 + idx * 30, w: W - 32, h: 26,
+        accent: UI.color.gold, depth: 104,
+        onClick: () => { this.closePanel(); this.rekindleExpedition(true); },
+      });
+      card.container.setScrollFactor(0);
+      card.hit.setScrollFactor(0);
+      card.add(makeText(this, 12, 7, '星火重燃 · 第 ' + Math.min(99, (this.save.expedition || 1) + 1) + ' 次远征', 'body', { color: UI.text.gold }));
+      rows.push({ card });
+    }
     const close = makeCard(this, {
       x: x + 16, y: y + H - 40, w: W - 32, h: 26,
       accent: UI.color.lineMuted, depth: 104, onClick: () => this.closePanel(),
@@ -1409,7 +1433,8 @@ export class World extends Phaser.Scene {
     const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
     const q2State = q2 ? this.save[prof.quest2Save] : 'none';
     const count2 = q2 ? this.secondCountFor(prof) : 0;
-    this.hudTitle.setText('远征 · ' + (s.short || s.name));
+    const cycle = Math.max(1, this.save.expedition || 1);
+    this.hudTitle.setText('远征 · ' + (s.short || s.name) + (cycle > 1 ? ' · 周目 ' + cycle : ''));
     const layerName = this.layer === 'cave' ? ' · 地穴' : (this.layer === 'plateau' ? ' · 台地' : '');
     this.hudPlace.setText(s.weatherName + ' · 第 ' + (this.screenIndex + 1) + '/' + this.screens.length + ' 屏' + layerName);
     let item = prof.item;
@@ -1443,6 +1468,10 @@ export class World extends Phaser.Scene {
   hudHintText() {
     if (this.gathering) return '正在采集 · 移动会打断';
     if (this.dead) return '星火熄灭 · R 重新挑战 / ESC 回小屋';
+    if (this.bossGate) {
+      const hint = this.boss?.def?.bossGate?.hint || '走近归水灯 · 按 E 点燃';
+      return hint + ' · ESC 回小屋';
+    }
     if (this.bossActive) {
       const name = this.boss?.name || '世界 Boss';
       return this.touchCtl ? '点按「攻」击败' + name + ' · 点按「返」回小屋' : 'SPACE / J 攻击 · 击败' + name + ' · ESC 回小屋';
@@ -1553,7 +1582,76 @@ export class World extends Phaser.Scene {
       return;
     }
     if (!this.boss || this.boss.id !== def.id) this.spawnBoss(def);
+    // 归水灯：雾泽终局不直接开战。灯未燃时 Boss 留在水底，玩家走到灯前按 E 才唤醒。
+    if (def.bossGate) {
+      this.buildBossGate(def);
+      this.bossActive = false;
+      this.bossDead = false;
+      this.updateHud();
+      this.updatePrompts();
+      return;
+    }
     if (!this.bossActive && !this.bossDead) this.startBossFight();
+  }
+
+  buildBossGate(def) {
+    this.clearBossGate();
+    if (!def || !def.bossGate || !this.bossSpawn) return;
+    const g = def.bossGate;
+    const x = this.bossSpawn.screen.x + g.x;
+    const y = WORLD_Y + g.y;
+    const aura = this.add.image(x, y - 16, 'aura', 0)
+      .setScale(2.1).setAlpha(0.30).setTint(UI.world.mireGlow)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(26);
+    const ring = this.add.ellipse(x, y - 2, 48, 13, UI.world.mireGlow, 0.18)
+      .setDepth(27);
+    // 灯芯：一盏很小的冷焰，远看就能认出归水灯的位置。
+    const flame = this.add.circle(x, y - 61, 4, UI.world.mireGlow, 0.92)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(39);
+    const flameGlow = this.add.circle(x, y - 61, 10, UI.world.mireGlow, 0.18)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(38);
+    const label = this.add.text(x, y - 94, '归水灯', {
+      fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
+      backgroundColor: UI.hud.bgSoft, padding: { x: 4, y: 1 },
+    }).setOrigin(0.5, 1).setDepth(40);
+    const prompt = this.add.text(x, y - 44, g.prompt || 'E 点燃归水灯', {
+      fontFamily: UI.font, fontSize: '12px', color: UI.text.gold,
+      backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
+    }).setOrigin(0.5, 1).setDepth(41).setVisible(false);
+    this.tweens.add({
+      targets: aura, alpha: 0.10, scale: 2.5, duration: 1100, yoyo: true, repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    this.tweens.add({
+      targets: [flame, flameGlow], alpha: 0.55, scale: 1.25, duration: 620, yoyo: true, repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    this.bossGate = { x, y, aura, ring, flame, flameGlow, label, prompt };
+    if (this.boss) {
+      if (this.boss.spr) this.boss.spr.setVisible(false);
+      if (this.boss.mirror) this.boss.mirror.setVisible(false);
+      if (this.boss.glow) this.boss.glow.setVisible(false);
+      if (this.boss.shadow) this.boss.shadow.setVisible(false);
+      if (this.boss.ring) this.boss.ring.setVisible(false);
+      if (this.boss.label) this.boss.label.setVisible(false);
+    }
+  }
+
+  clearBossGate() {
+    if (!this.bossGate) return;
+    for (const key of ['aura', 'ring', 'flame', 'flameGlow', 'label', 'prompt']) {
+      const o = this.bossGate[key];
+      if (!o) continue;
+      this.tweens.killTweensOf(o);
+      o.destroy();
+    }
+    this.bossGate = null;
+  }
+
+  lightBossGate() {
+    if (!this.bossGate) return;
+    this.clearBossGate();
+    this.startBossFight();
   }
 
   /* ---------- 输入 ---------- */
@@ -1628,6 +1726,10 @@ export class World extends Phaser.Scene {
     if (this.dead) { this.retryBoss(); return; }
     if (this.talking) { this.advanceTalk(); return; }
     if (this.panelOpen || this.gathering) return;
+    if (this.bossGate && this.distPlayer(this.bossGate.x, this.bossGate.y) <= 54) {
+      this.lightBossGate();
+      return;
+    }
     if (this.bossActive) {
       const battle = this.nearestHerb(true);
       if (battle && this.distPlayer(battle.x, battle.y) <= 46) { this.pickBattleHerb(battle); return; }
@@ -1800,7 +1902,12 @@ export class World extends Phaser.Scene {
     this.npcs.forEach((n) => n.prompt.setVisible(false));
     this.quenches.forEach((q) => q.prompt.setVisible(false));
     this.campfires.forEach((c) => c.prompt.setVisible(false));
+    if (this.bossGate) this.bossGate.prompt.setVisible(false);
     if (busy) return;
+    if (this.bossGate && this.distPlayer(this.bossGate.x, this.bossGate.y) <= 54) {
+      this.bossGate.prompt.setVisible(true);
+      return;
+    }
     // Boss 战里保留一处快采点：E 快采回血，不冻结 Boss。
     if (this.bossActive) {
       const battle = this.nearestHerb(true);
@@ -2524,10 +2631,14 @@ export class World extends Phaser.Scene {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
       backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
     }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
+    // 星火重燃：周目越高，Boss 的血量与伤害越重；第 1 周目保持原数值。
+    const tier = Math.max(1, Math.min(99, this.save.expedition || 1));
+    const scaledHp = Math.round(b.hp * (1 + 0.12 * (tier - 1)));
+    const scaledDmg = b.dmg + Math.floor((tier - 1) / 2);
     this.boss = {
-      id: b.id, def: b, art,
+      id: b.id, def: b, art, tier,
       name: b.name, spr, mirror, glow, shadow, ring, label, x, y,
-      maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
+      maxHp: scaledHp, hp: scaledHp, dmg: scaledDmg, rewardTokens: b.rewardTokens,
       scale: art.scale, standoff: art.standoff,
       speed: b.speed || 34, pattern: b.pattern || '', specialGap: b.specialGap || 5200,
       state: 'idle', stateEnd: 0, nextAt: 0, specialAt: 0, target: null, warning: null, flash: 0,
@@ -2819,6 +2930,7 @@ export class World extends Phaser.Scene {
 
   startBossFight() {
     if (!this.boss) return;
+    this.clearBossGate();
     // 避开上一屏跨过来的树冠：把入场站位放到巢心左下空地。
     this.player.setPosition(this.bossSpawn.screen.x + 150, WORLD_Y + 240);
     this.bossActive = true;
@@ -3477,6 +3589,50 @@ export class World extends Phaser.Scene {
     this.updateBossBar();
   }
 
+  rekindleExpedition(allowOutsideVictory = false) {
+    if (!this.world.bosses.every((b) => this.save.bosses[b.id] === 'done')) return;
+    if (!this.victory && !allowOutsideVictory) return;
+    this.clearBossGate();
+    if (this.boss) {
+      for (const key of ['spr', 'mirror', 'glow', 'shadow', 'ring', 'label', 'warning']) {
+        if (this.boss[key]) this.boss[key].destroy();
+      }
+      if (this.boss.breath) this.boss.breath.remove();
+      this.boss = null;
+    }
+    if (this.memorial) {
+      this.tweens.killTweensOf(this.memorial.aura);
+      this.memorial.aura.destroy();
+      this.memorial = null;
+    }
+    if (this.memorialText) { this.memorialText.destroy(); this.memorialText = null; }
+    this.restoreBossEdge();
+    this.clearBossHazards();
+    this.clearMobs(true);
+    this.destroyModal();
+    this.victory = false;
+    this.panelOpen = false;
+    this.dead = false;
+    this.bossActive = false;
+    this.bossDead = false;
+    this.bossSpawn = null;
+    this.hp = this.maxHp;
+    this.iframe = 0;
+    this.lastHurtAt = -9999;
+    this.player.setAlpha(1);
+    this.player.setPosition(this.screens[0].x + 72, WORLD_Y + 185);
+    this.save = rekindleWorldSave();
+    this.applyScreen(0, true);
+    this.updateLayer(true);
+    this.cameras.main.scrollX = clamp(this.player.x - VIEW_W / 2, 0, this.worldWidth - VIEW_W);
+    this.cameras.main.scrollY = 0;
+    if (this.hudHint) this.hudHint.setVisible(true);
+    this.updateHud();
+    this.updatePrompts();
+    this.banner('星火重燃 · 第 ' + this.save.expedition + ' 次远征');
+    this.toast('六盏星火重新落回群系 · 这次它们记得你');
+  }
+
   showVictory(reward, finale = false, newAch = []) {
     this.victory = true;
     this.panelOpen = true;
@@ -3486,14 +3642,14 @@ export class World extends Phaser.Scene {
     if (this.toastT) { this.toastT.destroy(); this.toastT = null; }
     if (this.hudHint) this.hudHint.setVisible(false);
     const W = Math.min(400, VIEW_W - 40);
-    const H = 184;
+    const H = finale ? 218 : 184;
     const x = VIEW_W / 2 - W / 2;
     const y = VIEW_H / 2 - H / 2;
     const dim = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.color.overlay, UI.alpha.disabled)
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     // 胜利按钮用一块无描边底板：保留按钮感，又不让卡片顶线贴着“继续探索”。
-    const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, 34, UI.color.panelRaised, 0.92)
+    const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, finale ? 74 : 34, UI.color.panelRaised, 0.92)
       .setOrigin(0).setScrollFactor(0).setDepth(103);
     const def = this.boss?.def || {};
     const title = finale ? '星火归途 · 远征完成' : (def.victoryTitle || '星火的碎片 · 已归位');
@@ -3506,14 +3662,20 @@ export class World extends Phaser.Scene {
     if (newAch && newAch.length) {
       p.add(makeText(this, 14, 78, '新成就 · ' + newAch.join(' / '), 'caption', { color: UI.text.info }));
     }
-    const rows = [[finale ? '回到小屋' : '继续探索', finale ? () => this.leave() : () => this.closeVictory()]].map(([label, cb]) => {
+    const actions = finale
+      ? [
+        ['回到小屋', () => this.leave()],
+        ['星火重燃 · 第 ' + Math.min(99, (this.save.expedition || 1) + 1) + ' 次远征', () => this.rekindleExpedition()],
+      ]
+      : [['继续探索', () => this.closeVictory()]];
+    const rows = actions.map(([label, cb], i) => {
       const card = makeCard(this, {
-        x: x + 16, y: y + 100, w: W - 32, h: 34,
+        x: x + 16, y: y + 100 + i * 40, w: W - 32, h: 34,
         accent: UI.color.gold, depth: 104, onClick: cb,
       });
       card.container.setScrollFactor(0);
       card.hit.setScrollFactor(0);
-      // 胜利页只有一个按钮，去掉卡片顶部的横向描边，避免它像一条压在“继续探索”上的分隔线。
+      // 胜利页按钮去掉卡片顶部的横向描边，避免它像一条压在文案上的分隔线。
       card.bg.setVisible(false);
       card.add(makeText(this, 12, 14, label, 'body', { color: UI.text.primary }));
       return { card };

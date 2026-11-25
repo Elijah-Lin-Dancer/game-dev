@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G4-3 v14：
+ *   - 新增 expedition（远征周目，默认 1）；星火重燃时 +1，六 Boss 进度清零；
+ *   - v13 旧档补 expedition 1，其余字段不动。
+ *
  * G4-2 v13：
  *   - bosses 增加第六只 mireWraith（雾泽 · 归水）；v12 旧档补 none；
  *   - 其余字段与 v12 一致；六只世界 Boss 全部有独立进度。
@@ -36,7 +40,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 13;
+const VERSION = 14;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -91,6 +95,7 @@ const defaults = () => ({
   mireHerbs: 0,
   mireQuest: 'none',
   mireQuest2: 'none',
+  expedition: 1,
   boss: 'none',
   bosses: bossDefaults(),
   tokens: 0,
@@ -130,6 +135,7 @@ function migrate(old) {
     mireHerbs: Math.min(99, Math.round(num(old.mireHerbs))),
     mireQuest: QUESTS.includes(old.mireQuest) ? old.mireQuest : 'none',
     mireQuest2: QUESTS.includes(old.mireQuest2) ? old.mireQuest2 : 'none',
+    expedition: Math.max(1, Math.min(99, Math.round(num(old.expedition, 1)))),
     bosses: sanitizeBosses(old.bosses, old.bosses ? null : old.boss),
     boss: sanitizeBosses(old.bosses, old.bosses ? null : old.boss).mossBeast === 'done' ? 'done' : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),
@@ -184,6 +190,15 @@ export function patchWorldSave(patch) {
   next.boss = next.bosses.mossBeast === 'done' ? 'done' : 'none';
   next.tokens = Math.min(99, Math.round(num(next.tokens)));
   return writeWorldSave(next);
+}
+
+export function rekindleWorldSave() {
+  const cur = loadWorldSave();
+  return patchWorldSave({
+    bosses: bossDefaults(),
+    boss: 'none',
+    expedition: Math.min(99, Math.max(1, cur.expedition || 1) + 1),
+  });
 }
 
 export function resetWorldSave() {

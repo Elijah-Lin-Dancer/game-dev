@@ -535,3 +535,17 @@
 | W-133 | G4-2 Pages 线上 | 推送 `cef57e3` 后读 Pages 入口；960 `applyScreen(35,true)`；直接沼潮 + 真击杀；640 / 844 hasTouch；PWA controller 后 `set_offline(true)` 外部 fetch probe + reload | 通过；入口 `game.8be60f73.js` + `assets.1b86f4c5.js` / PWA `na-b18-b5c05acf` 12 条；`worldBosses=6 / screens=36 / save.v=13 / mire-6` 三战斗采集点；960 `mireWraith / hp104 / name=沉灯水魇 / desertTile0`；沼潮 `tide3 → hazards3 / dmg2 / tick700 / HP20→18`；六 Boss `allDone / tokens26 / newAch`，标题 `星火归途 · 远征完成`、六群系正文；640 `scrollWidth=640 / touchItems=0`；844 `scrollWidth=844 / touchItems=3 / canvas779×360`；PWA probe `rejected:TypeError`、离线 reload 仍 `mire-6 / mireWraith`；`errs=[]`（PWA 仅预期断网 console） |
 
 线上证据：`docs/revamp/g4-2/g4-online-mire-boss-intro-960.png`、`g4-online-mire-tide-warn-960.png`、`g4-online-mire-victory-960.png`、`g4-online-mire-boss-640.png`、`g4-online-mire-boss-844.png`、`g4-online-mire-boss-pwa-960.png`；详见 `docs/BATCH26-G4-2.md` 第 11 节。
+
+## W-134～W-140. 批 26 / G4-3 终局闭环（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-134 | 数据 / 存档 v14 | 读 `world.json`；预置 v13 旧档（5 只 done、`mireWraith none`、无 `expedition`）加载；读 `mireWraith.bossGate` | 通过；`world.json v10 / 36 屏 / 6 Boss`；`bossGate x250 y246 / prompt E 点燃归水灯 / hint 归水灯未燃 · 沉灯水魇还在水底`；`na.world v14 / expedition=1`；5 只 done 保留，`mireWraith none` |
+| W-135 | 归水灯前置 / E 唤醒 | 960 `applyScreen(35)`；读 `bossGate / bossActive / boss.visible / boss.state`；站到灯前读 prompt；按 E | 通过；gate × 1，`bossActive=false`，Boss `visible=false / state=idle`；近 54px prompt 可见；E 后 `gate=null / active=true / visible=true`，`tier1 maxHp=104` |
+| W-136 | 终局面板 / 星火重燃 / 周目 | 击杀第六只；读 `rows / fillH`；调用 `rekindleExpedition()`；读 `expedition / screen / bosses / tokens / HUD`；再进 `mire-6` gate 与草原 Boss | 通过；`rows=2 / fillH=74`；`expedition=2 / screen=0 / victory=false / 六 Boss none / tokens=26`；HUD 含「周目 2」；tier2 雾泽 gate `maxHp116 / dmg6 / tier2`，草原 Boss `maxHp72 / dmg4 / tier2` |
+| W-137 | 篝火 allDone 行 / 640 | 预置六 Boss done；960/640 `openTravel`；读行数、标签、`scrollWidth` | 通过；8 行（6 篝火 + 星火重燃 + 留在原地），含「星火重燃 · 第 2 次远征」；960/640 面板均无溢出，640 `scrollWidth=640 / canvas640×360`；截图 `g4-3-travel-960.png` / `g4-3-travel-640.png` |
+| W-138 | 640 / 844 / 单文件 / PWA | 640×360；844×390 hasTouch；`file://` 单文件；SW controller 后 `set_offline(true)` reload | 通过；640 `scrollWidth=640`；844 `touchCtl=true / gate.prompt=true / canvas779×360`；单文件 `__SINGLE__ / mire-6 / gate`，E 可唤醒；PWA `na-b18-9cf996b0` controller=true，离线 reload 仍 `mire-6`，gate 存在且 `bossActive=false` |
+| W-139 | 沼潮 / 冒烟 / 比例 | `/tmp/g43-tide.py` 强制沼潮窗口；`npm run smoke`；`tools/audit_scale.py` | 通过；`state=mireWindup / tide=3`，落地 `recover / hazards=3 / dmg=2 / tick=700`；`smoke` 9 PASS；审计 **220 实例 / 0 FAIL**。自然计时完整 special 本轮未长跑，G4-2 已验自然窗口 |
+| W-140 | 构建 / 证据 | `npm run build -- --single`；收集字节；归档截图 | 通过；首屏 **1902 KB / gzip723 KB**；图集 **120 KB / 174 切片（无新增）**；`game.c7d2c0ba.js` **374,292 B** + `assets.8c75570a.js` **132,049 B**；单文件 **2,032,200 B**；PWA `na-b18-9cf996b0`；证据 `docs/revamp/g4-3/` 14 张 |
+
+证据：`docs/revamp/g4-3/g4-3-gate-960.png`、`g4-3-gate-640.png`、`g4-3-gate-844.png`、`g4-3-tier2-gate-960.png`、`g4-3-boss-intro-960.png`、`g4-3-mire-tide-960.png`、`g4-3-finale-960.png`、`g4-3-rekindle-960.png`、`g4-3-tier2-960.png`、`g4-3-travel-960.png`、`g4-3-travel-rekindle-960.png`、`g4-3-travel-640.png`、`g4-3-single-960.png`、`g4-3-pwa-960.png`；详见 `docs/BATCH26-G4-3.md`。

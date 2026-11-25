@@ -4676,7 +4676,13 @@
       "memorialText": "雾泽星火 · 已归位",
       "pattern": "mire",
       "speed": 25,
-      "specialGap": 5000
+      "specialGap": 5000,
+      "bossGate": {
+        "x": 250,
+        "y": 246,
+        "prompt": "E 点燃归水灯",
+        "hint": "归水灯未燃 · 沉灯水魇还在水底"
+      }
     }
   ],
   "mireQuest": {
