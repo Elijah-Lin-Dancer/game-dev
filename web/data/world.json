@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "biome": "field",
   "tile": 16,
   "grid": [
@@ -3460,6 +3460,14 @@
     "yield": 2,
     "rewardTokens": 1
   },
+  "fieldQuest2": {
+    "id": "fieldHerb8",
+    "name": "雨后药圃",
+    "npc": "doctor",
+    "need": 8,
+    "yield": 2,
+    "rewardTokens": 3
+  },
   "bambooQuest": {
     "id": "bamboo4",
     "name": "雾竹三味",
@@ -3467,6 +3475,14 @@
     "need": 4,
     "yield": 2,
     "rewardTokens": 2
+  },
+  "bambooQuest2": {
+    "id": "bambooOil7",
+    "name": "旧祠灯油",
+    "npc": "hermit",
+    "need": 7,
+    "yield": 2,
+    "rewardTokens": 3
   },
   "desertQuest": {
     "id": "desert5",
@@ -3476,6 +3492,14 @@
     "yield": 2,
     "rewardTokens": 2
   },
+  "desertQuest2": {
+    "id": "desertWell7",
+    "name": "沙井回甘",
+    "npc": "sandmother",
+    "need": 7,
+    "yield": 2,
+    "rewardTokens": 3
+  },
   "snowQuest": {
     "id": "snow5",
     "name": "雪灯五盏",
@@ -3483,6 +3507,14 @@
     "need": 5,
     "yield": 2,
     "rewardTokens": 2
+  },
+  "snowQuest2": {
+    "id": "snowNight7",
+    "name": "长夜续灯",
+    "npc": "snowkeeper",
+    "need": 7,
+    "yield": 2,
+    "rewardTokens": 3
   },
   "volcanoQuest": {
     "id": "volcano5",

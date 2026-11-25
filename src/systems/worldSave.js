@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G2-6 v11：
+ *   - 新增 fieldQuest2 / bambooQuest2 / desertQuest2 / snowQuest2；
+ *   - 四群系第二条委托全部落档；v10 旧档补 none，其余字段不变；
+ *
  * G3-4/5 v10：
  *   - bosses 增加 frostOwl（雪原 · 白原）与 magmaColossus（火山 · 火心）；
  *   - v9 旧档补两只 none，其余字段与 v9 一致；G3 五只世界 Boss 全部有独立进度。
@@ -24,7 +28,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 10;
+const VERSION = 11;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -61,12 +65,16 @@ const defaults = () => ({
   visited: [],
   herbs: 0,
   quest: 'none',
+  fieldQuest2: 'none',
   bambooHerbs: 0,
   bambooQuest: 'none',
+  bambooQuest2: 'none',
   desertHerbs: 0,
   desertQuest: 'none',
+  desertQuest2: 'none',
   snowHerbs: 0,
   snowQuest: 'none',
+  snowQuest2: 'none',
   volcanoHerbs: 0,
   volcanoQuest: 'none',
   volcanoQuest2: 'none',
@@ -93,12 +101,16 @@ function migrate(old) {
     visited: sanitizeVisited(old.visited),
     herbs: Math.min(99, Math.round(num(old.herbs))),
     quest: QUESTS.includes(old.quest) ? old.quest : 'none',
+    fieldQuest2: QUESTS.includes(old.fieldQuest2) ? old.fieldQuest2 : 'none',
     bambooHerbs: Math.min(99, Math.round(num(old.bambooHerbs))),
     bambooQuest: QUESTS.includes(old.bambooQuest) ? old.bambooQuest : 'none',
+    bambooQuest2: QUESTS.includes(old.bambooQuest2) ? old.bambooQuest2 : 'none',
     desertHerbs: Math.min(99, Math.round(num(old.desertHerbs))),
     desertQuest: QUESTS.includes(old.desertQuest) ? old.desertQuest : 'none',
+    desertQuest2: QUESTS.includes(old.desertQuest2) ? old.desertQuest2 : 'none',
     snowHerbs: Math.min(99, Math.round(num(old.snowHerbs))),
     snowQuest: QUESTS.includes(old.snowQuest) ? old.snowQuest : 'none',
+    snowQuest2: QUESTS.includes(old.snowQuest2) ? old.snowQuest2 : 'none',
     volcanoHerbs: Math.min(99, Math.round(num(old.volcanoHerbs))),
     volcanoQuest: QUESTS.includes(old.volcanoQuest) ? old.volcanoQuest : 'none',
     volcanoQuest2: QUESTS.includes(old.volcanoQuest2) ? old.volcanoQuest2 : 'none',
@@ -135,14 +147,19 @@ export function patchWorldSave(patch) {
   next.visited = sanitizeVisited(next.visited);
   next.herbs = Math.min(99, Math.round(num(next.herbs)));
   next.quest = QUESTS.includes(next.quest) ? next.quest : 'none';
+  next.fieldQuest2 = QUESTS.includes(next.fieldQuest2) ? next.fieldQuest2 : 'none';
   next.bambooHerbs = Math.min(99, Math.round(num(next.bambooHerbs)));
   next.bambooQuest = QUESTS.includes(next.bambooQuest) ? next.bambooQuest : 'none';
+  next.bambooQuest2 = QUESTS.includes(next.bambooQuest2) ? next.bambooQuest2 : 'none';
   next.desertHerbs = Math.min(99, Math.round(num(next.desertHerbs)));
   next.desertQuest = QUESTS.includes(next.desertQuest) ? next.desertQuest : 'none';
+  next.desertQuest2 = QUESTS.includes(next.desertQuest2) ? next.desertQuest2 : 'none';
   next.snowHerbs = Math.min(99, Math.round(num(next.snowHerbs)));
   next.snowQuest = QUESTS.includes(next.snowQuest) ? next.snowQuest : 'none';
+  next.snowQuest2 = QUESTS.includes(next.snowQuest2) ? next.snowQuest2 : 'none';
   next.volcanoHerbs = Math.min(99, Math.round(num(next.volcanoHerbs)));
   next.volcanoQuest = QUESTS.includes(next.volcanoQuest) ? next.volcanoQuest : 'none';
+  next.volcanoQuest2 = QUESTS.includes(next.volcanoQuest2) ? next.volcanoQuest2 : 'none';
   const currentBosses = loadWorldSave().bosses;
   const bossPatch = patch && patch.bosses && typeof patch.bosses === 'object'
     ? { ...currentBosses, ...patch.bosses }

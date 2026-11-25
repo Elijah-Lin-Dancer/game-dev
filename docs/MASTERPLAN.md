@@ -142,8 +142,9 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 | **22 · G2-5 火山第二委托与篝火（已完成）** | 30 屏不变；熔匠第二条「三淬归火」（3 炉眼 / 3 碎片）；5 个篝火主落点 + 已访问传送；world 三键触屏 + 摇杆；`na.world v7`；无新增美术，alpha bbox 审计 141/0 | `world.js`、`web/data/world.json`、`worldSave.js`、`src/systems/input.js`、`tools/audit_scale.py` | W41–W50：委托 / 传送 / v6→v7 / 960·640·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH22-G2-5.md` |
 | **20 · G2-3 雪原与比例基线（已完成）** | 24 屏（四群系 6×4）；守灯人 / 雪灯五盏 / 14 雪灯草；`na.world v5`；雪松 / 雪祠 96×128、守灯人 / 雪灯草 / 完整沙棕 3D；`PROP_SCALE` + alpha bbox 审计 106/0 | `world.js`、`web/data/world.json`、`worldSave.js`、`tools/build.mjs`、`tools/audit_scale.py`、`art-src/g2/` | W21–W30：24 屏 / 雪灯委托 / 比例审计 / v4→v5 / 640·960·844 / 单文件 / 冒烟 / PWA / Pages；见 `docs/BATCH20-G2-3.md` |
 | **24 · G3-4·G3-5 霜灯巨鸮 + 熔心巨像（已完成）** | 世界 Boss 5 只；`frostOwl / snow-6 / hp88 / dmg6 / reward5`、`magmaColossus / volcano-6 / hp96 / dmg7 / reward5`；ink-studio 96×96 四向 × idle/charge/roar；霜锥 3 落点 4 伤、炉口 3 落点 + 熔渣池；`snow-6` 4 松 + 3 雪灯、`volcano-6` 6 摆件 + 3 火种 + 补边 / 地表；`na.world v10`；五 Boss 结局 + 3 条远征成就；审计 170/0 | `src/scenes/world.js`、`src/systems/worldSave.js`、`src/systems/ach.js`、`web/data/world.json`、`art-src/g3/`、`tools/build.mjs`、`tools/audit_scale.py` | W96–W111：两屏 / 3D 四向 / 专属攻击 / 草药 / 转身 / 击杀 / 结局 / 成就 / v10 / 640·844 / 单文件 / PWA / 冒烟 / 比例 / Pages；见 `docs/BATCH24-G3-4-5.md` |
+| **25 · G2-6 四群系第二条委托（已完成）** | 30 屏不变；草原 / 竹林 / 沙漠 / 雪原各补第二条委托（8 / 7 / 7 / 7 件，3 碎片）；`world.json` v8、`na.world v11`；不新增美术、不新增采集点 | `src/scenes/world.js`、`src/systems/worldSave.js`、`web/data/world.json`、`tools/build.mjs` | W112–W116：四条委托 / v10→v11 / 640·844 / 单文件 / PWA / 冒烟 / 比例 / Pages；见 `docs/BATCH25-G2-6.md` |
 
-**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → **22（已完成）** → **23 / G3（已完成 5/5）** → G2 剩余 4 条委托。
+**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → **22（已完成）** → **23 / G3（已完成 5/5）** → 25 / G2（已完成 10/10）。
 
 ---
 

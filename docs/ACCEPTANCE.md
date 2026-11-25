@@ -473,3 +473,14 @@
 | W-111 | Pages 线上：五 Boss 结局 / 成就 | 预置前四只 done + 熔像未 done；线上击杀熔像；读面板文本 / `bosses / tokens / ach` | 通过；`victory / panelOpen / bossDead`；五键全 done；`tokens20`；面板文本 `星火归途 · 远征完成`、`五片群系的星火重新连成一线，归途在火心尽头亮起。`、`新成就 · 远征初火 / 三片星火 / 五火归位`；`na.save.ach` 三键写入；`errs=[]` |
 
 线上证据：`docs/revamp/g3/g3-online-frost-arena-960.png`、`g3-online-frost-volley-960.png`、`g3-online-frost-impact-960.png`、`g3-online-magma-arena-960.png`、`g3-online-magma-erupt-960.png`、`g3-online-magma-hazards-960.png`、`g3-online-finale-960.png`、`g3-online-magma-640.png`、`g3-online-magma-844.png`、`g3-online-frost-pwa-960.png`。
+
+## W-112～W-115. 批 25 / G2-6 四群系第二条委托（G2 10/10，2026-11-25 追加）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-112 | 数据 / 存档 v11 | 读 `world.json` 四个 q2；预置 v10 旧档（无 q2、`herbs12`、`visited` 两屏、`mossBeast done`）后加载 | 通过；`world v8`；`fieldQuest2 雨后药圃 / 8 / 3`、`bambooQuest2 旧祠灯油 / 7 / 3`、`desertQuest2 沙井回甘 / 7 / 3`、`snowQuest2 长夜续灯 / 7 / 3`；`na.world v11`；四个 q2 全部 `none`；`herbs12`、`visited`、`mossBeast done` 保留 |
+| W-113 | 草原第二条 + 实际采集 + 第一条回归 | 960 `applyScreen(0)`；q2 `active` 读 6/8；实际采集一丛 `startGather→completeGather`；补到 8/8 后交互打开 panel；交付 | 通过；`6/8 → 8/8`；toast「第二批草药够了 · 回村口找阿杏」；panel `stage2`；交付 `done / tokens3 / herbs0`；村医第一条 `active / 5 → panel → done / tokens1 / herbs0` |
+| W-114 | 竹林 / 沙漠 / 雪原第二条 + 火山回归 | 960 `applyScreen(9/15/20)`；q2 `active` 读 5/7；补到 7/7；交互 → panel → 交付；火山 `volcanoQuest2 active + vents3` 回归 | 通过；竹林 `done / tokens3 / bambooHerbs0`；沙漠 `done / tokens3 / desertHerbs0`；雪原 `done / tokens3 / snowHerbs0`；火山 `done / tokens3 / HUD 炉眼3·已淬` |
+| W-115 | 640 / 844 / 单文件 / PWA / 构建 | 640×360；844×390 hasTouch；`file://` 单文件；PWA cache 安装后全网络请求 abort 重载；`npm run build` / `build:single` / `smoke` / `audit_scale.py` | 通过；640 `scrollWidth=640`；844 `scrollWidth=844 / touchCtl=true / touchItems=3 / canvas779×360`；单文件 `__SINGLE__ / sw=false / v11 / 四 q2 数据可读 / errs=[]`；PWA `na-b18-686abf47` / 12 条 / controller=true / abort 后 reload 仍 `field-1 / v11 / fieldQuest2 雨后药圃`；首屏 **2027 KB / gzip859 KB**，图集 **267 KB / 166 切片**，`game.af68aa30.js` **357,526 B** + `assets.272a87b6.js` **127,090 B**，单文件 **2,210,407 B**；`smoke` 9 PASS；`audit_scale.py` **170 / 0 FAIL** |
+
+证据：`docs/revamp/g2-6/g2-6-field-active-960.png`、`g2-6-field-panel-960.png`、`g2-6-field-done-960.png`、`g2-6-field-gather-960.png`、`g2-6-bamboo-active-960.png`、`g2-6-desert-active-960.png`、`g2-6-snow-active-960.png`、`g2-6-field-640.png`、`g2-6-field-844.png`、`g2-6-single-field-960.png`、`g2-6-pwa-field-960.png`；详见 `docs/BATCH25-G2-6.md`。G2 30 屏 / 5 群系 / **10 委托**完成；G3 5/5 保持。

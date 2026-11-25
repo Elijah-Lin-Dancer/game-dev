@@ -126,35 +126,43 @@ const PROP_SCALE = {
  * 不再用 bamboo 单布尔分派；沙漠和后续雪原 / 火山复用同一结构。 */
 const QUEST_PROFILE = {
   field: {
-    biome: 'field', questDef: 'quest', questSave: 'quest', herbSave: 'herbs',
+    biome: 'field', questDef: 'quest', questSave: 'quest', herbSave: 'herbs', npcName: '村医阿杏',
     item: '草药', unit: '株', npcAsset: 'villager2', npcScale: 2, glowTint: UI.world.herbGold,
     glowScale: 1.1, labelY: 44, promptY: 58,
     readyHint: '草药够了 · 去找村医阿杏交付',
     respawn: '一丛草药重新长成了',
+    quest2Def: 'fieldQuest2', quest2Save: 'fieldQuest2',
+    readyHint2: '第二批草药够了 · 回村口找阿杏',
   },
   bamboo: {
-    biome: 'bamboo', questDef: 'bambooQuest', questSave: 'bambooQuest', herbSave: 'bambooHerbs',
+    biome: 'bamboo', questDef: 'bambooQuest', questSave: 'bambooQuest', herbSave: 'bambooHerbs', npcName: '竹隐',
     item: '雾竹', unit: '株', npcAsset: 'bambooHermit', npcScale: 0.9, glowTint: UI.world.herb,
     glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '雾竹够了 · 去找竹隐交付',
     respawn: '一丛雾竹重新长成了',
+    quest2Def: 'bambooQuest2', quest2Save: 'bambooQuest2',
+    readyHint2: '灯油材料够了 · 回旧祠找竹隐',
   },
   desert: {
-    biome: 'desert', questDef: 'desertQuest', questSave: 'desertQuest', herbSave: 'desertHerbs',
+    biome: 'desert', questDef: 'desertQuest', questSave: 'desertQuest', herbSave: 'desertHerbs', npcName: '沙婆阿砾',
     item: '沙枣', unit: '颗', npcAsset: 'desertNomad', npcScale: 0.95, glowTint: UI.world.herbGold,
     glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '沙枣够了 · 去找沙婆阿砾交付',
     respawn: '一丛沙枣重新长成了',
+    quest2Def: 'desertQuest2', quest2Save: 'desertQuest2',
+    readyHint2: '第二批沙枣够了 · 回旧门找阿砾',
   },
   snow: {
-    biome: 'snow', questDef: 'snowQuest', questSave: 'snowQuest', herbSave: 'snowHerbs',
+    biome: 'snow', questDef: 'snowQuest', questSave: 'snowQuest', herbSave: 'snowHerbs', npcName: '守灯人阿霁',
     item: '雪灯', unit: '盏', npcAsset: 'snowKeeper', npcScale: 0.9, glowTint: UI.world.snowLight,
     glowScale: 1.1, labelY: 46, promptY: 60,
     readyHint: '雪灯够了 · 去雪祠找阿霁交付',
     respawn: '一盏雪灯草重新亮了',
+    quest2Def: 'snowQuest2', quest2Save: 'snowQuest2',
+    readyHint2: '续灯够了 · 回雪祠找阿霁',
   },
   volcano: {
-    biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs',
+    biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs', npcName: '熔匠赤砧',
     item: '火种', unit: '枚', npcAsset: 'volcanoSmith', npcScale: 0.95, glowTint: UI.world.ember,
     glowScale: 1.2, labelY: 46, promptY: 60,
     readyHint: '火种够了 · 去铁砧找赤砧交付',
@@ -246,9 +254,13 @@ function normalizeWorld(raw) {
     x: i * SCREEN_W,
   }));
   const q = raw && raw.quest ? raw.quest : {};
+  const fq2 = raw && raw.fieldQuest2 ? raw.fieldQuest2 : {};
   const bq = raw && raw.bambooQuest ? raw.bambooQuest : {};
+  const bq2 = raw && raw.bambooQuest2 ? raw.bambooQuest2 : {};
   const dq = raw && raw.desertQuest ? raw.desertQuest : {};
+  const dq2 = raw && raw.desertQuest2 ? raw.desertQuest2 : {};
   const sq = raw && raw.snowQuest ? raw.snowQuest : {};
+  const sq2 = raw && raw.snowQuest2 ? raw.snowQuest2 : {};
   const vq = raw && raw.volcanoQuest ? raw.volcanoQuest : {};
   const vq2 = raw && raw.volcanoQuest2 ? raw.volcanoQuest2 : {};
   const bossesRaw = Array.isArray(raw && raw.bosses)
@@ -343,6 +355,34 @@ function normalizeWorld(raw) {
       name: String(vq2.name || '三淬归火'),
       need: Math.max(1, Math.round(asNumber(vq2.need, 3))),
       rewardTokens: Math.max(0, Math.round(asNumber(vq2.rewardTokens, 3))),
+    },
+    fieldQuest2: {
+      id: String(fq2.id || 'fieldHerb8'),
+      name: String(fq2.name || '雨后药圃'),
+      need: Math.max(1, Math.round(asNumber(fq2.need, 8))),
+      yield: Math.max(1, Math.round(asNumber(fq2.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(fq2.rewardTokens, 3))),
+    },
+    bambooQuest2: {
+      id: String(bq2.id || 'bambooOil7'),
+      name: String(bq2.name || '旧祠灯油'),
+      need: Math.max(1, Math.round(asNumber(bq2.need, 7))),
+      yield: Math.max(1, Math.round(asNumber(bq2.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(bq2.rewardTokens, 3))),
+    },
+    desertQuest2: {
+      id: String(dq2.id || 'desertWell7'),
+      name: String(dq2.name || '沙井回甘'),
+      need: Math.max(1, Math.round(asNumber(dq2.need, 7))),
+      yield: Math.max(1, Math.round(asNumber(dq2.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(dq2.rewardTokens, 3))),
+    },
+    snowQuest2: {
+      id: String(sq2.id || 'snowNight7'),
+      name: String(sq2.name || '长夜续灯'),
+      need: Math.max(1, Math.round(asNumber(sq2.need, 7))),
+      yield: Math.max(1, Math.round(asNumber(sq2.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(sq2.rewardTokens, 3))),
     },
   };
 }
@@ -1219,7 +1259,7 @@ export class World extends Phaser.Scene {
     const herbCount = this.save[prof.herbSave];
     const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
     const q2State = q2 ? this.save[prof.quest2Save] : 'none';
-    const ventCount = q2 ? (this.save[prof.ventSave] || []).length : 0;
+    const count2 = q2 ? this.secondCountFor(prof) : 0;
     this.hudTitle.setText('远征 · ' + (s.short || s.name));
     const layerName = this.layer === 'cave' ? ' · 地穴' : (this.layer === 'plateau' ? ' · 台地' : '');
     this.hudPlace.setText(s.weatherName + ' · 第 ' + (this.screenIndex + 1) + '/' + this.screens.length + ' 屏' + layerName);
@@ -1227,12 +1267,12 @@ export class World extends Phaser.Scene {
     let count = herbCount;
     let qs = QUEST_LABEL[questState] || QUEST_LABEL.none;
     if (q2 && questState === 'done') {
-      item = prof.item2;
-      count = ventCount;
-      qs = q2State === 'done' ? '已淬' : (q2State === 'active' ? '淬火' : '待接');
+      item = prof.item2 || prof.item;
+      count = count2;
+      qs = q2State === 'done' ? (prof.ventSave ? '已淬' : '已完成') : (q2State === 'active' ? (prof.ventSave ? '淬火' : '采集') : '待接');
       if (q2State === 'active') {
-        qs = '淬火 ' + Math.min(ventCount, q2.need) + '/' + q2.need;
-        if (ventCount >= q2.need) qs = '可交付 ' + q2.need + '/' + q2.need;
+        qs = (prof.ventSave ? '淬火 ' : '采集 ') + Math.min(count2, q2.need) + '/' + q2.need;
+        if (count2 >= q2.need) qs = '可交付 ' + q2.need + '/' + q2.need;
       }
     } else if (questState === 'active') {
       qs = '采集 ' + Math.min(herbCount, q.need) + '/' + q.need;
@@ -1265,14 +1305,15 @@ export class World extends Phaser.Scene {
     const herbCount = this.save[prof.herbSave];
     const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
     const q2State = q2 ? this.save[prof.quest2Save] : 'none';
-    const ventCount = q2 ? (this.save[prof.ventSave] || []).length : 0;
+    const count2 = q2 ? this.secondCountFor(prof) : 0;
     if (q2 && questState === 'done') {
-      if (q2State === 'none') return '找赤砧接「' + q2.name + '」 · ESC 回小屋';
-      if (q2State === 'active' && ventCount < q2.need) {
-        return '靠近炉眼按 E 淬火 · 还差 ' + (q2.need - ventCount) + ' 处 · ESC 回小屋';
+      if (q2State === 'none') return '找' + (prof.npcName || '村民') + '接「' + q2.name + '」 · ESC 回小屋';
+      if (q2State === 'active' && count2 < q2.need) {
+        if (prof.ventSave) return '靠近炉眼按 E 淬火 · 还差 ' + (q2.need - count2) + ' 处 · ESC 回小屋';
+        return '继续采集' + prof.item + ' · 还差 ' + (q2.need - count2) + ' ' + (prof.unit || '件') + ' · ESC 回小屋';
       }
-      if (q2State === 'active' && ventCount >= q2.need) return prof.readyHint2 + ' · ESC 回小屋';
-      return '篝火旁按 E 传送 · ESC 回小屋';
+      if (q2State === 'active' && count2 >= q2.need) return prof.readyHint2 + ' · ESC 回小屋';
+      if (prof.ventSave) return '篝火旁按 E 传送 · ESC 回小屋';
     }
     if (questState === 'active' && herbCount >= q.need) {
       return prof.readyHint + ' · ESC 回小屋';
@@ -1749,6 +1790,10 @@ export class World extends Phaser.Scene {
     this.updateHud();
     if (this.save[prof.questSave] === 'active' && count >= q.need) {
       this.toast(prof.readyHint);
+    } else if (prof.quest2Def && this.save[prof.questSave] === 'done'
+      && this.save[prof.quest2Save] === 'active') {
+      const q2 = this.world[prof.quest2Def];
+      if (q2 && count >= q2.need) this.toast(prof.readyHint2);
     }
   }
 
@@ -1783,19 +1828,44 @@ export class World extends Phaser.Scene {
     return prof.quest2Save ? this.save[prof.quest2Save] : 'none';
   }
 
-  ventCountFor(npc) {
-    const prof = profileForNpc(npc);
-    return prof.ventSave ? (this.save[prof.ventSave] || []).length : 0;
+  secondCountFor(prof) {
+    if (!prof) return 0;
+    if (prof.ventSave) return (this.save[prof.ventSave] || []).length;
+    return this.save[prof.herbSave] || 0;
+  }
+
+  secondCountForNpc(npc) {
+    return this.secondCountFor(profileForNpc(npc));
   }
 
   npcLines2(npc, state, count) {
-    if (npc.quest !== 'volcano') return [];
     const q = this.secondQuestFor(npc);
     if (!q) return [];
+    const prof = profileForNpc(npc);
     const missing = q.need - count;
-    if (state === 'done') return ['三淬归火。铁砧记住了你的手。', '以后在篝火旁按 E，五片地的火会替你引路。'];
-    if (state === 'none') return ['火稳了，可铁砧还差三口气。', '去焦原、黑曜坡、灰口各找一处炉眼，按 E 淬火。'];
-    return ['炉眼还差 ' + missing + ' 处。', '焦原、黑曜坡、灰口的旧裂口都能淬，走近按 E。'];
+    if (npc.quest === 'volcano') {
+      if (state === 'done') return ['三淬归火。铁砧记住了你的手。', '以后在篝火旁按 E，五片地的火会替你引路。'];
+      if (state === 'none') return ['火稳了，可铁砧还差三口气。', '去焦原、黑曜坡、灰口各找一处炉眼，按 E 淬火。'];
+      return ['炉眼还差 ' + missing + ' 处。', '焦原、黑曜坡、灰口的旧裂口都能淬，走近按 E。'];
+    }
+    if (npc.quest === 'bamboo') {
+      if (state === 'done') return ['灯油够点三夜了。', '旧祠不会再黑。'];
+      if (state === 'none') return ['雾竹汤熬好了，可旧祠的灯油还差。', '再采七株雾竹，我榨油。'];
+      return ['还差 ' + missing + ' 株' + prof.item + '。', '旧祠后面的竹丛还有，采完会重新长。'];
+    }
+    if (npc.quest === 'desert') {
+      if (state === 'done') return ['井水回甘了。', '旧门那边，也能听见水声。'];
+      if (state === 'none') return ['沙枣甜，可井底还压着沙。', '再拾七颗沙枣，我换一井清水。'];
+      return ['还差 ' + missing + ' 颗' + prof.item + '。', '旧门附近的沙丘还有，采完会重新长。'];
+    }
+    if (npc.quest === 'snow') {
+      if (state === 'done') return ['灯续上了。', '雪夜里，终于有了一点暖。'];
+      if (state === 'none') return ['雪灯亮了，可长夜还长。', '再拾七盏雪灯，我要把破祠的灯续到天亮。'];
+      return ['还差 ' + missing + ' 盏' + prof.item + '。', '白原和石灯附近还有，雪化之前会重新亮。'];
+    }
+    if (state === 'done') return ['药圃的草药够了。', '这场雨总算没白下。'];
+    if (state === 'none') return ['第一副药已经熬上了。', '雨停后药圃还要补一茬，再帮我采八株草药。'];
+    return ['还差 ' + missing + ' 株' + prof.item + '。', '草原上那几丛，采完会重新长出来。'];
   }
 
   npcLines(npc, state, count) {
@@ -1835,7 +1905,7 @@ export class World extends Phaser.Scene {
       const q2 = this.secondQuestFor(npc);
       const s2 = this.secondStateFor(npc);
       if (s2 === 'done') {
-        this.say(npc.name, this.npcLines2(npc, 'done', this.ventCountFor(npc)));
+        this.say(npc.name, this.npcLines2(npc, 'done', this.secondCountForNpc(npc)));
         return;
       }
       if (s2 === 'none') {
@@ -1847,7 +1917,7 @@ export class World extends Phaser.Scene {
         });
         return;
       }
-      const count2 = this.ventCountFor(npc);
+      const count2 = this.secondCountForNpc(npc);
       if (count2 < q2.need) {
         this.say(npc.name, this.npcLines2(npc, 'active', count2));
         return;
@@ -1879,9 +1949,9 @@ export class World extends Phaser.Scene {
     if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
     const prof = profileForNpc(npc);
     const q = stage === 2 ? this.secondQuestFor(npc) : this.questFor(npc);
-    const count = stage === 2 ? this.ventCountFor(npc) : this.herbCountFor(npc);
-    const unit = stage === 2 ? (prof.unit2 || '处') : (prof.unit || '株');
-    const item = stage === 2 ? (prof.item2 || '炉眼') : prof.item;
+    const count = stage === 2 ? this.secondCountForNpc(npc) : this.herbCountFor(npc);
+    const unit = stage === 2 ? (prof.unit2 || prof.unit || '处') : (prof.unit || '株');
+    const item = stage === 2 ? (prof.item2 || prof.item || '炉眼') : prof.item;
     const W = Math.min(390, VIEW_W - 40);
     const H = 154;
     const x = VIEW_W / 2 - W / 2;
@@ -1921,16 +1991,19 @@ export class World extends Phaser.Scene {
     if (stage === 2) {
       const q2 = this.secondQuestFor(npc);
       if (!q2) return;
-      this.save = patchWorldSave({
+      const count2 = this.secondCountForNpc(npc);
+      const patch = {
         [prof.quest2Save]: 'done',
         tokens: this.save.tokens + q2.rewardTokens,
-      });
+      };
+      if (!prof.ventSave) patch[prof.herbSave] = Math.max(0, count2 - q2.need);
+      this.save = patchWorldSave(patch);
       this.closePanel();
-      this.refreshQuenchVisuals();
+      if (prof.ventSave) this.refreshQuenchVisuals();
       this.updateHud();
       this.toast('委托完成 · 星火碎片 +' + q2.rewardTokens);
-      this.banner('篝火 · 已记住五片地');
-      this.say(npc.name, this.npcLines2(npc, 'done', this.ventCountFor(npc)));
+      this.banner(prof.ventSave ? '篝火 · 已记住五片地' : '委托 · ' + q2.name + ' 完成');
+      this.say(npc.name, this.npcLines2(npc, 'done', this.secondCountForNpc(npc)));
       return;
     }
     const q = this.questFor(npc);
