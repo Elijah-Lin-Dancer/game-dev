@@ -119,8 +119,12 @@ export const ACHIEVEMENTS = [
     accent: 0xffd479, value: () => worldBossCount(),
   },
   {
-    id: 'world_boss_5', name: '五火归位', desc: '五片群系的世界 Boss 全部归位', cat: '远征', goal: 5,
+    id: 'world_boss_5', name: '五火归位', desc: '击败 5 只世界 Boss', cat: '远征', goal: 5,
     accent: 0xffb0d8, value: () => worldBossCount(),
+  },
+  {
+    id: 'world_boss_6', name: '六火归位', desc: '六片群系的世界 Boss 全部归位', cat: '远征', goal: 6,
+    accent: 0xffe7a8, value: () => worldBossCount(),
   },
   {
     id: 'story_end', name: '星火归途', desc: '看完终章', cat: '剧情', goal: 1,

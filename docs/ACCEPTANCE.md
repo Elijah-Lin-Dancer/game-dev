@@ -513,3 +513,17 @@
 | 编号 | 项目 | 操作 | 结果 |
 |---|---|---|---|
 | W-125 | 雾泽 Pages 线上 | 部署 `601dfc3` 后 960×540 六屏；`mireKeeper` 两条委托全流程；6 篝火传送；640 / 844 hasTouch；PWA 离线重载；v11 旧档加载 | 通过；入口 `game.e9831838.js` + `assets.0b93f349.js`；`world.json v9 / 36 屏 / 6 篝火 / 13 组水洼 / save v12`；六屏 `miasma`；委托 `0/7 → 8/7 → done1 / tokens3`、`1/9 → 11/9 → done2 / tokens6`；640 `scrollWidth=640`；844 `touchItems=3 / canvas779×360`；PWA `na-b18-27205f58` controller=true，断网 probe rejected，reload `mire-3 / screens36`；v11→v12 保留 `herbs3 / quest active`；`errs=[]`（PWA 仅预期断网 console） |
+
+## W-126～W-132. 批 26 / G4-2 雾泽终局 Boss（2026-11-25）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-126 | 数据 / 存档 v10→v13 | 读 `web/data/world.json`；预置 v12 旧档（5 Boss 全 done、无 `mireWraith`、`mire-6` 原 3 普通采集点）加载 | 通过；`world.json v10 / 36 屏 / 6 Boss`；`mireWraith / mire-6 / x300 y170 / hp104 / dmg6 / rewardTokens6 / pattern mire / speed25 / specialGap5000`；`mire-6 herbs=[[150,226,1],[330,208,1],[430,214,1]]`；`na.world v13`，`mireWraith:'none'`，其余 5 只 `done` 保留，`visited / herbs / tokens` 不丢 |
+| W-127 | Boss 美术 / 比例 | 读 `docs/revamp/g4-3d/mire-wraith-idle/charge/roar.png`；跑 `tools/audit_scale.py` | 通过；三张均 384×96、4 向 × 96×96 × 三姿态；`mireWraith scale1.48 / standoff108 / swipeAt96 / origin78/96`；审计 **220 实例 / 0 FAIL**，三姿态 **3.0–3.29×** 在 2.2–3.3 内 |
+| W-128 | Boss 场景 / 补边 / 战斗采集 | 960 `applyScreen(35,true)`；读 `bossEdge / bossArena / herbs / hazards`；低血量调 `pickBattleHerb` | 通过；`active=true / id=mireWraith / state=chase / hp104 / name=沉灯水魇`；`bossEdge` 中 `desertTile=0`，有 `mireReed / mireShrine / mireArch / mireDeadTree / mireVeil`；三个战斗采集点；`hp10→12 / active=false / battle=true` |
+| W-129 | 沼潮 / 半血 / 自然计时 | 960：自然等待专属窗口；再强制 `hp55→50`；读 `tide / hazards / dmg / tick / rage / speed / gap` | 通过；自然在开战约 3.6s 后进入 `mireWindup`，`tide3`；落地 `hazards3 / dmg2 / tick700`，玩家 `HP20→18`；半血 `hp50 / rage=true / speed30 / gap3600 / tide4 / hazards4`；雾泽 / 霜鸮 / 熔像三只的自然 special 均回归通过 |
+| W-130 | 六 Boss 终局 / 第 24 条成就 | 预置其余 5 只 done、`mireWraith none`；击杀沉灯水魇；读面板 / `ach / tokens` | 通过；`allDone=true / 6 只 done / tokens20→26 / v13`；标题 `星火归途 · 远征完成`，正文 `六片群系的星火重新连成一线，归途在火心尽头亮起。`；`newAch` 含 `world_boss_6`「六火归位」（测试档同时列出 4 条远征成就，不代表真实档一次全弹） |
+| W-131 | 640 / 844 / 单文件 / PWA | 640×360；844×390 hasTouch；`file://` 单文件；SW controller 后 `set_offline(true)` 外部 fetch probe + reload | 通过；640 `scrollWidth=640 / canvas640×360 / touchItems=0`；844 `scrollWidth=844 / touchItems=3 / canvas779×360`；单文件 `__SINGLE__ / mire-6 / 36 屏 / v13 / Boss active / errs=[]`；PWA `na-b18-b5c05acf`、`probe=rejected:TypeError`、reload 仍 `mire-6 / mireWraith`，console 仅预期 `ERR_INTERNET_DISCONNECTED` |
+| W-132 | 构建 / 冒烟 | `npm run build:single`、`npm run smoke`、`audit_scale.py` | 通过；首屏 **1897 KB / gzip721 KB**；图集 **174 切片 / 123,265 B**；`dist/game.8be60f73.js` **369,447 B** + `dist/assets.1b86f4c5.js` **131,938 B**；单文件 **2,027,136 B**；`smoke` **9 PASS**；审计 **220 / 0 FAIL** |
+
+证据：`docs/revamp/g4-2/g4-mire6-boss-intro-960.png`、`g4-mire-tide-warn-960.png`、`g4-mire-tide-pools-960.png`、`g4-mire-phase2-warn-960.png`、`g4-mire-victory-960.png`、`g4-mire-boss-640.png`、`g4-mire-boss-844.png`、`g4-mire-boss-single-960.png`、`g4-mire-boss-pwa-960.png`；详见 `docs/BATCH26-G4-2.md`。

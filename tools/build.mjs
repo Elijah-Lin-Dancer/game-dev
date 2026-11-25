@@ -203,6 +203,10 @@ const img = {
   magmaColossusIdle: join(ROOT, 'assets/01-primary/world/magma-colossus-idle.png'),
   magmaColossusCharge: join(ROOT, 'assets/01-primary/world/magma-colossus-charge.png'),
   magmaColossusRoar: join(ROOT, 'assets/01-primary/world/magma-colossus-roar.png'),
+  /* G4-2 世界 Boss：ink-studio 沉灯水魇 96×96 四向 idle / charge / roar */
+  mireWraithIdle: join(ROOT, 'assets/01-primary/world/mire-wraith-idle.png'),
+  mireWraithCharge: join(ROOT, 'assets/01-primary/world/mire-wraith-charge.png'),
+  mireWraithRoar: join(ROOT, 'assets/01-primary/world/mire-wraith-roar.png'),
   /* 批 13 小屋：ink-studio 3D 像素离线件，见 docs/ART_PIPELINE.md */
   faceGuide: join(ROOT, 'assets/01-primary/hub/npc-guide.png'),
   faceSmith: join(ROOT, 'assets/01-primary/hub/npc-smith.png'),
@@ -261,6 +265,7 @@ const FRAME = {
   sandScarabIdle: [64, 64], sandScarabSkitter: [64, 64], desertRock: [64, 64],
   frostOwlIdle: [96, 96], frostOwlCharge: [96, 96], frostOwlRoar: [96, 96],
   magmaColossusIdle: [96, 96], magmaColossusCharge: [96, 96], magmaColossusRoar: [96, 96],
+  mireWraithIdle: [96, 96], mireWraithCharge: [96, 96], mireWraithRoar: [96, 96],
   faceGuide: [64, 64], faceSmith: [64, 64], faceMerchant: [64, 64],
   forgeAnvil: [64, 64], trainDummy: [64, 64],
 };

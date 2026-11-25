@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "biome": "field",
   "tile": 16,
   "grid": [
@@ -4380,15 +4380,18 @@
       "herbs": [
         [
           150,
-          226
+          226,
+          1
         ],
         [
           330,
-          208
+          208,
+          1
         ],
         [
           430,
-          214
+          214,
+          1
         ]
       ],
       "npc": null
@@ -4656,6 +4659,24 @@
       "pattern": "magma",
       "speed": 36,
       "specialGap": 4800
+    },
+    {
+      "id": "mireWraith",
+      "name": "沉灯水魇",
+      "screen": "mire-6",
+      "x": 300,
+      "y": 170,
+      "hp": 104,
+      "dmg": 6,
+      "rewardTokens": 6,
+      "art": "mireWraith",
+      "title": "归水守灯者",
+      "victoryTitle": "雾泽的星火 · 已归位",
+      "victoryBody": "归水的沉灯终于熄灭，雾泽最后一层瘴气散开，露出一条能走出沼泽的浅岸。",
+      "memorialText": "雾泽星火 · 已归位",
+      "pattern": "mire",
+      "speed": 25,
+      "specialGap": 5000
     }
   ],
   "mireQuest": {

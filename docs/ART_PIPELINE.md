@@ -278,3 +278,19 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 审计：`python3 tools/audit_scale.py` **217 实例 / 0 FAIL**；keeper 1.24×、reed 2.31×、shrine 3.0×、herb 0.675×。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
 - 素材出处：4 件 ink-studio 生成件，工具 MIT，成品本项目自制；tile 为 NinjaAdventure CC0 调色。
+
+## G4-2 产出（2026-11-25）
+
+雾泽终局 Boss「沉灯水魇」1 件，仍按 ink-studio 离线 SDF → 像素 → 四向图集生成，运行时只读成品 PNG；没有把 Ninja Adventure 原 Boss 图换色，也没有 image-to-image。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 沉灯水魇 | `art-src/g4/mire-wraith.cjs`（seed 405，四向） | 384×96，4 向 × 96×96 × 3 姿态 | `mire-wraith-idle.png` / `-charge.png` / `-roar.png` | `mire-6` Boss；bbox idle `(24,12,72,77)`、charge `(24,15,72,77)`、roar `(24,9,72,77)`；origin 78/96；scale 1.48 |
+
+- 造型：一盏沉在沼底的旧祠灯，灯壳被水草与断木缠住，长成弓背灯影；正面是带冷焰灯窗的旧灯，背面是裂开的祠脊与水草拖尾。
+- 姿态：`idle` 弓背低头 / `charge` 灯窗收束 / `roar` 灯窗张开；帧序 0 前 / 1 左 / 2 后 / 3 右。
+- 暗色灯影在雾泽地面上原本偏黑；后一轮把 body palette 的 P2–P5 提亮为 `0x1b2f24 / 0x2c4937 / 0x3e5b45 / 0x5d7b5e`，重新渲染并复制到运行时。
+- 对照 / 元数据：`docs/revamp/g4-3d/mire-wraith-*.png` + 同名 `.json`；运行时 `assets/01-primary/world/mire-wraith-*.png`。
+- 审计：`python3 tools/audit_scale.py` **220 实例 / 0 FAIL**；`mireWraith` 三姿态 **3.0–3.29×**，在 2.2–3.3 内。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。

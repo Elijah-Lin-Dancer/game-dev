@@ -45,6 +45,10 @@ def main():
         sheets[key] = {"x": px, "y": py, "w": im.width, "h": im.height,
                        "fw": fw, "fh": fh}
 
+    # 图集是像素级素材，最终只有一帧直接上屏；把整张 1024 宽图集收敛到
+    # 256 色调色板，能显著降低首屏 PNG 体积，透明边缘仍由 tRNS 保留。
+    if atlas.getcolors(maxcolors=256) is None:
+        atlas = atlas.quantize(colors=256, method=Image.FASTOCTREE)
     atlas.save(out_png, optimize=True)
     json.dump({"width": width, "height": total_h, "sheets": sheets},
               open(out_json, "w"), ensure_ascii=False)

@@ -85,6 +85,14 @@ BOSS_ART = {
             'roar': 'assets/01-primary/world/magma-colossus-roar.png',
         },
     },
+    'mireWraith': {
+        'name': '沉灯水魇', 'scale': 1.48,
+        'poses': {
+            'idle': 'assets/01-primary/world/mire-wraith-idle.png',
+            'charge': 'assets/01-primary/world/mire-wraith-charge.png',
+            'roar': 'assets/01-primary/world/mire-wraith-roar.png',
+        },
+    },
 }
 
 MINION_ART = {

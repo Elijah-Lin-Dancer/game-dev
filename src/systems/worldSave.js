@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G4-2 v13：
+ *   - bosses 增加第六只 mireWraith（雾泽 · 归水）；v12 旧档补 none；
+ *   - 其余字段与 v12 一致；六只世界 Boss 全部有独立进度。
+ *
  * G4-1 v12：
  *   - 新增 mire-1…mire-6 屏，追加雾泽 6 屏；
  *   - 新增 mireHerbs / mireQuest / mireQuest2；v11 旧档补 0 / none；
@@ -32,7 +36,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 12;
+const VERSION = 13;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -50,7 +54,7 @@ function sanitizeVents(v) {
   return [...new Set(v.filter((id) => VENTS.has(id)))];
 }
 const BOSS_STATES = ['none', 'done'];
-const BOSS_IDS = ['mossBeast', 'bambooMirage', 'sandMirage', 'frostOwl', 'magmaColossus'];
+const BOSS_IDS = ['mossBeast', 'bambooMirage', 'sandMirage', 'frostOwl', 'magmaColossus', 'mireWraith'];
 const bossDefaults = () => Object.fromEntries(BOSS_IDS.map((id) => [id, 'none']));
 
 function sanitizeBosses(raw, legacy) {

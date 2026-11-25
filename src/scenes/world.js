@@ -91,6 +91,16 @@ const BOSS_ART = {
     shadow: [132, 18], glowY: 34, labelY: 112,
     tint: UI.world.volcanoLight, warnColor: 0xffa24a,
   },
+  /* G4-2 雾泽：沉灯水魇。灯窗是唯一正面识别点，身位比巨像窄但比巨鸮高；
+     站位 112，近身 98 内横扫，拉开则扑水；专属「沼潮」留下冷焰水洼。 */
+  mireWraith: {
+    tex: { idle: 'mireWraithIdle', charge: 'mireWraithCharge', roar: 'mireWraithRoar' },
+    origin: { idle: 78 / 96, charge: 78 / 96, roar: 78 / 96 },
+    scale: 1.48, standoff: 108, swipeAt: 96,
+    pounceGap: 86, pounceR: 100, swipeR: 108, swipeWarn: 98,
+    shadow: [84, 15], glowY: 30, labelY: 106,
+    tint: UI.world.mireLight, warnColor: UI.world.mireGlow,
+  },
 };
 const bossArt = (id) => BOSS_ART[id] || BOSS_ART.mossBeast;
 /* G3-3 Boss 场小怪：沙蚋。四向 × idle / skitter，按脚底 44/64 锚定。 */
@@ -316,7 +326,7 @@ function normalizeWorld(raw) {
       victoryTitle: String(b.victoryTitle || '星火的碎片 · 已归位'),
       victoryBody: String(b.victoryBody || '这片群系的远征，暂时告一段落。'),
       memorialText: String(b.memorialText || '星火已归位'),
-      pattern: ['frost', 'magma'].includes(b.pattern) ? b.pattern : '',
+      pattern: ['frost', 'magma', 'mire'].includes(b.pattern) ? b.pattern : '',
       speed: Math.min(60, Math.max(14, asNumber(b.speed, 34))),
       specialGap: Math.max(2200, Math.round(asNumber(b.specialGap, 5200))),
       minionRespawnMs: Math.max(2000, Math.round(asNumber(b.minionRespawnMs, 9000))),
@@ -2521,7 +2531,7 @@ export class World extends Phaser.Scene {
       scale: art.scale, standoff: art.standoff,
       speed: b.speed || 34, pattern: b.pattern || '', specialGap: b.specialGap || 5200,
       state: 'idle', stateEnd: 0, nextAt: 0, specialAt: 0, target: null, warning: null, flash: 0,
-      pose: 'idle', dir: 0, faceAt: 0, moteAt: 0, turnAt: 0, turnDir: 0,
+      pose: 'idle', dir: 0, faceAt: 0, moteAt: 0, turnAt: 0, turnDir: 0, rage: false,
       screenIndex: spawn.screenIndex, arena: {
         x1: spawn.screen.x + 44, x2: spawn.screen.x + SCREEN_W - 44,
         y1: WORLD_Y + 104, y2: WORLD_Y + SCREEN_H - 22,
@@ -2662,6 +2672,38 @@ export class World extends Phaser.Scene {
       return;
     }
 
+    if (screen.biome === 'mire') {
+      const tile = this.add.tileSprite(right, WORLD_Y, SCREEN_W, SCREEN_H, 'mireTile', 0)
+        .setOrigin(0).setDepth(0.2);
+      this.bossEdge.push(tile);
+      // 归水右岸：浅水、泥滩和半沉的祠木，不接出一片沙漠。
+      const waterA = this.add.ellipse(right + 226, WORLD_Y + SCREEN_H - 12, 280, 34, UI.world.mireWater, 0.52).setDepth(2.4);
+      const waterB = this.add.ellipse(right + 60, WORLD_Y + SCREEN_H - 7, 160, 22, UI.world.mireWater, 0.42).setDepth(2.5);
+      const bankA = this.add.ellipse(right + 160, WORLD_Y + SCREEN_H - 3, 210, 16, 0x4a6b54, 0.34).setDepth(2.6);
+      const reedA = this.add.image(right + 76, WORLD_Y + SCREEN_H - 8, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(1.05).setDepth(18).setTint(0x9fc7a8);
+      const reedB = this.add.image(right + 172, WORLD_Y + SCREEN_H - 10, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(0.84).setDepth(18).setTint(0x8bb79a);
+      const arch = this.add.image(right + 356, WORLD_Y + SCREEN_H - 8, 'desertArch')
+        .setOrigin(0.5, 1).setScale(0.78).setDepth(18).setTint(0x7c9a7e);
+      const shrine = this.add.image(right + 486, WORLD_Y + SCREEN_H - 10, 'mireShrine')
+        .setOrigin(0.5, 110 / 128).setScale(0.66).setDepth(18).setTint(0xa6b99c);
+      const stump = this.add.image(right + 286, WORLD_Y + SCREEN_H - 12, 'desertDeadTree')
+        .setOrigin(0.5, 1).setScale(0.92).setDepth(18).setTint(0x6f8b72);
+      this.bossEdge.push(waterA, waterB, bankA, reedA, reedB, arch, shrine, stump);
+      for (let i = 0; i < 7; i += 1) {
+        const glow = this.add.circle(
+          right + 54 + i * 76, WORLD_Y + SCREEN_H - 14 - (i % 3) * 7,
+          2 + (i % 2), UI.world.mireGlow, 0.25 - i * 0.02,
+        ).setDepth(19.4).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossEdge.push(glow);
+      }
+      const haze = this.add.rectangle(right, WORLD_Y, SCREEN_W, SCREEN_H, UI.world.mireVeil, 0.10)
+        .setOrigin(0).setDepth(19.5);
+      this.bossEdge.push(haze);
+      return;
+    }
+
     const sand = this.add.tileSprite(right, WORLD_Y, SCREEN_W, SCREEN_H, 'desertTile', 0)
       .setOrigin(0).setDepth(0.2).setTint(TINT.desert || 0xffffff);
     this.bossEdge.push(sand);
@@ -2697,6 +2739,32 @@ export class World extends Phaser.Scene {
     if (!screen) return;
     const sx = screen.x;
     const sy = WORLD_Y;
+    if (screen.biome === 'mire') {
+      // 归水战场：三块浅水、湿泥岸和从水里探出的断苇；全部是低层贴地装饰。
+      const wetA = this.add.ellipse(sx + 116, sy + SCREEN_H - 9, 196, 24, UI.world.mireWater, 0.42).setDepth(2.4);
+      const wetB = this.add.ellipse(sx + 390, sy + SCREEN_H - 11, 172, 20, UI.world.mireWater, 0.38).setDepth(2.4);
+      const wetC = this.add.ellipse(sx + 256, sy + 100, 224, 18, UI.world.mireWater, 0.30).setDepth(2.4);
+      this.bossArena.push(wetA, wetB, wetC);
+      const bankA = this.add.ellipse(sx + 62, sy + SCREEN_H - 4, 154, 14, 0x4d6d56, 0.30).setDepth(2.6);
+      const bankB = this.add.ellipse(sx + 444, sy + SCREEN_H - 5, 120, 12, 0x4d6d56, 0.26).setDepth(2.6);
+      const bankC = this.add.ellipse(sx + 330, sy + 96, 130, 12, 0x4d6d56, 0.22).setDepth(2.6);
+      this.bossArena.push(bankA, bankB, bankC);
+      const reedL = this.add.image(sx + 28, sy + SCREEN_H - 10, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(0.78).setDepth(3.2).setTint(0x83ad91).setAlpha(0.82);
+      const reedR = this.add.image(sx + 500, sy + SCREEN_H - 12, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(0.68).setDepth(3.2).setTint(0x7fa287).setAlpha(0.72);
+      const reedTop = this.add.image(sx + 96, sy + 92, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(0.52).setDepth(3.1).setTint(0x6f947b).setAlpha(0.48);
+      this.bossArena.push(reedL, reedR, reedTop);
+      for (let i = 0; i < 8; i += 1) {
+        const glow = this.add.circle(
+          sx + 54 + i * 62, sy + SCREEN_H - 18 - (i % 3) * 8,
+          2, UI.world.mireGlow, 0.18,
+        ).setDepth(3.4).setBlendMode(Phaser.BlendModes.ADD);
+        this.bossArena.push(glow);
+      }
+      return;
+    }
     if (screen.biome === 'snow') {
       const driftA = this.add.ellipse(sx + 70, sy + SCREEN_H - 8, 170, 18, 0xeaf7ff, 0.28).setDepth(2.6);
       const driftB = this.add.ellipse(sx + 420, sy + SCREEN_H - 10, 140, 16, 0xd6eaf4, 0.30).setDepth(2.6);
@@ -2762,6 +2830,9 @@ export class World extends Phaser.Scene {
     this.lastHurtAt = -9999;
     this.pointerTarget = null;
     this.boss.hp = this.boss.maxHp;
+    this.boss.rage = false;
+    this.boss.speed = this.boss.def.speed || 34;
+    this.boss.specialGap = this.boss.def.specialGap || 5200;
     this.boss.state = 'intro';
     this.boss.stateEnd = this.time.now + 900;
     this.boss.nextAt = this.time.now + 900;
@@ -2808,6 +2879,16 @@ export class World extends Phaser.Scene {
     return Phaser.Math.Distance.Between(this.player.x, this.player.y - 14, this.boss.spr.x, this.boss.spr.y - 36);
   }
 
+  /* 半血阶段只触发一次；伤害路径与每帧更新都调用同一入口。 */
+  maybeMireRage() {
+    const B = this.boss;
+    if (!B || B.pattern !== 'mire' || B.rage || B.hp <= 0 || B.hp > B.maxHp * 0.5) return;
+    B.rage = true;
+    B.speed += 5;
+    B.specialGap = 3600;
+    this.banner('沉灯水魇 · 灯窗裂开');
+  }
+
   updateBoss(time, delta) {
     const B = this.boss;
     if (!B || !this.bossActive || this.dead || this.victory) return;
@@ -2829,6 +2910,8 @@ export class World extends Phaser.Scene {
         if (B.art.bodyTint) B.spr.setTint(B.art.bodyTint); else B.spr.clearTint();
       }
     }
+    // 终局 Boss 的半血阶段：灯窗裂开，移动更快，沼潮间隔更短。
+    this.maybeMireRage();
     const dist = this.distBoss();
     if (B.state === 'intro') {
       if (time >= B.stateEnd) {
@@ -2857,10 +2940,11 @@ export class World extends Phaser.Scene {
         }
       }
       if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
-      // G3-4 / G3-5 的专属攻击：雪原落霜锥，火山喷炉渣；先于普通扑 / 扫触发。
+      // G3-4 / G3-5 / G4-2 的专属攻击：雪原落霜锥，火山喷炉渣，雾泽涨沼潮；先于普通扑 / 扫触发。
       if (B.pattern && time >= B.specialAt) {
         if (B.pattern === 'frost') this.startFrostVolley();
-        else this.startMagmaEruption();
+        else if (B.pattern === 'magma') this.startMagmaEruption();
+        else this.startMireTide();
         return;
       }
       if (time >= B.nextAt) {
@@ -2918,6 +3002,10 @@ export class World extends Phaser.Scene {
       this.resolveMagmaEruption();
       return;
     }
+    if (B.state === 'mireWindup' && time >= B.stateEnd) {
+      this.resolveMireTide();
+      return;
+    }
     if (B.state === 'recover') {
       if (time >= B.stateEnd) {
         this.setBossPose('idle');
@@ -2925,7 +3013,6 @@ export class World extends Phaser.Scene {
         B.turnAt = time + BOSS_TURN_MS;
         B.state = 'chase';
         B.nextAt = time + 760;
-        B.specialAt = time + B.specialGap;
       }
     }
   }
@@ -2981,6 +3068,7 @@ export class World extends Phaser.Scene {
     B.volley = [];
     B.state = 'recover';
     B.stateEnd = this.time.now + 620;
+    B.specialAt = this.time.now + B.specialGap;
     this.setBossPose('roar');
     this.cameras.main.shake(100, 0.007);
   }
@@ -3032,8 +3120,68 @@ export class World extends Phaser.Scene {
     B.erupt = [];
     B.state = 'recover';
     B.stateEnd = this.time.now + 720;
+    B.specialAt = this.time.now + B.specialGap;
     this.setBossPose('charge');
     this.cameras.main.shake(180, 0.012);
+  }
+
+  /* 雾泽：三 / 四片沼潮先在脚边画绿圈，落点炸开冷焰，再留 2.5 秒水洼。
+     池内每 700ms 烫 2 点；半血后多铺一片，把终局压成持续走位。 */
+  startMireTide() {
+    const B = this.boss;
+    if (!B || !this.bossActive) return;
+    B.state = 'mireWindup';
+    B.stateEnd = this.time.now + 760;
+    B.specialAt = this.time.now + 999999;
+    this.setBossPose('roar');
+    B.turnDir = B.dir;
+    B.turnAt = this.time.now + BOSS_TURN_MS;
+    if (B.warning) { B.warning.destroy(); B.warning = null; }
+    B.tide = [];
+    const offsets = B.rage
+      ? [[-74, 14], [66, -30], [6, 44], [2, -58]]
+      : [[-72, 10], [64, -28], [2, 40]];
+    offsets.forEach(([dx, dy], i) => {
+      const x = clamp(this.player.x + dx, B.arena.x1, B.arena.x2);
+      const y = clamp(this.player.y + dy, B.arena.y1, B.arena.y2);
+      const warn = this.add.circle(x, y - 7, 30, 0x000000, 0)
+        .setDepth(38).setStrokeStyle(2, UI.world.mireGlow, 0.92);
+      const mote = this.add.circle(x, y - 11, 5, UI.world.mireGlow, 0.82)
+        .setDepth(37).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: warn, scale: 1.16, alpha: 0.56, duration: 240 + i * 28, yoyo: true });
+      B.tide.push({ x, y, warn, mote });
+    });
+    this.banner('沉灯水魇 · 沼潮');
+  }
+
+  resolveMireTide() {
+    const B = this.boss;
+    if (!B) return;
+    for (const t of B.tide || []) {
+      if (t.warn) t.warn.destroy();
+      if (t.mote) t.mote.destroy();
+      const base = this.add.ellipse(t.x, t.y - 3, 58, 18, 0x1b3d31, 0.54).setDepth(28);
+      const glow = this.add.ellipse(t.x, t.y - 8, 46, 20, UI.world.mireGlow, 0.22)
+        .setDepth(29).setBlendMode(Phaser.BlendModes.ADD);
+      const rim = this.add.ellipse(t.x, t.y - 3, 58, 18, 0x000000, 0)
+        .setDepth(30).setStrokeStyle(1, UI.world.mireGlow, 0.45);
+      // 水洼里立两根断苇，和 mire-6 的芦苇剪影同源。
+      const reedA = this.add.rectangle(t.x - 12, t.y - 13, 2, 14, UI.world.mireLight, 0.42).setDepth(29);
+      const reedB = this.add.rectangle(t.x + 10, t.y - 11, 2, 11, UI.world.mireLight, 0.34).setDepth(29);
+      this.bossHazards.push({
+        x: t.x, y: t.y, r: 30, nextAt: this.time.now + 380,
+        end: this.time.now + 2500, dmg: 2, tick: 700,
+        parts: [base, glow, rim, reedA, reedB],
+      });
+      this.bossImpact(t.x, t.y, false);
+      if (this.distPlayer(t.x, t.y) <= 34) this.hurtPlayer(B.spr.x, B.spr.y, 2);
+    }
+    B.tide = [];
+    B.state = 'recover';
+    B.stateEnd = this.time.now + 680;
+    B.specialAt = this.time.now + B.specialGap;
+    this.setBossPose('charge');
+    this.cameras.main.shake(150, 0.010);
   }
 
   updateBossHazards(time) {
@@ -3048,8 +3196,8 @@ export class World extends Phaser.Scene {
       const pulse = 0.5 + 0.5 * Math.sin(time / 140);
       if (h.parts[1]) h.parts[1].setAlpha(0.22 + pulse * 0.18);
       if (time >= h.nextAt) {
-        if (this.distPlayer(h.x, h.y) <= h.r) this.hurtPlayer(h.x, h.y, 2);
-        h.nextAt = time + 650;
+        if (this.distPlayer(h.x, h.y) <= h.r) this.hurtPlayer(h.x, h.y, h.dmg || 2);
+        h.nextAt = time + (h.tick || 650);
       }
       keep.push(h);
     }
@@ -3071,8 +3219,13 @@ export class World extends Phaser.Scene {
         if (t.warn) t.warn.destroy();
         if (t.ember) t.ember.destroy();
       }
+      for (const t of B.tide || []) {
+        if (t.warn) t.warn.destroy();
+        if (t.mote) t.mote.destroy();
+      }
       B.volley = [];
       B.erupt = [];
+      B.tide = [];
     }
   }
 
@@ -3136,6 +3289,7 @@ export class World extends Phaser.Scene {
     B.flash = 70;
     B.spr.setTintFill(0xffffff);
     this.updateBossBar();
+    this.maybeMireRage();
     this.cameras.main.shake(70, 0.006);
     const float = this.add.text(B.spr.x + 10, B.spr.y - 40, '-' + dmg, {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
@@ -3294,6 +3448,9 @@ export class World extends Phaser.Scene {
     this.clearMobs(true);
     this.spawnBossMinions();
     this.boss.hp = this.boss.maxHp;
+    this.boss.rage = false;
+    this.boss.speed = this.boss.def.speed || 34;
+    this.boss.specialGap = this.boss.def.specialGap || 5200;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y);
     this.boss.state = 'intro';
     this.boss.stateEnd = this.time.now + 650;
@@ -3341,7 +3498,7 @@ export class World extends Phaser.Scene {
     const def = this.boss?.def || {};
     const title = finale ? '星火归途 · 远征完成' : (def.victoryTitle || '星火的碎片 · 已归位');
     const body = finale
-      ? '五片群系的星火重新连成一线，归途在火心尽头亮起。'
+      ? '六片群系的星火重新连成一线，归途在火心尽头亮起。'
       : (def.victoryBody || '这片群系的远征，暂时告一段落。');
     p.add(makeText(this, 14, 12, title, 'h2', { color: UI.text.gold }));
     p.add(makeText(this, 14, 36, (this.boss?.name || '世界 Boss') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
