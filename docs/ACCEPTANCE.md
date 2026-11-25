@@ -527,3 +527,11 @@
 | W-132 | 构建 / 冒烟 | `npm run build:single`、`npm run smoke`、`audit_scale.py` | 通过；首屏 **1897 KB / gzip721 KB**；图集 **174 切片 / 123,265 B**；`dist/game.8be60f73.js` **369,447 B** + `dist/assets.1b86f4c5.js` **131,938 B**；单文件 **2,027,136 B**；`smoke` **9 PASS**；审计 **220 / 0 FAIL** |
 
 证据：`docs/revamp/g4-2/g4-mire6-boss-intro-960.png`、`g4-mire-tide-warn-960.png`、`g4-mire-tide-pools-960.png`、`g4-mire-phase2-warn-960.png`、`g4-mire-victory-960.png`、`g4-mire-boss-640.png`、`g4-mire-boss-844.png`、`g4-mire-boss-single-960.png`、`g4-mire-boss-pwa-960.png`；详见 `docs/BATCH26-G4-2.md`。
+
+## W-133. 批 26 / G4-2 Pages 线上验收（2026-11-25）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-133 | G4-2 Pages 线上 | 推送 `cef57e3` 后读 Pages 入口；960 `applyScreen(35,true)`；直接沼潮 + 真击杀；640 / 844 hasTouch；PWA controller 后 `set_offline(true)` 外部 fetch probe + reload | 通过；入口 `game.8be60f73.js` + `assets.1b86f4c5.js` / PWA `na-b18-b5c05acf` 12 条；`worldBosses=6 / screens=36 / save.v=13 / mire-6` 三战斗采集点；960 `mireWraith / hp104 / name=沉灯水魇 / desertTile0`；沼潮 `tide3 → hazards3 / dmg2 / tick700 / HP20→18`；六 Boss `allDone / tokens26 / newAch`，标题 `星火归途 · 远征完成`、六群系正文；640 `scrollWidth=640 / touchItems=0`；844 `scrollWidth=844 / touchItems=3 / canvas779×360`；PWA probe `rejected:TypeError`、离线 reload 仍 `mire-6 / mireWraith`；`errs=[]`（PWA 仅预期断网 console） |
+
+线上证据：`docs/revamp/g4-2/g4-online-mire-boss-intro-960.png`、`g4-online-mire-tide-warn-960.png`、`g4-online-mire-victory-960.png`、`g4-online-mire-boss-640.png`、`g4-online-mire-boss-844.png`、`g4-online-mire-boss-pwa-960.png`；详见 `docs/BATCH26-G4-2.md` 第 11 节。

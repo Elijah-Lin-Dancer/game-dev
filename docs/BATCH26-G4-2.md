@@ -168,6 +168,15 @@
 - `.../g4-mire-boss-single-960.png`
 - `.../g4-mire-boss-pwa-960.png`
 
+线上：
+
+- `docs/revamp/g4-2/g4-online-mire-boss-intro-960.png`
+- `.../g4-online-mire-tide-warn-960.png`
+- `.../g4-online-mire-victory-960.png`
+- `.../g4-online-mire-boss-640.png`
+- `.../g4-online-mire-boss-844.png`
+- `.../g4-online-mire-boss-pwa-960.png`
+
 美术：
 
 - `docs/revamp/g4-3d/mire-wraith-idle.png` / `-charge.png` / `-roar.png`（384×96，4 帧横排）
@@ -199,5 +208,6 @@
 
 ## 11. 提交与 Pages
 
-- 本文件随 G4-2 代码 / 构建 / 截图一起提交；推送与 Pages 线上验收见 `LEDGER` 第 93–94 条与 `ACCEPTANCE` W-133。
-- Pages 入口以推送后实际生成的 `game.<hash>.js` + `assets.<hash>.js` 为准，不在本文件预先写死。
+- 代码 / 构建 / 本地截图 / 文档提交 **`cef57e3`**，推送 `6878312..cef57e3` 到 `origin/main`；线上截图随 Pages 回填提交。
+- Pages 入口 **`game.8be60f73.js` + `assets.1b86f4c5.js`**，PWA **`na-b18-b5c05acf` / 12 条**。
+- 线上 960 / 640 / 844 / PWA 均验：`worldBosses6 / screens36 / save.v13`；Boss intro `desertTile0`；沼潮 `tide3→hazards3/dmg2/tick700`；胜利 `allDone / tokens26 / ach`；640 `scrollWidth640`；844 `touchItems3 / canvas779×360`；PWA `probe=rejected:TypeError`、离线 reload `mire-6 / mireWraith`。详见 `LEDGER` 第 94 条与 `ACCEPTANCE` W-133。
