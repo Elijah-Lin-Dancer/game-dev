@@ -858,7 +858,7 @@ export class World extends Phaser.Scene {
         .setOrigin(0.5, 1).setScale(k).setDepth(18).setTint(0x7fa07a);
       this.addBlock(s, p.x - 5, p.y - 7, 10, 7);
     } else if (p.kind === 'campfire') {
-      this.add.circle(x, y - 8, 28 * k, 0xff9a4a, 0.10)
+      this.add.circle(x, y - 8, 24 * k, 0xff9a4a, 0.06)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
       this.add.ellipse(x, y - 1, 24 * k, 7 * k, 0x000000, 0.22).setDepth(17);
       this.add.sprite(x, y, 'campfire', 0)

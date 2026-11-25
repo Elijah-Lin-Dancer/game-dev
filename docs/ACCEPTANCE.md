@@ -497,13 +497,13 @@
 
 | 编号 | 项目 | 操作 | 结果 |
 |---|---|---|---|
-| W-117 | 数据 / 存档 v12 | 读 `world.json` 6 屏 / 6 篝火；预置 v11 旧档（无 mire 字段、`herbs3 / quest active`）后加载 | 通过；`worldData.version=9`、`screens=36`；`mire-1..6` 索引 30–35；`mireQuest need7`、`mireQuest2 need9`；`na.world v12`；`mireHerbs0 / mireQuest none / mireQuest2 none`，`herbs3 / quest active` 保留 |
+| W-117 | 数据 / 存档 v12 | 读 `world.json` 6 屏 / 6 篝火；预置 v11 旧档（无 mire 字段、`herbs3 / quest active`）后加载 | 通过；`world.json v9`、`screens=36`；`mire-1..6` 索引 30–35；`mireQuest need7`、`mireQuest2 need9`；`na.world v12`；`mireHerbs0 / mireQuest none / mireQuest2 none`，`herbs3 / quest active` 保留 |
 | W-118 | 六屏 / 地表 / 水洼 / 气候 | 960 `applyScreen(30..35, true)`；读每屏 `pools` / `props` / `weather`；检查 `mireSpores / mireVeil` | 通过；六屏均 `biome=mire`、`weather=miasma`；13 组水洼（mire-1 3 组，其余 2 组）；芦苇 / 沉祠 / 旧木门 / 枯木 / 石堆 / 灌木正常；`errs=[]` |
 | W-119 | 第一条「灯芯七束」 | NPC `mireKeeper` 交互 → 接取；采 4 节点；交互打开 panel；交付 | 通过；`active / 0/7 / tokens0`；`mireHerbs8 / 可交付 7/7`；panel「需要 7 束，当前 8 束」；`done / herbs1 / tokens3 / HUD 待接` |
 | W-120 | 第二条「沉祠长明」 | 第一条完成后再次交互 → 接取；再采 5 节点；交互 → 交付 | 通过；`mireQuest2 active / 1/9 / tokens3`；`mireHerbs11 / 可交付 9/9`；`done / herbs2 / tokens6 / HUD 已完成`；`errs=[]` |
 | W-121 | 实际走屏 / Boss 边 | 预置 `magmaColossus done`，从 `volcano-6` 右缘连续 `movePlayer`；另预置 Boss 未杀，`applyScreen(29)` | 通过；`volcano-6 → mire-1`，`visited` 写入，`errs=[]`；Boss 战 `bossActive=true / hidden=59`，不提前露出 mire-1 |
 | W-122 | 640 / 844 / 单文件 | 640×360；844×390 hasTouch；`file://` 单文件 `game.html` | 通过；640 `scrollWidth=640`；844 `scrollWidth=844 / touchCtl=true / touchItems=3 / labels=['攻','E','返'] / canvas779×360`；单文件 `__SINGLE__ / mire-3 / screens36 / v12 / errs=[]` |
-| W-123 | PWA / 6 篝火传送 / 冒烟 / 比例 | PWA 安装 controller 后 `set_offline(true)`，网络 probe + reload；960/640 `openTravel`；`npm run smoke`；`audit_scale.py` | 通过；PWA cache `na-b18-04de8b50` / 12 条，probe `rejected:TypeError`，reload 仍 `mire-3 / screens36`；6 行传送面板 960/640 均 `overflow=false`；`smoke` 9 PASS；审计 **217 / 0 FAIL** |
-| W-124 | 构建 / 证据 | `npm run build -- --single`；收集字节；归档截图 | 通过；首屏 **2042 KB / gzip865 KB**；图集 **272 KB / 171 切片**；`game.196888a7.js` **364,269 B** + `assets.0b93f349.js` **131,323 B**；单文件 **2,227,695 B**；PWA `na-b18-04de8b50`；证据 `docs/revamp/g4-1/` |
+| W-123 | PWA / 6 篝火传送 / 冒烟 / 比例 | PWA 安装 controller 后 `set_offline(true)`，网络 probe + reload；960/640 `openTravel`；`npm run smoke`；`audit_scale.py` | 通过；PWA cache `na-b18-27205f58` / 12 条，probe `rejected:TypeError`，reload 仍 `mire-3 / screens36`；6 行传送面板 960/640 均 `overflow=false`；`smoke` 9 PASS；审计 **217 / 0 FAIL** |
+| W-124 | 构建 / 证据 | `npm run build -- --single`；收集字节；归档截图 | 通过；首屏 **2043 KB / gzip866 KB**；图集 **272 KB / 171 切片**；`game.e9831838.js` **364,270 B** + `assets.0b93f349.js` **131,323 B**；单文件 **2,227,940 B**；PWA `na-b18-27205f58`；证据 `docs/revamp/g4-1/` |
 
 证据：`docs/revamp/g4-1/g4-mire-1-960.png` … `g4-mire-6-960.png`、`g4-mire-screens.png`、`g4-mire-active-960.png`、`g4-mire-panel-960.png`、`g4-mire-done1-960.png`、`g4-mire-q2active-960.png`、`g4-mire-done2-960.png`、`g4-mire-cross-960.png`、`g4-mire-640.png`、`g4-mire-844.png`、`g4-mire-single-960.png`、`g4-mire-pwa-960.png`、`g4-mire-travel-960.png`、`g4-mire-travel-640.png`、`g4-mire-3d.png`；详见 `docs/BATCH26-G4-1.md`。当前 36 屏 / 6 群系 / 12 委托 / 5 Boss / 23 成就；雾泽无 Boss、无新成就。

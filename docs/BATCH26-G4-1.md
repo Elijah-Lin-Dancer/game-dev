@@ -113,7 +113,7 @@
 | 接取第二条 | `mireQuest2 active`；HUD `1/9` |
 | 再采 5 个节点 | `mireHerbs 11`；HUD `可交付 9/9` |
 | 交付第二条 | `mireQuest2 done / mireHerbs 2 / tokens 6 / HUD 已完成` |
-| 错误 | `errs=[]`；`window.__world.save.v=12`；`screens=36`；`worldData.version=9` |
+| 错误 | `errs=[]`；`window.__world.save.v=12`；`screens=36`；`world.json v9` |
 
 > 第一次任务测试误用 `npcs[0]`（草原村医），得到「草药 0/5」的错误结果；改为 `npcs.find(n=>n.quest==='mire')` 后重跑，以当前结果为准。
 
@@ -130,7 +130,7 @@
 | 640×360 | `scrollWidth=640 / clientWidth=640`；HUD / 场景无溢出；`g4-mire-640.png` |
 | 844×390 hasTouch | `scrollWidth=844 / clientWidth=844 / touchCtl=true / touchItems=3 / labels=['攻','E','返']`；`canvas779×360` |
 | 单文件 `file://` | `__SINGLE__ / mire-3 / screens=36 / v=12 / errs=[]`；`g4-mire-single-960.png` |
-| PWA | `na-b18-04de8b50` / 12 条；controller=true；`set_offline(true)` 后网络 probe `rejected:TypeError`，reload 仍进 `mire-3 / screens=36`；`g4-mire-pwa-960.png` |
+| PWA | `na-b18-27205f58` / 12 条；controller=true；`set_offline(true)` 后网络 probe `rejected:TypeError`，reload 仍进 `mire-3 / screens=36`；`g4-mire-pwa-960.png` |
 | v11 → v12 | `v=12`；`mireHerbs=0 / mireQuest=none / mireQuest2=none`；`screens=36`；`herbs3 / quest active` 保留 |
 | 6 篝火传送 | 960 / 640 均打开 `travel` 面板；6 行 + 留在原地；`overflow=false`；`g4-mire-travel-960.png` / `g4-mire-travel-640.png` |
 | 冒烟 | `npm run smoke` 9 PASS |
@@ -141,20 +141,20 @@
 
 | 项 | 值 |
 |---|---|
-| 首屏预算 | **2042 KB / gzip 865 KB** |
+| 首屏预算 | **2043 KB / gzip 866 KB** |
 | 图集 | **272 KB / 171 切片**；`web/atlas/core.png` **278,152 B** |
-| 游戏逻辑 | `dist/game.196888a7.js` **364,269 B**（gzip 102,384 B） |
+| 游戏逻辑 | `dist/game.e9831838.js` **364,270 B**（gzip 101,777 B） |
 | 素材数据 | `dist/assets.0b93f349.js` **131,323 B**（gzip 67,597 B） |
-| 单文件 | `web/game.html` **2,227,695 B**（gzip 893,928 B） |
-| PWA | `sw.js` cache **`na-b18-04de8b50`**，CORE 12 条 |
-| 入口 | `index.html` → `dist/assets.0b93f349.js` + `dist/game.196888a7.js` |
+| 单文件 | `web/game.html` **2,227,940 B**（gzip 891,453 B） |
+| PWA | `sw.js` cache **`na-b18-27205f58`**，CORE 12 条 |
+| 入口 | `index.html` → `dist/assets.0b93f349.js` + `dist/game.e9831838.js` |
 
 ## 7. 已知边界
 
 - **无 Boss / 无成就**：`mire-6` 只作为归水尾屏，不触发终局；世界 Boss 仍 5 只，成就仍 23。
 - **无液体模拟**：水洼不阻挡、不推挤、不落水；只有视觉与冷光呼吸。
 - **未走完整 Hall → World NAV**：本轮从 `?world&debug` 直入、逐屏 `applyScreen`，另补了 `volcano-6 → mire-1` 的实际走屏；没有单独重走 Hall → World 的完整导航栈。
-- **640 / 844 的 mire 采集提示**：截图脚本只调用 `updateHud`，未调用 `updatePrompts`，因此 844 截图中 NPC 的 E 提示未显示；不代表运行时提示缺失。
+- **640 / 844 的 mire 提示**：截图脚本必须同时调用 `updateHud / updatePrompts`；早期漏调 `updatePrompts` 导致 844 初版无 E 提示，最终线上 844 图已显示「E 交谈」，不代表运行时缺失。
 - **帧率**：headless / 无 GPU 下 20–23fps，只能说明 mire 与既有场景同档，不能作为真实设备 60fps 证明。
 - **性能专项未做**：水洼 tween、孢子 emitter、13 组水洼在低端设备上的长期开销未做专项 profile。
 
