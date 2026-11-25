@@ -259,3 +259,22 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 审计：`python3 tools/audit_scale.py` **170 实例 / 0 FAIL**；霜鸮 idle 3.09× / charge 2.89× / roar 3.24×；熔像 idle 3.11× / charge 3.04× / roar 3.24×。
 - 复现：`INK_STUDIO=/.../toolchains/ink-studio node art-src/g3/render-g3.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
+## G4-1 产出（2026-11-25）
+
+第六群系雾泽的 4 件角色 / 摆件 / 采集物与 1 张湿苔调色 tile。4 件均按 ink-studio 离线 SDF → 像素 → 图集生成，运行时只读成品 PNG；基础 16px 地形仍用现有 `TilesetField` 调色，不换 tile 体系。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 守泽人 阿芦 | `art-src/g4/mire-keeper.cjs`（seed 401，四向） | 256×64，4 向 × 64×64 | `mire-keeper.png` 64×64 | `mire-3` NPC；bbox 42px / 1.24×；origin 54/64 |
+| 芦苇 | `art-src/g4/mire-reed.cjs`（seed 402，单向） | 64×96 | `mire-reed.png` 64×96 | 各屏摆件；bbox 63px / 2.31×；origin 75/96 |
+| 沉祠 | `art-src/g4/mire-shrine.cjs`（seed 403，单向） | 96×128 | `mire-shrine.png` 96×128 | `mire-3 / mire-6`；bbox 96px / 3.0×；origin 110/128 |
+| 灯芯草 | `art-src/g4/mire-herb.cjs`（seed 404，单向） | 32×48 | `mire-herb.png` 32×48 | 采集节点；bbox 16px / 0.675×；origin 32/48 |
+| 湿苔 tile | `TilesetField` 帧 21 + 湿苔绿调色 | 16×16 | `mire-tile.png` | `buildGround` 的 `mireTile` 分支 |
+
+- 造型：守泽人是斗笠 + 深绿蓑衣 + 木杖 + 腰间旧灯芯的泽地守人；芦苇是高秆细叶 + 锈褐穗 + 浅水根；沉祠是低矮石基 + 木柱 + 湿苔顶 + 暖纸灯；灯芯草是冷水叶簇 + 白蓝灯芯。
+- 复用件：`mireArch` 复用 `desertArch` 加 tint；`mireDeadTree` 复用 `desertDeadTree`；`mireRock` 复用 `sand-rock`；`mireBush` 复用 `worldBush`。
+- 对照板：`docs/revamp/g4-1/g4-mire-3d.png`；源图集 / json：`docs/revamp/g4-3d/mire-*-atlas.png`。
+- 审计：`python3 tools/audit_scale.py` **217 实例 / 0 FAIL**；keeper 1.24×、reed 2.31×、shrine 3.0×、herb 0.675×。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
+- 素材出处：4 件 ink-studio 生成件，工具 MIT，成品本项目自制；tile 为 NinjaAdventure CC0 调色。

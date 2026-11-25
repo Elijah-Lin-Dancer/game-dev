@@ -1,10 +1,11 @@
-/* G2 开放世界：草原 / 竹林 / 沙漠 / 雪原 / 火山，30 屏 30×17
+/* G2 / G4 开放世界：草原 / 竹林 / 沙漠 / 雪原 / 火山 / 雾泽，36 屏 30×17
  *
  * 设计边界：
  *   - 单屏 480×272（30×17 格 ×16px），镜头仍是 640×360，能看到相邻屏边缘；
  *   - 五种地表群系共用同一套走 / 采 / 谈 / 打动词，任务、资源和 HUD 按群系配置；
  *   - 世界 Boss 仍只在 field-6，任务不跨群系记账；
  *   - 火山第二委托完成后解锁篝火传送，只去已访问过的篝火；
+ *   - G4-1 追加雾泽 6 屏；mire 仍走同一套走 / 采 / 谈 / 交付，不新开系统；
  *   - 仍只写 na.world，不碰主线 na.save。
  */
 import { S, VEC, ANGLE } from '../core/config.js';
@@ -35,6 +36,7 @@ const BATTLE_HERB_LABEL = {
   desert: { name: '沙蓬', prompt: 'E 采沙蓬', use: '沙蓬入药', respawn: '沙蓬重新抽叶' },
   snow: { name: '雪灯', prompt: 'E 采雪灯', use: '雪灯暖身', respawn: '雪灯重新亮起' },
   volcano: { name: '火种', prompt: 'E 拾火种', use: '火种暖身', respawn: '火种重新燃起' },
+  mire: { name: '灯芯草', prompt: 'E 采灯芯草', use: '灯芯草续灯', respawn: '一束灯芯草重新抽芽' },
 };
 const ATTACK_CD = 320;
 const ATTACK_RANGE = 62;
@@ -42,7 +44,7 @@ const ATTACK_DMG = 3;
 const IFRAME = 700;
 const BOSS_TURN_MS = 1600;
 const QUEST_LABEL = { none: '未接委托', active: '采集', done: '委托完成' };
-const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山' };
+const BIOME_LABEL = { field: '草原', bamboo: '竹林', desert: '沙海', snow: '雪原', volcano: '火山', mire: '雾泽' };
 /* G3 世界 Boss：96×96 四向 atlas 的帧序 0 前 / 1 左 / 2 后 / 3 右。
  * 竹林 Boss 的脚底统一在 73/96；苔背巨兽三姿态各有 1–2px 差，保留逐姿态。 */
 const BOSS_ART = {
@@ -106,7 +108,7 @@ const WORLD_TOUCH = [
 
 const TINT = {
   field: UI.world.field, bamboo: UI.world.bamboo, desert: UI.world.desert,
-  snow: UI.world.snow, volcano: UI.world.volcano,
+  snow: UI.world.snow, volcano: UI.world.volcano, mire: UI.world.mire,
 };
 
 /* 尺寸基线：玩家 16×16 源帧 ×2 = 32px 高。所有摆件按“可见像素高度”对齐：
@@ -120,6 +122,8 @@ const PROP_SCALE = {
   snowPine: 1.0, snowShrine: 1.1, snowLantern: 1.3,
   volcanoSpire: 1.2, volcanoVent: 2.0, volcanoForge: 1.0,
   volcanoLava: 3.0,
+  mireReed: 1.0, mireShrine: 1.0, mireArch: 1.0,
+  mireDeadTree: 1.2, mireRock: 1.4, mireBush: 0.9,
 };
 
 /* 群系任务配置：数据键、存档键、HUD 文案、NPC 素材都在这里对齐。
@@ -160,6 +164,15 @@ const QUEST_PROFILE = {
     respawn: '一盏雪灯草重新亮了',
     quest2Def: 'snowQuest2', quest2Save: 'snowQuest2',
     readyHint2: '续灯够了 · 回雪祠找阿霁',
+  },
+  mire: {
+    biome: 'mire', questDef: 'mireQuest', questSave: 'mireQuest', herbSave: 'mireHerbs', npcName: '守泽人阿芦',
+    item: '灯芯草', unit: '束', npcAsset: 'mireKeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.mireGlow,
+    glowScale: 1.1, labelY: 56, promptY: 70,
+    readyHint: '灯芯草够了 · 去沉祠找阿芦交付',
+    respawn: '一束灯芯草重新抽芽了',
+    quest2Def: 'mireQuest2', quest2Save: 'mireQuest2',
+    readyHint2: '续祠的灯芯够了 · 回沉祠找阿芦',
   },
   volcano: {
     biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs', npcName: '熔匠赤砧',
@@ -248,6 +261,8 @@ function normalizeWorld(raw) {
     deco: Array.isArray(s.deco) ? s.deco : [],
     props: normalizeProps(s.props),
     herbs: Array.isArray(s.herbs) ? s.herbs.filter((h) => Array.isArray(h) && h.length >= 2) : [],
+    pools: Array.isArray(s.pools) ? s.pools.filter((p) => Array.isArray(p) && p.length >= 4)
+      .map((p) => [asNumber(p[0], 0), asNumber(p[1], 0), asNumber(p[2], 0), asNumber(p[3], 0)]) : [],
     npc: s.npc || null,
     plateau: normalizeRect(s.plateau),
     cave: normalizeRect(s.cave),
@@ -263,6 +278,8 @@ function normalizeWorld(raw) {
   const sq2 = raw && raw.snowQuest2 ? raw.snowQuest2 : {};
   const vq = raw && raw.volcanoQuest ? raw.volcanoQuest : {};
   const vq2 = raw && raw.volcanoQuest2 ? raw.volcanoQuest2 : {};
+  const mq = raw && raw.mireQuest ? raw.mireQuest : {};
+  const mq2 = raw && raw.mireQuest2 ? raw.mireQuest2 : {};
   const bossesRaw = Array.isArray(raw && raw.bosses)
     ? raw.bosses
     : (raw && raw.boss ? [raw.boss] : []);
@@ -349,6 +366,20 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(vq.need, 5))),
       yield: Math.max(1, Math.round(asNumber(vq.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(vq.rewardTokens, 2))),
+    },
+    mireQuest: {
+      id: String(mq.id || 'mireReed7'),
+      name: String(mq.name || '灯芯七束'),
+      need: Math.max(1, Math.round(asNumber(mq.need, 7))),
+      yield: Math.max(1, Math.round(asNumber(mq.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(mq.rewardTokens, 3))),
+    },
+    mireQuest2: {
+      id: String(mq2.id || 'mireReed9'),
+      name: String(mq2.name || '沉祠长明'),
+      need: Math.max(1, Math.round(asNumber(mq2.need, 9))),
+      yield: Math.max(1, Math.round(asNumber(mq2.yield, 2))),
+      rewardTokens: Math.max(0, Math.round(asNumber(mq2.rewardTokens, 3))),
     },
     volcanoQuest2: {
       id: String(vq2.id || 'volcanoForge3'),
@@ -452,6 +483,7 @@ export class World extends Phaser.Scene {
 
     this.buildBackdrop();
     this.buildGround();
+    this.buildMirePools();
     this.buildTerrain();
     this.buildNPC();
     this.buildHerbs();
@@ -509,24 +541,30 @@ export class World extends Phaser.Scene {
     this.screens.forEach((s) => {
       const tint = TINT[s.biome] || TINT.field;
       const ground = s.biome === 'desert' ? 'desertTile'
-        : (s.biome === 'snow' ? 'snowTile' : (s.biome === 'volcano' ? 'volcanoTile' : 'field'));
-      const groundFrame = (s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano') ? 0 : 21;
-      const whiteGround = s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano';
+        : (s.biome === 'snow' ? 'snowTile' : (s.biome === 'volcano' ? 'volcanoTile'
+          : (s.biome === 'mire' ? 'mireTile' : 'field')));
+      const groundFrame = (s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano' || s.biome === 'mire') ? 0 : 21;
+      const whiteGround = s.biome === 'desert' || s.biome === 'snow' || s.biome === 'volcano' || s.biome === 'mire';
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, tint, 1)
         .setOrigin(0).setDepth(-0.4);
       this.add.tileSprite(s.x, WORLD_Y, SCREEN_W, SCREEN_H, ground, groundFrame)
         .setOrigin(0).setTint(whiteGround ? 0xffffff : tint).setDepth(0);
-      const shade = s.biome === 'snow' ? 0.035 : (s.biome === 'desert' ? 0.10 : (s.biome === 'volcano' ? 0.16 : 0.07));
+      const shade = s.biome === 'snow' ? 0.035 : (s.biome === 'desert' ? 0.10
+        : (s.biome === 'volcano' ? 0.16 : (s.biome === 'mire' ? 0.13 : 0.07)));
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, SCREEN_H, 0x0a120c, shade)
         .setOrigin(0).setDepth(1);
       const rim = s.biome === 'snow' ? UI.world.snowLight
-        : (s.biome === 'desert' ? 0xe5c37d : (s.biome === 'volcano' ? UI.world.volcanoLight : UI.world.fieldLight));
-      const rimAlpha = s.biome === 'snow' ? 0.32 : (s.biome === 'desert' ? 0.20 : (s.biome === 'volcano' ? 0.30 : 0.16));
+        : (s.biome === 'desert' ? 0xe5c37d
+          : (s.biome === 'volcano' ? UI.world.volcanoLight
+            : (s.biome === 'mire' ? UI.world.mireLight : UI.world.fieldLight)));
+      const rimAlpha = s.biome === 'snow' ? 0.32 : (s.biome === 'desert' ? 0.20
+        : (s.biome === 'volcano' ? 0.30 : (s.biome === 'mire' ? 0.22 : 0.16)));
       this.add.rectangle(s.x, WORLD_Y, SCREEN_W, 3, rim, rimAlpha)
         .setOrigin(0).setDepth(1.4);
       s.deco.forEach((d) => {
         const [dx, dy, frame = 0, scale = 1] = d;
-        const decoAlpha = s.biome === 'snow' ? 0.28 : (s.biome === 'desert' ? 0.32 : (s.biome === 'volcano' ? 0.30 : 0.42));
+        const decoAlpha = s.biome === 'snow' ? 0.28 : (s.biome === 'desert' ? 0.32
+          : (s.biome === 'volcano' ? 0.30 : (s.biome === 'mire' ? 0.36 : 0.42)));
         this.add.image(s.x + dx, WORLD_Y + dy, 'floorDetail', frame)
           .setScale(scale).setAlpha(decoAlpha).setTint(tint).setDepth(2);
       });
@@ -553,6 +591,23 @@ export class World extends Phaser.Scene {
         this.add.ellipse(s.x + 128, WORLD_Y + 208, 150, 22, UI.world.volcanoDark, 0.16)
           .setOrigin(0.5, 0.5).setDepth(2.35);
       }
+      if (s.biome === 'mire') {
+        const idx = this.screens.indexOf(s);
+        // 湿苔斑：固定公式落点，不开新数据，也不随机漂移；只压暗地皮，不改碰撞。
+        for (let i = 0; i < 4; i += 1) {
+          const px = 32 + ((i * 101 + idx * 37) % 414);
+          const py = 62 + ((i * 43 + idx * 29) % 180);
+          this.add.ellipse(s.x + px, WORLD_Y + py, 76 + i * 12, 18 + i * 3, UI.world.mireDark, 0.075)
+            .setOrigin(0.5, 0.5).setDepth(2.02);
+        }
+        this.add.ellipse(s.x + 238, WORLD_Y + 248, 330, 38, UI.world.mireDark, 0.18)
+          .setOrigin(0.5, 0.5).setDepth(2.25);
+        this.add.ellipse(s.x + 118, WORLD_Y + 176, 170, 24, UI.world.mireLight, 0.08)
+          .setOrigin(0.5, 0.5).setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD);
+        const bank = this.add.ellipse(s.x + 270, WORLD_Y + 230, 380, 30, UI.world.mireLight, 0.055)
+          .setOrigin(0.5, 0.5).setDepth(2.6);
+        this.tweens.add({ targets: bank, alpha: 0.025, duration: 3600, yoyo: true, repeat: -1 });
+      }
       this.add.text(s.x + 16, WORLD_Y + 12, s.name, {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.muted,
       }).setAlpha(0.55).setDepth(3);
@@ -564,6 +619,27 @@ export class World extends Phaser.Scene {
         .setOrigin(0.5, 0).setDisplaySize(112, SCREEN_H)
         .setTint(mixColor(TINT[this.screens[i - 1].biome] || TINT.field, TINT[this.screens[i].biome] || TINT.field, 0.55)).setAlpha(0.56).setDepth(1.6);
     }
+  }
+
+  /* 雾泽水洼：只做视觉层，不做碰撞；形状用椭圆，水下压一层暗色，边上补一点冷光。 */
+  buildMirePools() {
+    this.screens.filter((s) => s.biome === 'mire').forEach((s) => {
+      s.pools.forEach(([px, py, pw, ph], i) => {
+        const x = s.x + px;
+        const y = WORLD_Y + py;
+        this.add.ellipse(x, y + 2, pw * 1.04, ph * 1.04, UI.world.mireDark, 0.34).setDepth(2.1);
+        this.add.ellipse(x, y, pw, ph, UI.world.mireWater, 0.78).setDepth(2.2);
+        this.add.ellipse(x, y - 1, pw * 0.80, ph * 0.56, UI.world.mireLight, 0.11)
+          .setDepth(2.25).setBlendMode(Phaser.BlendModes.ADD);
+        this.add.ellipse(x, y, pw * 0.98, ph * 1.02, 0x000000, 0.10)
+          .setStrokeStyle(1, UI.world.mireLight, 0.18).setDepth(2.15);
+        const glint = this.add.ellipse(x - pw * 0.18, y - 2, pw * 0.24, 1, UI.world.mireGlow, 0.30)
+          .setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({
+          targets: glint, alpha: 0.06, duration: 1900 + i * 140, yoyo: true, repeat: -1,
+        });
+      });
+    });
   }
 
   /* ---------- 台地 / 洞穴 / 摆件 ---------- */
@@ -747,6 +823,40 @@ export class World extends Phaser.Scene {
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
       this.add.image(x, y, 'volcanoVent')
         .setOrigin(0.5, 1).setScale(k).setDepth(18);
+    } else if (p.kind === 'mireReed') {
+      this.add.ellipse(x, y - 2, 32 * k, 8 * k, 0x000000, 0.20).setDepth(17);
+      const reed = this.add.image(x, y, 'mireReed')
+        .setOrigin(0.5, 75 / 96).setScale(k).setDepth(18);
+      this.tweens.add({ targets: reed, rotation: 0.018, duration: 2600, yoyo: true, repeat: -1 });
+      this.addBlock(s, p.x - 7, p.y - 8, 14, 8);
+    } else if (p.kind === 'mireShrine') {
+      this.add.circle(x, y - 62 * k, 42 * k, UI.world.mireGlow, 0.07)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
+      this.add.ellipse(x, y - 2, 78 * k, 12 * k, 0x000000, 0.24).setDepth(17);
+      this.add.image(x, y, 'mireShrine')
+        .setOrigin(0.5, 110 / 128).setScale(k).setDepth(18);
+      this.addBlock(s, p.x - 38 * k, p.y - 14, 76 * k, 14);
+    } else if (p.kind === 'mireArch') {
+      this.add.ellipse(x, y - 2, 92 * k, 12 * k, 0x000000, 0.24).setDepth(17);
+      this.add.image(x, y, 'desertArch')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18).setTint(0x8fb89a);
+      this.addBlock(s, p.x - 42 * k, p.y - 14, 10, 14);
+      this.addBlock(s, p.x + 32 * k, p.y - 14, 10, 14);
+    } else if (p.kind === 'mireDeadTree') {
+      this.add.ellipse(x, y - 3, 36 * k, 9 * k, 0x000000, 0.22).setDepth(17);
+      this.add.image(x, y, 'desertDeadTree')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18).setTint(0x7d997b);
+      this.addBlock(s, p.x - 8, p.y - 18, 16, 16);
+    } else if (p.kind === 'mireRock') {
+      this.add.ellipse(x, y - 2, 40 * k, 10 * k, 0x000000, 0.22).setDepth(17);
+      this.add.image(x, y, 'desertRock')
+        .setOrigin(0.5, 45 / 64).setScale(k).setDepth(18).setTint(0x8fae92);
+      this.addBlock(s, p.x - 18 * k, p.y - 14, 36 * k, 14);
+    } else if (p.kind === 'mireBush') {
+      this.add.ellipse(x, y - 2, 24 * k, 7 * k, 0x000000, 0.18).setDepth(17);
+      this.add.image(x, y, 'worldBush')
+        .setOrigin(0.5, 1).setScale(k).setDepth(18).setTint(0x7fa07a);
+      this.addBlock(s, p.x - 5, p.y - 7, 10, 7);
     } else if (p.kind === 'campfire') {
       this.add.circle(x, y - 8, 28 * k, 0xff9a4a, 0.10)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(16);
@@ -773,13 +883,14 @@ export class World extends Phaser.Scene {
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(22);
       this.tweens.add({ targets: glow, alpha: 0.06, scale: p.glowScale + 0.4, duration: 900, yoyo: true, repeat: -1 });
       const sprite = this.add.sprite(x, y, p.npcAsset, n.frame || 0)
-        .setOrigin(0.5, 1).setScale(p.npcScale).setDepth(25);
+        .setOrigin(0.5, p.npcOriginY || 1).setScale(p.npcScale).setDepth(25);
       this.tweens.add({ targets: sprite, y: y - 2, duration: 620, yoyo: true, repeat: -1 });
       const label = this.add.text(x, y - p.labelY, String(n.name || '村民'), {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.primary,
         backgroundColor: UI.hud.bgSoft, padding: { x: 4, y: 2 },
       }).setOrigin(0.5, 1).setDepth(40);
-      const prompt = this.add.text(x, y - p.promptY, 'E 交谈', {
+      const promptY = Math.max(p.promptY || 0, p.labelY + 26);
+      const prompt = this.add.text(x, y - promptY, 'E 交谈', {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
         backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
       }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -813,16 +924,18 @@ export class World extends Phaser.Scene {
         const desert = s.biome === 'desert';
         const snow = s.biome === 'snow';
         const volcano = s.biome === 'volcano';
+        const mire = s.biome === 'mire';
         const battle = !!h[2];
-        const glow = this.add.circle(x, y - 6, snow ? 12 : (desert ? 15 : 12), battle ? UI.world.herb : prof.glowTint, snow ? 0.10 : (desert ? (battle ? 0.16 : 0.08) : 0.10))
+        const glow = this.add.circle(x, y - 6, snow ? 12 : (mire ? 13 : (desert ? 15 : 12)), battle ? UI.world.herb : prof.glowTint, snow ? 0.10 : (mire ? 0.11 : (desert ? (battle ? 0.16 : 0.08) : 0.10)))
           .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
-        const herbAsset = desert ? 'desertShrub' : (snow ? 'snowLantern' : (volcano ? 'volcanoEmber' : 'herb'));
-        const herbScale = desert ? 1.7 : (snow ? 1.3 : (volcano ? 1.3 : 1.0));
+        const herbAsset = desert ? 'desertShrub' : (snow ? 'snowLantern'
+          : (volcano ? 'volcanoEmber' : (mire ? 'mireHerb' : 'herb')));
+        const herbScale = desert ? 1.7 : (snow ? 1.3 : (volcano ? 1.3 : (mire ? 1.35 : 1.0)));
         const sprite = this.add.sprite(x, y, herbAsset, 0)
-          .setOrigin(0.5, 1).setScale(herbScale).setDepth(24);
+          .setOrigin(0.5, mire ? 32 / 48 : 1).setScale(herbScale).setDepth(24);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 760 + i * 90, yoyo: true, repeat: -1 });
         const battleLabel = BATTLE_HERB_LABEL[s.biome] || BATTLE_HERB_LABEL.field;
-        const prompt = this.add.text(x, y - (desert || snow || volcano ? 32 : 24), battle ? battleLabel.prompt : 'E 采集', {
+        const prompt = this.add.text(x, y - (desert || snow || volcano || mire ? 32 : 24), battle ? battleLabel.prompt : 'E 采集', {
           fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
           backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
         }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
@@ -1147,6 +1260,25 @@ export class World extends Phaser.Scene {
     this.ashVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.volcanoVeil, 0.10)
       .setOrigin(0).setScrollFactor(0).setDepth(793).setAlpha(0);
 
+    // 瘴雾：缓慢上浮的孢子 + 一层薄绿 veil；只挡视线，不改判定。
+    this.mireSpores = this.add.particles(0, 0, 'dust', {
+      x: { min: -30, max: VIEW_W + 30 },
+      y: { min: 24, max: VIEW_H - 4 },
+      lifespan: { min: 1800, max: 3200 },
+      speedX: { min: -16, max: 10 },
+      speedY: { min: -24, max: -4 },
+      scaleX: { min: 0.32, max: 0.72 },
+      scaleY: { min: 0.32, max: 0.72 },
+      alpha: { start: 0.42, end: 0 },
+      quantity: 2,
+      frequency: 36,
+      tint: UI.world.mireSpore,
+      blendMode: 'ADD',
+    }).setScrollFactor(0).setDepth(794);
+    this.mireSpores.stop();
+    this.mireVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.mireVeil, 0.10)
+      .setOrigin(0).setScrollFactor(0).setDepth(792).setAlpha(0);
+
     this.dustVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.dustVeil, 0.13)
       .setOrigin(0).setScrollFactor(0).setDepth(791).setAlpha(0);
     this.fogVeil = this.add.rectangle(0, 0, VIEW_W, VIEW_H, UI.world.fogVeil, 0.16)
@@ -1164,13 +1296,16 @@ export class World extends Phaser.Scene {
     this.dustStorm.stop();
     this.snowFall.stop();
     this.ashFall.stop();
+    this.mireSpores.stop();
     this.fogVeil.setAlpha(0);
     this.dustVeil.setAlpha(0);
     this.snowVeil.setAlpha(0);
     this.ashVeil.setAlpha(0);
+    this.mireVeil.setAlpha(0);
     this.worldVig.setAlpha(s.weather === 'fog' ? 0.48
       : (s.weather === 'dust' ? 0.34
-        : (s.weather === 'snow' ? 0.22 : (s.weather === 'ash' ? 0.30 : 0.12))));
+        : (s.weather === 'snow' ? 0.22
+          : (s.weather === 'ash' ? 0.30 : (s.weather === 'miasma' ? 0.42 : 0.12)))));
     if (s.weather === 'rain') this.rain.start();
     if (s.weather === 'fog') {
       this.fogMist.start();
@@ -1187,6 +1322,10 @@ export class World extends Phaser.Scene {
     if (s.weather === 'ash') {
       this.ashFall.start();
       this.ashVeil.setAlpha(0.10);
+    }
+    if (s.weather === 'miasma') {
+      this.mireSpores.start();
+      this.mireVeil.setAlpha(0.10);
     }
   }
 
@@ -1577,7 +1716,9 @@ export class World extends Phaser.Scene {
 
   movePlayer(vx, vy, delta) {
     const d = Math.hypot(vx, vy) || 1;
-    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92 : (this.weather === 'dust' ? 0.94 : (this.weather === 'snow' ? 0.90 : 1)));
+    let mul = this.weather === 'rain' ? 1.05 : (this.weather === 'fog' ? 0.92
+      : (this.weather === 'dust' ? 0.94
+        : (this.weather === 'snow' ? 0.90 : (this.weather === 'miasma' ? 0.88 : 1))));
     if (this.layer === 'cave') mul *= 0.9;
     const step = SPEED * mul * (delta / 1000);
     let nx = this.player.x + (vx / d) * step;
@@ -1848,6 +1989,11 @@ export class World extends Phaser.Scene {
       if (state === 'none') return ['火稳了，可铁砧还差三口气。', '去焦原、黑曜坡、灰口各找一处炉眼，按 E 淬火。'];
       return ['炉眼还差 ' + missing + ' 处。', '焦原、黑曜坡、灰口的旧裂口都能淬，走近按 E。'];
     }
+    if (npc.quest === 'mire') {
+      if (state === 'done') return ['沉祠的灯又亮了。', '雾泽会记得你的脚步。'];
+      if (state === 'none') return ['火山那边的风，把沉祠的灯吹灭了。', '再采九束灯芯草，我要搓一根长明芯。'];
+      return ['还差 ' + missing + ' 束' + prof.item + '。', '浅汀和灯沼还有，采完会重新抽芽。'];
+    }
     if (npc.quest === 'bamboo') {
       if (state === 'done') return ['灯油够点三夜了。', '旧祠不会再黑。'];
       if (state === 'none') return ['雾竹汤熬好了，可旧祠的灯油还差。', '再采七株雾竹，我榨油。'];
@@ -1885,6 +2031,11 @@ export class World extends Phaser.Scene {
       if (state === 'done') return ['雪灯亮了，破祠里终于有影子。', '往风口走时别回头，雪会替你记路。'];
       if (state === 'none') return ['破祠的灯灭了很久，雪把灯芯压在霜林里。', '帮我拾五盏雪灯回来，我想再点一次。'];
       return ['还差 ' + missing + ' 盏雪灯。', '白原和石灯附近还有，雪化之前它们会重新亮。'];
+    }
+    if (npc.quest === 'mire') {
+      if (state === 'done') return ['灯芯草够点一夜。', '收下碎片，别在雾里停太久。'];
+      if (state === 'none') return ['雾把沉祠的灯压灭了。', '帮我采七束灯芯草，我要给守泽灯续芯。'];
+      return ['还差 ' + missing + ' 束灯芯草。', '浅汀和灯沼的草还有，采完会重新抽芽。'];
     }
     if (npc.quest === 'volcano') {
       if (state === 'done') return ['炉子又烧起来了，铁砧响得像心跳。', '收好碎片，别让火山吞了你的影子。'];
@@ -2018,15 +2169,14 @@ export class World extends Phaser.Scene {
     this.closePanel();
     this.updateHud();
     this.toast('委托完成 · 星火碎片 +' + q.rewardTokens);
-    this.say(npc.name, npc.quest === 'bamboo'
-      ? ['雾竹够了。', '收下这枚星火碎片，旧祠的灯就拜托你了。']
-      : (npc.quest === 'desert'
-        ? ['沙枣够了。', '收下这枚星火碎片，旧门的灯就拜托你了。']
-        : (npc.quest === 'snow'
-          ? ['雪灯够了。', '收下这枚星火碎片，破祠的灯就拜托你了。']
-          : (npc.quest === 'volcano'
-            ? ['火种够了。', '收下这枚星火碎片，铁砧的火就拜托你了。']
-            : ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。']))));
+    const doneLines = {
+      bamboo: ['雾竹够了。', '收下这枚星火碎片，旧祠的灯就拜托你了。'],
+      desert: ['沙枣够了。', '收下这枚星火碎片，旧门的灯就拜托你了。'],
+      snow: ['雪灯够了。', '收下这枚星火碎片，破祠的灯就拜托你了。'],
+      volcano: ['火种够了。', '收下这枚星火碎片，铁砧的火就拜托你了。'],
+      mire: ['灯芯草够了。', '收下这枚星火碎片，沉祠的灯就拜托你了。'],
+    }[npc.quest] || ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。'];
+    this.say(npc.name, doneLines);
   }
 
   closePanel() {

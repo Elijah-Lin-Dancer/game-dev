@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G4-1 v12：
+ *   - 新增 mire-1…mire-6 屏，追加雾泽 6 屏；
+ *   - 新增 mireHerbs / mireQuest / mireQuest2；v11 旧档补 0 / none；
+ *
  * G2-6 v11：
  *   - 新增 fieldQuest2 / bambooQuest2 / desertQuest2 / snowQuest2；
  *   - 四群系第二条委托全部落档；v10 旧档补 none，其余字段不变；
@@ -28,13 +32,14 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 11;
+const VERSION = 12;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
   'desert-1', 'desert-2', 'desert-3', 'desert-4', 'desert-5', 'desert-6',
   'snow-1', 'snow-2', 'snow-3', 'snow-4', 'snow-5', 'snow-6',
   'volcano-1', 'volcano-2', 'volcano-3', 'volcano-4', 'volcano-5', 'volcano-6',
+  'mire-1', 'mire-2', 'mire-3', 'mire-4', 'mire-5', 'mire-6',
 ];
 const LEGACY_SCREEN = { field: 'field-1', bamboo: 'field-3', desert: 'field-6' };
 const QUESTS = ['none', 'active', 'done'];
@@ -79,6 +84,9 @@ const defaults = () => ({
   volcanoQuest: 'none',
   volcanoQuest2: 'none',
   volcanoVents: [],
+  mireHerbs: 0,
+  mireQuest: 'none',
+  mireQuest2: 'none',
   boss: 'none',
   bosses: bossDefaults(),
   tokens: 0,
@@ -115,6 +123,9 @@ function migrate(old) {
     volcanoQuest: QUESTS.includes(old.volcanoQuest) ? old.volcanoQuest : 'none',
     volcanoQuest2: QUESTS.includes(old.volcanoQuest2) ? old.volcanoQuest2 : 'none',
     volcanoVents: sanitizeVents(old.volcanoVents),
+    mireHerbs: Math.min(99, Math.round(num(old.mireHerbs))),
+    mireQuest: QUESTS.includes(old.mireQuest) ? old.mireQuest : 'none',
+    mireQuest2: QUESTS.includes(old.mireQuest2) ? old.mireQuest2 : 'none',
     bosses: sanitizeBosses(old.bosses, old.bosses ? null : old.boss),
     boss: sanitizeBosses(old.bosses, old.bosses ? null : old.boss).mossBeast === 'done' ? 'done' : 'none',
     tokens: Math.min(99, Math.round(num(old.tokens))),

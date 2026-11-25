@@ -23,6 +23,8 @@ BASE = {
     'campfire': 1.3, 'snowPine': 1.0, 'snowShrine': 1.1,
     'volcanoSpire': 1.2, 'volcanoVent': 2.0, 'volcanoForge': 1.0,
     'volcanoLava': 3.0,
+    'mireReed': 1.0, 'mireShrine': 1.0, 'mireArch': 1.0,
+    'mireDeadTree': 1.2, 'mireRock': 1.4, 'mireBush': 0.9,
 }
 # 群系资源点缩放，与 buildHerbs 同步
 HERB = {
@@ -31,6 +33,7 @@ HERB = {
     'desert': ('assets/01-primary/world/desert-shrub.png', 1.7),
     'snow': ('assets/01-primary/world/snow-lantern.png', 1.3),
     'volcano': ('assets/01-primary/world/volcano-ember.png', 1.3),
+    'mire': ('assets/01-primary/world/mire-herb.png', 1.35),
 }
 # NPC 正面帧与缩放，与 QUEST_PROFILE 同步
 NPC = {
@@ -39,6 +42,7 @@ NPC = {
     'desert': ('assets/01-primary/world/desert-nomad.png', 0.95, (0, 0, 64, 64)),
     'snow': ('assets/01-primary/world/snow-keeper.png', 0.9, (0, 0, 64, 64)),
     'volcano': ('assets/01-primary/world/volcano-smith.png', 0.95, (0, 0, 64, 64)),
+    'mire': ('assets/01-primary/world/mire-keeper.png', 0.95, (0, 0, 64, 64)),
 }
 BOSS_ART = {
     'mossBeast': {
@@ -110,6 +114,12 @@ ASSET = {
     'volcanoVent': 'assets/01-primary/world/volcano-vent.png',
     'volcanoForge': 'assets/01-primary/world/volcano-forge.png',
     'volcanoLava': 'assets/01-primary/world/volcano-lava.png',
+    'mireReed': 'assets/01-primary/world/mire-reed.png',
+    'mireShrine': 'assets/01-primary/world/mire-shrine.png',
+    'mireArch': 'assets/01-primary/world/desert-arch.png',
+    'mireDeadTree': 'assets/01-primary/world/desert-dead-tree.png',
+    'mireRock': 'assets/01-primary/world/sand-rock.png',
+    'mireBush': 'assets/01-primary/world/bush-green.png',
 }
 
 def bbox_h(path, crop=None):
@@ -136,10 +146,10 @@ def main():
                 continue
             h = h0 * pscale
             ratio = h / PLAYER_H
-            low = 2.2 if kind in ('tree', 'bamboo', 'bambooGate', 'desertArch', 'desertDeadTree', 'desertPalm', 'snowPine', 'volcanoSpire') else (2.8 if kind in ('snowShrine', 'volcanoForge') else 0)
-            high = 1.15 if kind in ('desertScrub',) else (1.3 if kind in ('campfire', 'volcanoLava', 'volcanoVent') else 0)
-            if kind == 'desertRock' and ratio < 2.0:
-                fails.append(f'{s["id"]} desertRock {ratio:.2f}x < 2.0x')
+            low = 2.2 if kind in ('tree', 'bamboo', 'bambooGate', 'desertArch', 'desertDeadTree', 'desertPalm', 'snowPine', 'volcanoSpire', 'mireReed', 'mireArch', 'mireDeadTree') else (2.8 if kind in ('snowShrine', 'volcanoForge', 'mireShrine') else 0)
+            high = 1.15 if kind in ('desertScrub', 'mireBush') else (1.3 if kind in ('campfire', 'volcanoLava', 'volcanoVent') else 0)
+            if kind in ('desertRock', 'mireRock') and ratio < 2.0:
+                fails.append(f'{s["id"]} {kind} {ratio:.2f}x < 2.0x')
             if kind == 'campfire' and ratio < 0.7:
                 fails.append(f'{s["id"]} campfire {ratio:.2f}x < 0.7x')
             if low and ratio < low:
