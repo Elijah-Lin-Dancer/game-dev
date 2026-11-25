@@ -82,6 +82,24 @@ python3 tools/crop_hub.py
 - 沙枣丛与沙婆均登记 `assets/CREDITS.md`；NinjaAdventure 原包 LICENSE 为 CC0 1.0。
 
 
+## G3-3 产出（2026-11-25）
+
+世界 Boss 第三只，沙海蜃。玩家基线仍是 32px 可见高度；这不是沙门 / 神龛，也不是苔背巨兽换色，而是贴地游走的沙海活体。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 沙海蜃 待机 | `art-src/g3/sand-mirage.cjs`（seed 303，`pose=idle`） | 384×96，4 向 | `sand-mirage-idle.png` 384×96 | 世界 Boss；2.48× 玩家，79.2px |
+| 沙海蜃 蓄力 | 同上，`pose=charge` | 384×96，4 向 | `sand-mirage-charge.png` 384×96 | 蓄力 / 扑击 / 横扫；2.25× 玩家，72.0px |
+| 沙海蜃 咆哮 | 同上，`pose=roar` | 384×96，4 向 | `sand-mirage-roar.png` 384×96 | 入场 / 落地 / 死亡；2.85× 玩家，91.2px |
+
+- 造型：宽薄沙帆翼（后掠、前后向骨架）、低宽主躯干、三块覆瓦沙甲、新月背帆（半张 / 后掠 / 张开三态）、宽楔头 + 深眼窝 + 青焰瞳 + 金色高光、颊甲 / 沙玻璃短角 / 两颗小獠牙、四只短桨足 + 三枚沙玻璃爪、三节沙壳长鞭尾 + 玻璃倒刺 + 金色尾晶。
+- 帧序：0 前 / 1 左 / 2 后 / 3 右；三姿态脚底统一 **65/96**，`originY=0.6771`；运行时 `scale=2.4`，静态姿态切帧 + 呼吸 tween；`mirror` 为同姿态 ADD 重影，不参与碰撞。
+- 取景：`cam target [0,1.04,0], dist 10.2, pitch 0.13, yaw 0.04`；`charge` 的 `finTop 1.66`，把蓄力可见高度从 25px 提到 30px，保证 2.2× 下限。
+- 对照板：`docs/revamp/g3-3d/sand-mirage-board.png`；源元数据：`docs/revamp/g3-3d/sand-mirage-{idle,charge,roar}.json`。
+- 审计：`python3 tools/audit_scale.py` 扩第三只 Boss → **144 实例 / 0 FAIL**，沙海蜃 idle 2.48× / charge 2.25× / roar 2.85×。
+- 复现：`node art-src/g3/render-g3.cjs`（需要 `INK_STUDIO` 指向固定 checkout）。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
 ## G3-2 产出（2026-11-24）
 
 世界 Boss 第二只，雾竹蜃。玩家基线仍是 32px 可见高度；这不是放大竹节虫，也不是苔背巨兽换色，而是重新建模。

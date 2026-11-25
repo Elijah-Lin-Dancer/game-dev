@@ -1799,36 +1799,8 @@
           1
         ]
       ],
-      "props": [
-        [
-          "desertDeadTree",
-          136,
-          222,
-          1.2
-        ],
-        [
-          "desertPalm",
-          64,
-          190,
-          1.25
-        ],
-        [
-          "desertArch",
-          382,
-          248,
-          1
-        ]
-      ],
-      "herbs": [
-        [
-          210,
-          214
-        ],
-        [
-          312,
-          196
-        ]
-      ],
+      "props": [],
+      "herbs": [],
       "npc": null
     },
     {
@@ -3488,6 +3460,21 @@
       "title": "竹影守渡者",
       "victoryTitle": "竹林的星火 · 已归位",
       "victoryBody": "雾隐渡的竹影，暂时安静下来。"
+    },
+    {
+      "id": "sandMirage",
+      "name": "沙海蜃",
+      "screen": "desert-6",
+      "x": 300,
+      "y": 170,
+      "hp": 80,
+      "dmg": 5,
+      "rewardTokens": 4,
+      "art": "sandMirage",
+      "title": "蜃楼守沙者",
+      "victoryTitle": "沙海的星火 · 已归位",
+      "victoryBody": "无旗的沙海，终于散去了蜃楼。",
+      "memorialText": "沙海星火 · 已归位"
     }
   ]
 }

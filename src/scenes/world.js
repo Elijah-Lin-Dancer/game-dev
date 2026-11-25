@@ -49,6 +49,15 @@ const BOSS_ART = {
     shadow: [78, 14], glowY: 24, labelY: 126,
     tint: UI.world.herb,
   },
+  sandMirage: {
+    tex: { idle: 'sandMirageIdle', charge: 'sandMirageCharge', roar: 'sandMirageRoar' },
+    origin: { idle: 65 / 96, charge: 65 / 96, roar: 65 / 96 },
+    // 体宽约 154px：站位留 132，近身 104 内横扫，拉开则扑沙。
+    scale: 2.4, standoff: 132, swipeAt: 104,
+    pounceGap: 92, pounceR: 100, swipeR: 112, swipeWarn: 104,
+    shadow: [142, 18], glowY: 28, labelY: 100,
+    tint: UI.world.desert, mirage: true,
+  },
 };
 const bossArt = (id) => BOSS_ART[id] || BOSS_ART.mossBeast;
 const WORLD_TOUCH = [
@@ -1882,7 +1891,7 @@ export class World extends Phaser.Scene {
     const b = def || (this.bossSpawn && this.bossSpawn.def);
     if (!b) return;
     if (this.boss) {
-      for (const key of ['spr', 'glow', 'shadow', 'ring', 'label', 'warning']) {
+      for (const key of ['spr', 'mirror', 'glow', 'shadow', 'ring', 'label', 'warning']) {
         if (this.boss[key]) this.boss[key].destroy();
       }
       if (this.boss.breath) this.boss.breath.remove();
@@ -1900,13 +1909,19 @@ export class World extends Phaser.Scene {
     const ring = this.add.ellipse(x, y - 3, Math.round(art.shadow[0] * 0.86), Math.round(art.shadow[1] * 1.1), art.tint, 0.13).setDepth(32).setVisible(false);
     const spr = this.add.sprite(x, y, art.tex.idle, 0)
       .setOrigin(0.5, art.origin.idle).setScale(art.scale).setDepth(35).setVisible(false);
+    // 沙海蜃专属蜃气：身后一层沙金色低透明重影，随呼吸轻微漂移。
+    const mirror = art.mirage
+      ? this.add.sprite(x, y, art.tex.idle, 0).setOrigin(0.5, art.origin.idle)
+        .setScale(art.scale * 1.03).setAlpha(0.12).setTint(art.tint)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(34).setVisible(false)
+      : null;
     const label = this.add.text(x, y - art.labelY, b.name, {
       fontFamily: UI.font, fontSize: '12px', color: UI.text.danger,
       backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
     }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
     this.boss = {
       id: b.id, def: b, art,
-      name: b.name, spr, glow, shadow, ring, label, x, y,
+      name: b.name, spr, mirror, glow, shadow, ring, label, x, y,
       maxHp: b.hp, hp: b.hp, dmg: b.dmg, rewardTokens: b.rewardTokens,
       scale: art.scale, standoff: art.standoff,
       state: 'idle', stateEnd: 0, nextAt: 0, target: null, warning: null, flash: 0,
@@ -1941,6 +1956,10 @@ export class World extends Phaser.Scene {
     B.dir = nextDir;
     B.spr.setOrigin(0.5, B.art.origin[nextPose]);
     B.spr.setTexture(B.art.tex[nextPose], nextDir);
+    if (B.mirror) {
+      B.mirror.setOrigin(0.5, B.art.origin[nextPose]);
+      B.mirror.setTexture(B.art.tex[nextPose], nextDir);
+    }
   }
 
   bossImpact(x, y, big = false) {
@@ -1996,6 +2015,7 @@ export class World extends Phaser.Scene {
     this.boss.stateEnd = this.time.now + 900;
     this.boss.nextAt = this.time.now + 900;
     this.boss.spr.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(1);
+    if (this.boss.mirror) this.boss.mirror.setPosition(this.bossSpawn.x, this.bossSpawn.y).setVisible(true).setAlpha(0.1);
     this.boss.spr.setScale(this.boss.scale * 0.92);
     this.boss.turnDir = 0;
     this.boss.turnAt = this.time.now + BOSS_TURN_MS;
@@ -2043,6 +2063,12 @@ export class World extends Phaser.Scene {
     B.shadow.x = B.spr.x; B.shadow.y = B.spr.y - 3;
     B.ring.x = B.spr.x; B.ring.y = B.spr.y - 3;
     B.label.x = B.spr.x; B.label.y = B.spr.y - B.art.labelY;
+    if (B.mirror && B.mirror.visible) {
+      B.mirror.x = B.spr.x + 4 + Math.sin(time / 210) * 2.5;
+      B.mirror.y = B.spr.y - 1;
+      B.mirror.setScale(B.spr.scaleX * 1.03, B.spr.scaleY * 1.03);
+      B.mirror.setAlpha(0.09 + 0.045 * (0.5 + 0.5 * Math.sin(time / 280)));
+    }
     if (B.flash > 0) {
       B.flash -= delta;
       if (B.flash <= 0) B.spr.clearTint();
@@ -2075,7 +2101,8 @@ export class World extends Phaser.Scene {
       }
       if (time >= B.moteAt) { B.moteAt = time + 300; this.spawnBossMote(); }
       if (time >= B.nextAt) {
-        if (dist < 104) this.startSwipe();
+        // 每只 Boss 的近身阈值不同；没有声明 swipeAt 的沿用旧全局 104。
+        if (dist < (B.art.swipeAt || 104)) this.startSwipe();
         else this.startPounce();
         return;
       }
@@ -2230,7 +2257,7 @@ export class World extends Phaser.Scene {
     this.cameras.main.shake(200, 0.014);
     this.tweens.add({
       targets: this.boss.spr, alpha: 0, scale: this.boss.scale * 1.08, duration: 620, ease: 'Quad.easeOut',
-      onComplete: () => { if (this.boss) { this.boss.spr.setVisible(false).setAlpha(1); } },
+      onComplete: () => { if (this.boss) { this.boss.spr.setVisible(false).setAlpha(1); if (this.boss.mirror) this.boss.mirror.setVisible(false); } },
     });
     this.boss.glow.setVisible(false);
     this.boss.shadow.setVisible(false);
@@ -2340,6 +2367,7 @@ export class World extends Phaser.Scene {
     this.bossActive = true;
     if (this.boss.breath) { this.boss.breath.remove(); this.boss.breath = null; }
     this.boss.spr.setVisible(true).setAlpha(1).setScale(this.boss.scale);
+    if (this.boss.mirror) this.boss.mirror.setVisible(true).setAlpha(0.1);
     this.startBossBreath();
     this.boss.turnDir = 0;
     this.boss.turnAt = this.time.now + BOSS_TURN_MS;

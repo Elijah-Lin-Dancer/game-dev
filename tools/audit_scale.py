@@ -56,6 +56,14 @@ BOSS_ART = {
             'roar': 'assets/01-primary/world/bamboo-mirage-roar.png',
         },
     },
+    'sandMirage': {
+        'name': '沙海蜃', 'scale': 2.4,
+        'poses': {
+            'idle': 'assets/01-primary/world/sand-mirage-idle.png',
+            'charge': 'assets/01-primary/world/sand-mirage-charge.png',
+            'roar': 'assets/01-primary/world/sand-mirage-roar.png',
+        },
+    },
 }
 ASSET = {
     'tree': 'assets/01-primary/world/tree-green.png',

@@ -1,5 +1,9 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G3-3 v9：
+ *   - bosses 增加第三只 sandMirage（沙海 · 无旗）；v8 旧档补 none，不迁移已访问；
+ *   - 其余字段沿用 v8，仍是两值进度 none|done。
+ *
  * G3-2 v8：
  *   - 世界 Boss 进度由单值 boss 改为 bosses 对象（mossBeast / bambooMirage）；
  *   - 旧 v7 的 boss:'done' 迁移到 bosses.mossBeast；boss 字段保留为草原 Boss 兼容别名；
@@ -16,7 +20,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 8;
+const VERSION = 9;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -33,7 +37,7 @@ function sanitizeVents(v) {
   return [...new Set(v.filter((id) => VENTS.has(id)))];
 }
 const BOSS_STATES = ['none', 'done'];
-const BOSS_IDS = ['mossBeast', 'bambooMirage'];
+const BOSS_IDS = ['mossBeast', 'bambooMirage', 'sandMirage'];
 const bossDefaults = () => Object.fromEntries(BOSS_IDS.map((id) => [id, 'none']));
 
 function sanitizeBosses(raw, legacy) {
