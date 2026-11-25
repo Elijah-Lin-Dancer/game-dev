@@ -238,7 +238,7 @@ HUD 在 `cycle > 1` 时显示「远征 · 归水 · 周目 2」；`retryBoss` �
 
 ## 11. 提交与 Pages
 
-- 代码 / 构建 / 本地证据 / 文档提交 **`433afe6`**，推送 `35bcaed..433afe6` 到 `origin/main`。
+- 代码 / 构建 / 本地证据 / 文档提交 **`433afe6`**；线上证据回填 **`32d45a9`**；推送 `35bcaed..32d45a9` 到 `origin/main`。
 - Pages 入口 **`game.c7d2c0ba.js` + `assets.8c75570a.js`**，PWA **`na-b18-9cf996b0` / 12 条**。
 - 线上 `web/data/world.json` **v10 / 36 屏 / 6 Boss**，`mireWraith.bossGate {250,246 / E 点燃归水灯}`。
 - 960：v13→v14 / `expedition=1`；`mire-6` gate 存在，Boss `visible=false / state=idle`；近灯 prompt 可见；E 后 `active=true / gate=null / maxHp=104 / tier=1`；击杀后终局面板 `rows=2 / fillH=74`；重燃 `expedition=2 / screen=0 / 六 Boss none / tokens=26`，HUD「远征 · 村口 · 周目 2」。
