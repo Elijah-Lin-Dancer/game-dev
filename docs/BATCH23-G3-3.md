@@ -144,7 +144,7 @@ node art-src/g3/render-g3.cjs
 | 横扫 | 近距离 `swipeWindup / charge`，结算后 `HP20→15` |
 | 击杀 | 真实攻击 3 伤 → `victory=true / bossDead=true / bosses.sandMirage=done / tokens=4`；本体与 mirror 均隐藏 |
 | 失败 / 重试 | `HP` 归零 → `dead=true / panelOpen=true`；`retryBoss()` → `dead=false / active=true / hp20 / bossHp80` |
-| 苔背 / 雾竹回归 | 通用 `updateBoss` 修改只对声明 `swipeAt` 的 Boss 生效；两只旧 Boss 路径不变 |
+| 苔背 / 雾竹回归 | 960 fresh page：`field-6` 生成 `mossBeast / hp64 / pose roar / dir0`、`bamboo-6` 生成 `bambooMirage / hp72 / dir0`；两只均触发原有扑击，`errs=[]` |
 
 ### 4.2 三档与离线
 
@@ -170,9 +170,9 @@ node art-src/g3/render-g3.cjs
 
 ### 4.4 Pages 线上
 
-- 推送后读入口 hash / 线上截图；待回填。
-- 线上 960×540 `?world=1&debug=1`：`applyScreen(17)` 为 `sandMirage / hp80 / scale2.4 / originY0.6771`；四向 `3→0→1→2`；扑击 / 横扫 `HP20→15`；真实击杀 `tokens4 / bosses.sandMirage=done`；640 / 844 / PWA 断网同上。
-- 截图：`g3-online-sand-*.png`、`g3-online-sand-turn-board.png` / `.gif`。
+- Pages 入口 `game.1697e515.js` + `assets.edb3c810.js`，PWA `na-b18-5ce6f0a6` / 12 条。
+- 线上 960×540 `?world=1&debug=1`：`applyScreen(17)` 为 `sandMirage / hp80 / scale2.4109（呼吸峰值，基准 2.4） / originY0.6771 / mirror=true`；站定 `dir 2→3→0→1→2→3→0`（1.50–1.75s/步，HP20）；扑击 `HP20→15`；横扫 `HP20→15`；真实 3 伤击杀 `bossDead=true / bosses.sandMirage=done / tokens4 / 本体与 mirror 隐藏`；640 `scrollWidth=640`；844 `touchCtl=true / touchItems=3`；PWA 断网 `online=false / 30 屏 / desert-6 / sandMirage / hp80 / controller=true`；四组 `errs=[]`。
+- 截图：`g3-online-sand-intro-960.png`、`g3-online-sand-idle-960.png`、`g3-online-sand-turn-d0..d3.png`、`g3-online-sand-pounce-960.png`、`g3-online-sand-swipe-960.png`、`g3-online-sand-victory-960.png`、`g3-online-sand-640.png`、`g3-online-sand-touch-844x390.png`、`g3-online-sand-pwa-offline-960.png`、`g3-online-sand-turn-board.png` / `.gif`。
 
 ---
 
