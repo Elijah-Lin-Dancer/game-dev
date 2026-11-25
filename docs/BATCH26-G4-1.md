@@ -144,7 +144,7 @@
 | 首屏预算 | **2043 KB / gzip 866 KB** |
 | 图集 | **272 KB / 171 切片**；`web/atlas/core.png` **278,152 B** |
 | 游戏逻辑 | `dist/game.e9831838.js` **364,270 B**（gzip 101,777 B） |
-| 素材数据 | `dist/assets.0b93f349.js` **131,323 B**（gzip 67,597 B） |
+| 素材数据 | `dist/assets.0b93f349.js` **131,323 B**（gzip 67,463 B） |
 | 单文件 | `web/game.html` **2,227,940 B**（gzip 891,453 B） |
 | PWA | `sw.js` cache **`na-b18-27205f58`**，CORE 12 条 |
 | 入口 | `index.html` → `dist/assets.0b93f349.js` + `dist/game.e9831838.js` |
