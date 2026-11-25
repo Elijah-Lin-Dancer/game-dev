@@ -18,7 +18,7 @@
 - `na.world` **v9 → v10**：`BOSS_IDS = mossBeast / bambooMirage / sandMirage / frostOwl / magmaColossus`；v9 旧档补两只 `none`，其余字段不丢；`normalizeBoss` 新增 `pattern / speed / specialGap` 白名单归一化。
 - 战场：`snow-6` 4 个 `snowPine` + 3 个 battle 节点 + 雪脊 / 冰裂 / 冰簇；`volcano-6` 6 个 prop（两熔岩池、三尖柱、一个裂口）+ 3 个 battle 节点 + 黑曜台 / 熔缝 / 余烬；`buildBossEdge` 按群系补边，`buildBossArena` 只做地表不挡走位。
 - 最后一只 Boss 倒下：标题 **星火归途 · 远征完成**，正文说明五片群系星火连成一线，按钮改为 **回到小屋**；同批新增 `world_boss_1 / world_boss_3 / world_boss_5` 三条远征成就，成就页 23 条。
-- 本地最终：`audit_scale.py` **170 实例 / 0 FAIL**；`npm run smoke` **9 PASS**；构建首屏 **2022 KB / gzip 858 KB**；图集 **166 切片 / 267 KB**；`dist/game.505510f9.js` **352,488 B** + `dist/assets.711efd4b.js` **126,652 B**；单文件 **2,204,975 B**；PWA `na-b18-38dab29e` / 12 条。
+- 本地 + Pages 最终：`audit_scale.py` **170 实例 / 0 FAIL**；`npm run smoke` **9 PASS**；构建首屏 **2022 KB / gzip 858 KB**；图集 **166 切片 / 267 KB**；`dist/game.505510f9.js` **352,488 B** + `dist/assets.711efd4b.js` **126,652 B**；单文件 **2,204,975 B**；PWA `na-b18-38dab29e` / 12 条。
 
 ---
 
@@ -278,6 +278,15 @@ this.showVictory(reward, allDone, this.newAch);
 
 ---
 
+### 7.4 Pages 线上
+
+- 推送 `e53f756`（`6da0768..e53f756`）；Pages 入口切到 `game.505510f9.js` + `assets.711efd4b.js`，PWA `na-b18-38dab29e` / 12 条。
+- 线上 960：雪原 `props4 / herbs3 / battleHerbs3 / frostOwl / hp88 / edge35 / edgeProps8`；火山 `props6 / herbs3 / battleHerbs3 / magmaColossus / hp96 / edge0 / edgeProps16`。
+- 线上专属：霜锥 `volley3 / HP20→16`；炉口 `erupt3 / HP20→18 / hazards3 / parts[3,3,3] → 2.3s 后 HP16`。
+- 640 `scrollWidth=640`；844 `scrollWidth=844 / touchItems=3 / canvas779×360`；PWA 断网 `online=false / controller=true`，重载后 `applyScreen(23)` 进 `snow-6 / frostOwl`。
+- 线上结局：预置前四只 done，击杀熔像后五键全 done、`tokens20`、面板 `星火归途 · 远征完成`、`ach` 三键写入。
+- 线上证据：`g3-online-frost-*`、`g3-online-magma-*`、`g3-online-finale-960.png`；`errs=[]`。
+
 ## 8. 已知边界 / 下一步
 
 - G3 世界 Boss **5/5** 完成；本轮两只 **无小怪编队**，差异靠体型、速度、专属范围攻击与场地；如果后续要更接近“团本”，可给熔心巨像加炉渣小怪，但不建议在同一轮再加机制。
@@ -285,7 +294,7 @@ this.showVictory(reward, allDone, this.newAch);
 - 雪原 / 火山 Boss 场有地表、植物、石景、补边与 battle 草药；没有地形破坏、阶段转换或场景机关。
 - 远征结局是胜利面板的 finale 变体，不是独立过场 / 结局动画；3 条成就是 Hall 记录的远征成就，不额外发宝石。
 - G2 仍缺 **4 条委托**：雪原第二条 + 草原 / 竹林 / 沙漠各 1；G3 收尾已完成，下一段可转 G2 委托补齐或 G3 线上 Pages。
-- 960 / 640 / 844 的三档本次均已重验；Pages 线上验收在提交推送后补记。
+- 960 / 640 / 844 的三档本次均已重验；Pages 已于 `e53f756` 部署并完成线上验收（W109–W111）。
 
 ---
 
@@ -301,5 +310,6 @@ this.showVictory(reward, allDone, this.newAch);
 - 雪原：`docs/revamp/g3/g3-frost-intro-960.png`、`g3-frost-arena-960.png`、`g3-frost-volley-960.png`、`g3-frost-impact-960.png`、`g3-frost-victory-960.png`、`g3-frost-herb-960.png`、`g3-frost-640.png`、`g3-frost-844.png`、`g3-frost-single-960.png`、`g3-frost-pwa-960.png`。
 - 火山：`docs/revamp/g3/g3-magma-intro-960.png`、`g3-magma-arena-960.png`、`g3-magma-erupt-960.png`、`g3-magma-hazards-960.png`、`g3-magma-victory-960.png`、`g3-magma-herb-960.png`、`g3-magma-640.png`、`g3-magma-844.png`。
 - 结局：`docs/revamp/g3/g3-finale-960.png`。
+- 线上：`docs/revamp/g3/g3-online-frost-{arena,volley,impact,pwa}-960.png`、`g3-online-magma-{arena,erupt,hazards,640,844}.png`、`g3-online-finale-960.png`。
 - 3D：`docs/revamp/g3-3d/frost-owl-board.png`、`magma-colossus-board.png`、两套 atlas / json。
-- 文档：`docs/BATCH24-G3-4-5.md`、`docs/ACCEPTANCE.md` W96–W108、`CURRENT.md`、`LEDGER.md`、`docs/MASTERPLAN.md`、`docs/OPENWORLD.md`、`docs/ART_PIPELINE.md`、`assets/CREDITS.md`。
+- 文档：`docs/BATCH24-G3-4-5.md`、`docs/ACCEPTANCE.md` W96–W111、`CURRENT.md`、`LEDGER.md`、`docs/MASTERPLAN.md`、`docs/OPENWORLD.md`、`docs/ART_PIPELINE.md`、`assets/CREDITS.md`。
