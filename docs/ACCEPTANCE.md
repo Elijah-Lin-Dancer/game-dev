@@ -507,3 +507,9 @@
 | W-124 | 构建 / 证据 | `npm run build -- --single`；收集字节；归档截图 | 通过；首屏 **2043 KB / gzip866 KB**；图集 **272 KB / 171 切片**；`game.e9831838.js` **364,270 B** + `assets.0b93f349.js` **131,323 B**；单文件 **2,227,940 B**；PWA `na-b18-27205f58`；证据 `docs/revamp/g4-1/` |
 
 证据：`docs/revamp/g4-1/g4-mire-1-960.png` … `g4-mire-6-960.png`、`g4-mire-screens.png`、`g4-mire-active-960.png`、`g4-mire-panel-960.png`、`g4-mire-done1-960.png`、`g4-mire-q2active-960.png`、`g4-mire-done2-960.png`、`g4-mire-cross-960.png`、`g4-mire-640.png`、`g4-mire-844.png`、`g4-mire-single-960.png`、`g4-mire-pwa-960.png`、`g4-mire-travel-960.png`、`g4-mire-travel-640.png`、`g4-mire-3d.png`；详见 `docs/BATCH26-G4-1.md`。当前 36 屏 / 6 群系 / 12 委托 / 5 Boss / 23 成就；雾泽无 Boss、无新成就。
+
+## W-125. 批 26 / G4-1 Pages 线上验收（2026-11-25）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-125 | 雾泽 Pages 线上 | 部署 `601dfc3` 后 960×540 六屏；`mireKeeper` 两条委托全流程；6 篝火传送；640 / 844 hasTouch；PWA 离线重载；v11 旧档加载 | 通过；入口 `game.e9831838.js` + `assets.0b93f349.js`；`world.json v9 / 36 屏 / 6 篝火 / 13 组水洼 / save v12`；六屏 `miasma`；委托 `0/7 → 8/7 → done1 / tokens3`、`1/9 → 11/9 → done2 / tokens6`；640 `scrollWidth=640`；844 `touchItems=3 / canvas779×360`；PWA `na-b18-27205f58` controller=true，断网 probe rejected，reload `mire-3 / screens36`；v11→v12 保留 `herbs3 / quest active`；`errs=[]`（PWA 仅预期断网 console） |

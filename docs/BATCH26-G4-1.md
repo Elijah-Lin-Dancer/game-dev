@@ -169,4 +169,16 @@
 
 ## 9. 线上验收
 
-待 Pages 部署后回填。
+2026-11-25，`https://elijah-lin-dancer.github.io/game-dev/`，最终部署 `601dfc3`。
+
+| 项目 | 结果 |
+|---|---|
+| 入口 / 数据 | `index.html` → `dist/game.e9831838.js` + `dist/assets.0b93f349.js`；`world.json v9` / 36 屏 / 6 篝火 / 13 组水洼；`save.v=12`；PWA `na-b18-27205f58` / 12 条 |
+| 六屏 960 | `mire-1..6` 全部 `biome=mire / weather=miasma`；水洼、芦苇、沉祠、NPC、薄雾正常；`g4-online-mire-1-960.png` … `g4-online-mire-6-960.png` + 总览 `g4-online-mire-screens.png` |
+| 两条委托 | 接取 `0/7` → 采 4 节点 `8/7` → 面板「需要 7 束，当前 8 束」→ 交付 `done / tokens3 / herbs1`；第二条 `1/9` → 再采 5 节点 `11/9` → 交付 `done / tokens6 / herbs2`；`errs=[]` |
+| 传送 | 6 行 + 留在原地；`mireCamp` 显示「芦口篝火 · 雾泽 · 此处」；`g4-online-travel-960.png` |
+| 640 / 844 | 640 `scrollWidth=640`；844×390 hasTouch `scrollWidth=844 / touchCtl=true / touchItems=3 / labels=['攻','E','返'] / canvas779×360`；`g4-online-mire-640.png` / `g4-online-mire-844.png` |
+| PWA | controller=true；`set_offline(true)` 网络 probe `rejected:TypeError`；reload 后 `mire-3 / screens=36 / v=12`；console 仅预期 `ERR_INTERNET_DISCONNECTED`，无应用异常；`g4-online-mire-pwa-960.png` |
+| v11 迁移 | 旧档 `v=11` → `v=12`；`mireHerbs0 / mireQuest none / mireQuest2 none`；`screens=36`；`herbs3 / quest active / visited` 保留；`errs=[]` |
+
+线上证据全部在 `docs/revamp/g4-1/`；代码 / 构建 `567f6eb`（G4-1 主实现）+ `601dfc3`（篝火光晕收敛并重建）。
