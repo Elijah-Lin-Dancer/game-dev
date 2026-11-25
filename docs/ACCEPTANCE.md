@@ -549,3 +549,11 @@
 | W-140 | 构建 / 证据 | `npm run build -- --single`；收集字节；归档截图 | 通过；首屏 **1902 KB / gzip723 KB**；图集 **120 KB / 174 切片（无新增）**；`game.c7d2c0ba.js` **374,292 B** + `assets.8c75570a.js` **132,049 B**；单文件 **2,032,200 B**；PWA `na-b18-9cf996b0`；证据 `docs/revamp/g4-3/` 14 张 |
 
 证据：`docs/revamp/g4-3/g4-3-gate-960.png`、`g4-3-gate-640.png`、`g4-3-gate-844.png`、`g4-3-tier2-gate-960.png`、`g4-3-boss-intro-960.png`、`g4-3-mire-tide-960.png`、`g4-3-finale-960.png`、`g4-3-rekindle-960.png`、`g4-3-tier2-960.png`、`g4-3-travel-960.png`、`g4-3-travel-rekindle-960.png`、`g4-3-travel-640.png`、`g4-3-single-960.png`、`g4-3-pwa-960.png`；详见 `docs/BATCH26-G4-3.md`。
+
+## W-141. 批 26 / G4-3 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-141 | G4-3 Pages 线上 | 推送 `35bcaed..433afe6` 后读 Pages 入口 / `world.json` / `sw.js`；960 `applyScreen(35)` + E + 终局 + 重燃；640 / 844 hasTouch；allDone 篝火；PWA controller 后 `set_offline(true)` 外部 probe + reload | 通过；入口 `game.c7d2c0ba.js` + `assets.8c75570a.js`；`world.json v10 / screens36 / bosses6 / bossGate250,246`；PWA `na-b18-9cf996b0`；v13→v14、gate 休眠、E 唤醒 `maxHp104/tier1`、终局 `rows2/fill74`、重燃 `exp2/screen0/六none/tokens26`、HUD「周目 2」；640 `scrollWidth640 / canvas640×360`；844 `touchCtl=true / canvas779×360`；allDone 篝火 8 行；PWA `activated` / probe `rejected:TypeError` / 离线 reload gate 休眠；`errs=[]`（PWA 仅预期断网 console） |
+
+线上证据：`docs/revamp/g4-3/g4-online-mire-gate-960.png`、`g4-online-mire-boss-960.png`、`g4-online-mire-finale-960.png`、`g4-online-mire-rekindle-960.png`、`g4-online-mire-travel-960.png`、`g4-online-mire-640.png`、`g4-online-mire-844.png`、`g4-online-mire-pwa-960.png`；详见 `docs/BATCH26-G4-3.md` 第 11 节。
