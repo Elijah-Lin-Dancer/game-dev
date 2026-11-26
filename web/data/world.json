@@ -4394,7 +4394,15 @@
           1
         ]
       ],
-      "npc": null
+      "npc": {
+        "id": "mireLampkeeper",
+        "name": "守灯人 阿烬",
+        "x": 110,
+        "y": 190,
+        "quest": "mire",
+        "role": "lampkeeper",
+        "flipX": true
+      }
     }
   ],
   "quest": {

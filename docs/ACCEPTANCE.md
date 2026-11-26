@@ -578,3 +578,14 @@
 | W-147 | G4-4 Pages 线上 | 推送 `005d954..31737f8` 后读 Pages 入口 / sw / `world.json`；960 终局确认 + 第二次重燃；960 篝火确认；640 / 844 终局确认；PWA controller 后 `set_offline(true)` reload + `applyScreen(35)` | 通过；入口 `game.9d324e8d.js` + `assets.8c75570a.js`，PWA `na-b18-ae4a669e` / 12 条；960 `rows2/fill74`、第一次 `exp1/armed/六 Boss done/tokens26`、第二次 `exp2/screen0/六 none/tokens26`；960 篝火 8 行、`hint="再点一次确认 · 六 Boss 会重置"`；640 `scrollWidth640`、844 `scrollWidth844` 均 `rows2`；PWA 断网 reload 后 `mire-6` gate 存在、`bossActive=false`；`errs=[]` |
 
 线上证据：`docs/revamp/g4-4/g4-online-finale-confirm-960.png`、`g4-online-travel-confirm-960.png`、`g4-online-finale-confirm-640.png`、`g4-online-finale-confirm-844.png`、`g4-online-pwa-offline-960.png`；详见 `docs/BATCH26-G4-4.md` 第 9 节。
+
+## W-148. 批 26 / G4-5 守灯人 NPC 本地验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-148 | `mire-6` 守灯人 NPC | 读 `world.json`；BASE 档进入 `mire-6`，走到归水灯左侧 NPC 旁，按 E | 通过；`mire-6` 1 个 NPC「守灯人 阿烬」，`role=lampkeeper`，靠近显示「E 交谈」；灯前 gate 休眠，对话不触发 Boss |
+| W-149 | 四组状态文案 | 灯前 / 水魇退后 / 六 Boss 全 done / 周目 2 未点灯分别按 E | 通过；灯前「归水灯在等一簇火」；allDone「六盏灯都亮了」+「星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下」；周目 2「第 2 次远征。灯又沉下去了」 |
+| W-150 | 响应式 / 单文件 / PWA | 960、640、844；`web/game.html`；PWA `na-b18-4707d526` 断网 reload | 通过；`scrollWidth` 640/844 无溢出；单文件 NPC/gate/对话可用；PWA 离线后 NPC/gate/对话可用；`errs=[]` |
+| W-151 | 回归 | 旧档 v13→v14；`g44` / `g44-reg`；`npm run smoke`；`audit_scale.py` | 通过；v13→v14 + gate 休眠；G4-4 14/14 + 6/6；smoke 9 PASS；审计 221 INSTANCES / 0 FAIL |
+
+证据：`docs/revamp/g4-5/g4-5-lampkeeper-scene-960.png`、`g4-5-lampkeeper-gate-960.png`、`g4-5-lampkeeper-gate-640.png`、`g4-5-lampkeeper-gate-844.png`、`g4-5-lampkeeper-all-960.png`、`g4-5-lampkeeper-tier2-960.png`、`g4-5-lampkeeper-single-960.png`、`g4-5-lampkeeper-pwa-960.png`；详见 `docs/BATCH26-G4-5.md`。

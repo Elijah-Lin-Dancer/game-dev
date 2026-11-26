@@ -908,6 +908,9 @@ export class World extends Phaser.Scene {
       this.tweens.add({ targets: glow, alpha: 0.06, scale: p.glowScale + 0.4, duration: 900, yoyo: true, repeat: -1 });
       const sprite = this.add.sprite(x, y, p.npcAsset, n.frame || 0)
         .setOrigin(0.5, p.npcOriginY || 1).setScale(p.npcScale).setDepth(25);
+      if (n.tint) sprite.setTint(Number(n.tint) || 0xffffff);
+      if (n.alpha) sprite.setAlpha(Number(n.alpha) || 1);
+      if (n.flipX) sprite.setFlipX(true);
       this.tweens.add({ targets: sprite, y: y - 2, duration: 620, yoyo: true, repeat: -1 });
       const label = this.add.text(x, y - p.labelY, String(n.name || '村民'), {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.primary,
@@ -924,7 +927,7 @@ export class World extends Phaser.Scene {
         if (this.distPlayer(x, y) <= 52) this.interactNpc(this.nearestNpc());
         else this.pointerTarget = { x, y };
       });
-      this.npcs.push({ ...n, x, y, sprite, label, prompt, screenIndex: idx, quest: n.quest || 'field' });
+      this.npcs.push({ ...n, x, y, sprite, label, prompt, screenIndex: idx, quest: n.quest || 'field', role: n.role || 'quest' });
     });
   }
 
@@ -2171,6 +2174,37 @@ export class World extends Phaser.Scene {
     return ['还差 ' + missing + ' 株' + prof.item + '。', '草原上那几丛，采完会重新长出来。'];
   }
 
+  lampkeeperLines() {
+    const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
+    const mireDone = this.save.bosses && this.save.bosses.mireWraith === 'done';
+    const tier = this.save.expedition || 1;
+    if (allDone) {
+      if (tier > 1) return [
+        '第 ' + tier + ' 次远征，灯还记得你。',
+        '六只影子又沉下去了，碎片、委托、走过的路都还在。',
+        '要让灯再亮，回篝火，或等归水灯自己熄。',
+      ];
+      return [
+        '六盏灯都亮了。',
+        '归水灯下面，沉灯水魇已经退了。',
+        '若要星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下。',
+      ];
+    }
+    if (mireDone) return [
+      '水魇退了，归水灯不再沉。',
+      '雾泽的浅岸，终于能走人了。',
+    ];
+    if (tier > 1) return [
+      '第 ' + tier + ' 次远征。灯又沉下去了。',
+      '走近归水灯按 E 点燃，水魇才会浮上来。',
+    ];
+    return [
+      '归水灯在等一簇火。',
+      '走近按 E 点燃，沉灯水魇才会浮上来。',
+      '灯没亮之前，别在雾里停太久。',
+    ];
+  }
+
   npcLines(npc, state, count) {
     const q = this.questFor(npc);
     const missing = q.need - count;
@@ -2206,6 +2240,10 @@ export class World extends Phaser.Scene {
 
   interactNpc(npc) {
     if (!npc || this.talking || this.panelOpen || this.bossActive) return;
+    if (npc.role === 'lampkeeper') {
+      this.say(npc.name, this.lampkeeperLines());
+      return;
+    }
     const prof = profileForNpc(npc);
     const q = this.questFor(npc);
     const state = this.questStateFor(npc);

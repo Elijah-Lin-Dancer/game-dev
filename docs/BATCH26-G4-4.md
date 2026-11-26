@@ -176,3 +176,5 @@ const rewardBonus = Math.max(0, reward - baseReward);
 - 线上 640：终局确认态 `scrollWidth=640 / rows=2`；线上 844×390：`scrollWidth≤844 / rows=2`。
 - 线上 PWA：controller `sw.js` / cache `na-b18-ae4a669e`；断网 reload + `applyScreen(35)` 后 gate 存在、Boss 休眠。
 - 线上截图：`g4-online-finale-confirm-960.png`、`g4-online-travel-confirm-960.png`、`g4-online-finale-confirm-640.png`、`g4-online-finale-confirm-844.png`、`g4-online-pwa-offline-960.png`。
+
+> G4-5 后续：`mire-6` 归水灯左侧已补纯对话 NPC「守灯人 阿烬」，四组状态文案与周目提示见 `docs/BATCH26-G4-5.md`；不回改 G4-4 的两步确认与奖励公式。
