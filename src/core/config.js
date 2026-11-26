@@ -19,13 +19,13 @@ const CFG = {
   healAmount: 4, coinChance: 0.45, heartChance: 0.12,
   cyclope: { hp: 10, speed: 30, dmg: 4, dashSpeed: 230, dashTime: 260, dashCd: 1400, dashRange: 170 },
   eye: { hp: 8, speed: 34, dmg: 2, shotCd: 1600, shotSpeed: 150, keepMin: 110, keepMax: 230, range: 380, shotDmg: 2 },
-  larva: { hp: 9, speed: 56, dmg: 3, miniHp: 3, miniSpeed: 74, miniHalf: 10, splitCount: 2 },
+  larva: { hp: 9, speed: 56, dmg: 2, miniHp: 3, miniSpeed: 74, miniHalf: 10, splitCount: 2 },
   /* 批 4：新怪。每只一个"破法"，数值都留在这里可调 */
-  slime: { hp: 7, speed: 32, dmg: 3, splitHp: 3, splitSpeed: 46, splitCount: 2 },
+  slime: { hp: 7, speed: 32, dmg: 2, splitHp: 3, splitSpeed: 46, splitCount: 2 },
   spider: { hp: 8, speed: 36, dmg: 2, webCd: 1900, webSpeed: 118, webSlow: 0.4, webSlowMs: 1500, keepMin: 120, range: 360 },
   owl: { hp: 6, speed: 42, dmg: 3, hoverMs: 720, diveSpeed: 205, diveRange: 230, tall: 18 },
   mush: { hp: 10, speed: 8, dmg: 2, poisonCd: 2400, poisonRadius: 54, poisonLife: 3000, poisonTick: 600, poisonDmg: 1, poisonRange: 300 },
-  mole: { hp: 9, speed: 38, dmg: 3, diveMs: 620, emergeMs: 260, diveRange: 260 },
+  mole: { hp: 9, speed: 38, dmg: 2, diveMs: 620, emergeMs: 260, diveRange: 260 },
   skull: { hp: 7, speed: 26, dmg: 2, shotCd: 2100, shotSpeed: 105, shotDmg: 2, turn: 0.6, range: 420 },
   /* 批 10：小浣熊（快近战，偶尔侧跳） */
   racoon: { hp: 8, speed: 66, dmg: 2, half: 10, hopCd: 1300, hopRange: 150, hopSpeed: 155 },

@@ -1,0 +1,133 @@
+{
+  "chapter": "fort",
+  "stages": [
+    {
+      "stage": "fort:1",
+      "stageIndex": 1,
+      "attempt": 1,
+      "startHp": 20,
+      "maxHp": 20,
+      "weapon": "katana",
+      "rooms": [
+        {
+          "key": "0,2",
+          "idx": 0,
+          "type": "battle",
+          "hpAt": 20,
+          "enemiesAt": 2,
+          "startedAt": 1795696776805
+        },
+        {
+          "key": "1,2",
+          "idx": 1,
+          "type": "battle",
+          "hpAt": 16,
+          "enemiesAt": 3,
+          "startedAt": 1795696797271
+        },
+        {
+          "key": "2,2",
+          "idx": 2,
+          "type": "rest",
+          "hpAt": 9,
+          "enemiesAt": 0,
+          "startedAt": 1795696814901
+        },
+        {
+          "key": "2,1",
+          "idx": 3,
+          "type": "battle",
+          "hpAt": 16,
+          "enemiesAt": 3,
+          "startedAt": 1795696829317
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "gate",
+          "hpAt": 18,
+          "enemiesAt": 2,
+          "startedAt": 1795696854931
+        },
+        {
+          "key": "0,1",
+          "idx": 5,
+          "type": "boss",
+          "hpAt": 18,
+          "enemiesAt": 1,
+          "startedAt": 1795696879896
+        }
+      ],
+      "startedAt": 1795696776774,
+      "maxRoom": 5,
+      "minHp": 8,
+      "hitsApprox": 9,
+      "talents": [
+        "铁胃",
+        "吸血"
+      ],
+      "rest": 1,
+      "ended": "",
+      "endHp": 8,
+      "endRoom": 5,
+      "endRoomKey": "0,1",
+      "endedAt": 1795696886870,
+      "durationMs": 110096,
+      "kills": 26,
+      "coins": 0,
+      "gems": 0,
+      "talentsFinal": [
+        "ironstomach",
+        "vampire"
+      ],
+      "bossKind": "sam",
+      "bossEnd": {
+        "ph": "recover",
+        "hp": 39,
+        "maxHp": 39
+      },
+      "endEnemies": [
+        {
+          "k": "boss",
+          "x": 520,
+          "y": 462,
+          "hp": 39
+        },
+        {
+          "k": "beast",
+          "x": 445,
+          "y": 426,
+          "hp": 7
+        },
+        {
+          "k": "beast",
+          "x": 469,
+          "y": 423,
+          "hp": 7
+        },
+        {
+          "k": "beast",
+          "x": 480,
+          "y": 482,
+          "hp": 7
+        },
+        {
+          "k": "beast",
+          "x": 520,
+          "y": 422,
+          "hp": 7
+        }
+      ],
+      "endPx": 461,
+      "endPy": 406,
+      "error": "timeout",
+      "screenshot": "docs/revamp/playtest/fort-1-a1-timeout.png"
+    }
+  ],
+  "errors": [
+    "stage 1 timeout"
+  ],
+  "mode": "real-keyboard-input",
+  "notes": "Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win.",
+  "passed": false
+}

@@ -3,7 +3,7 @@
  * 产物：docs/audit/PLAYTEST-CH1.json + docs/revamp/playtest/ 截图。
  */
 import { createServer } from 'node:http';
-import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,10 +14,24 @@ const TILE = 32, COLS = 24, ROWS = 26;
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg' };
 const args = process.argv.slice(2);
 const opt = (name, dflt) => { const a = args.find((x) => x.startsWith('--' + name + '=')); return a ? a.split('=')[1] : dflt; };
+const CHAPTER = opt('chapter', 'bamboo');
 const STAGES = Math.max(1, Math.min(5, Number(opt('stages', 5)) || 5));
 const STAGE_TIMEOUT = Number(opt('stageTime', 150000));
 const MAX_ATTEMPTS = Math.max(1, Math.min(5, Number(opt('attempts', 3)) || 3));
-const out = { stages: [], errors: [], mode: 'real-keyboard-input', notes: 'Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win.' };
+const TAG = CHAPTER === 'bamboo' ? 'ch1' : CHAPTER;
+const OUT_NAME = CHAPTER === 'bamboo' ? 'PLAYTEST-CH1' : `PLAYTEST-${CHAPTER.toUpperCase()}`;
+const out = { chapter: CHAPTER, stages: [], errors: [], mode: 'real-keyboard-input', notes: 'Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win.' };
+
+// 测第二章起：预置前序章节通关星级，模拟玩家已完成第一章；不跳过目标章节自身解锁。
+const CHAPTERS = JSON.parse(readFileSync(join(ROOT, 'web/data/chapters.json'), 'utf8')).chapters || [];
+const CI = CHAPTERS.findIndex((c) => c.id === CHAPTER);
+const seedStars = {};
+if (CI > 0) {
+  for (const c of CHAPTERS.slice(0, CI)) {
+    for (let i = 1; i <= c.stages; i++) seedStars[`${c.id}:${i}`] = 1;
+  }
+}
+const seedSave = { v: 11, stars: seedStars, coins: 12, gem: 6, chars: ['ninja'], lastChar: 'ninja' };
 
 function serve() {
   return new Promise((done) => {
@@ -95,9 +109,9 @@ async function state(page) {
       roomTotal: st.total, cleared: !!p.room.cleared, doors: Object.keys(p.room.doors || {}), walls: Array.from(p.walls || []),
       nextDoors: Object.entries(p.room.doors || {}).map(([dir, key]) => { const r = p.dungeon && p.dungeon.rooms && p.dungeon.rooms.get(key); return { dir, targetIdx: r ? r.idx : -1 }; }).filter((x) => x.targetIdx > p.room.idx),
       enemies: foes, dead: !!p.dead, won: !!p.won, panelOpen: !!p.panelOpen, panelType: pnl && pnl.type,
-      talking: !!p.talking, facing: p.facing, stageKey: st.stageKey, weapon: st.weapon, kills: st.kills,
+      talking: !!p.talking, facing: p.facing, stageKey: st.stageKey, weapon: st.weapon, weaponKind: p.weapon && p.weapon.kind, kills: st.kills,
       coins: st.coins, gems: st.gems, boss: foes.find((e) => e.k === 'boss' || e.k === 'bossB' || e.k === 'racoonBoss' || e.k === 'mireWraith' || e.k === 'frostOwl' || e.k === 'magmaColossus' || e.k === 'bambooMirage' || e.k === 'sandMirage' || e.k === 'mossBeast'),
-      bossHp: st.bossHp, iframe: st.iframe, qready: !!(p.char && p.char.skill && p.time.now - p.skillAt >= p.char.skill.cd), qleft: p.char && p.char.skill ? Math.max(0, Math.round(p.char.skill.cd - (p.time.now - p.skillAt))) : 0,
+      bossHp: st.bossHp, iframe: st.iframe, slowLeft: Math.max(0, Math.round(((p.slowUntil || 0) - p.time.now))), qready: !!(p.char && p.char.skill && p.time.now - p.skillAt >= p.char.skill.cd), qleft: p.char && p.char.skill ? Math.max(0, Math.round(p.char.skill.cd - (p.time.now - p.skillAt))) : 0,
       bossInfo: window.__dbg && window.__dbg.bossInfo ? window.__dbg.bossInfo() : null,
       bossKind: window.__dbg && window.__dbg.bossKind ? window.__dbg.bossKind() : '',
       props: window.__dbg && window.__dbg.props ? window.__dbg.props().filter((x) => !x.used) : [],
@@ -138,6 +152,11 @@ async function startFirstStage(page) {
   await page.waitForTimeout(500);
   if (await page.evaluate(() => window.__game.scene.isActive('story'))) { await page.keyboard.press('Escape'); await page.waitForTimeout(500); }
   await page.waitForFunction(() => window.__game.scene.isActive('map'), null, { timeout: 30000 });
+  if (CHAPTER !== 'bamboo') {
+    // 测试夹具：直接带 chapterId 进入目标章节选关页；关卡解锁仍由真实存档校验。
+    await page.evaluate((ch) => window.__game.scene.start('map', { chapterId: ch, stage: 1 }), CHAPTER);
+    await page.waitForTimeout(350);
+  }
   await openSelect(page);
   await page.evaluate(() => window.__game.scene.getScene('select').confirm());
   await page.waitForFunction(() => window.__game.scene.isActive('play') && window.__state && window.__state.stageKey, null, { timeout: 30000 });
@@ -273,6 +292,8 @@ async function runStage(page, stageIndex, attempt) {
       continue;
     }
     if (s.enemies.length) {
+      // 风筝/远程怪：蜘蛛、骷髅会站在 120+ 距离持续放弹幕，近身后要贴死，不能打一刀就退。
+      const KITE = ['spider', 'skull', 'eye', 'octopus', 'flam', 'demon', 'lantern', 'spirit', 'mush'];
       // 按“真实可走路径”选目标，而不是直线距离：隔墙的敌人会让我方穿过整房吃弹幕。
       let e = null, epath = null, bestLen = 1e9;
       for (const foe of s.enemies) {
@@ -285,6 +306,22 @@ async function runStage(page, stageIndex, attempt) {
       const dx = e.x - s.px, dy = e.y - s.py, dist = Math.hypot(dx, dy);
       const want = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'd' : 'a') : (dy > 0 ? 's' : 'w');
       const away = { d: 'a', a: 'd', s: 'w', w: 's' }[want];
+      // 自动换装可能把忍者刀换成苦无/魔杖/短弓；远程武器不能按近战 44px 贴脸逻辑打，
+      // 否则会一直贴到碰撞距离、永远不出手（旧堡 5/6 机关房实机超时的根因）。
+      const rangedWeapon = s.weaponKind === 'ranged' || s.weaponKind === 'throw'
+        || ['wand', 'bow', 'kunai'].includes(s.weapon);
+      if (rangedWeapon && dist <= 190) {
+        if (dist < 90) {
+          if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
+          await page.waitForTimeout(120); continue;
+        }
+        if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
+          await release();
+          await page.keyboard.down(want); await page.waitForTimeout(35); await page.keyboard.up(want);
+        }
+        if (now - lastAtk > 380) { await page.keyboard.press('Space'); lastAtk = now; }
+        await page.waitForTimeout(220); continue;
+      }
       // 低血先面朝反方向疾影冲刺，借落地无敌脱离包围。
       if (s.hp <= 12 && s.qready && now - lastQ > 1000) {
         await release();
@@ -293,6 +330,16 @@ async function runStage(page, stageIndex, attempt) {
         await page.keyboard.press('q'); lastQ = now;
         await page.waitForTimeout(140); continue;
       }
+      // 远程/风筝怪（蜘蛛、骷髅、眼怪等）站在 120+ 距离放弹幕，慢慢追只会被磨死。
+      // 距离 70–170 且 Q 就绪时向前疾影冲刺 100px，落地无敌帧正好贴脸，再进入近战循环。
+      if (KITE.includes(e.k) && dist >= 70 && dist <= 170 && s.qready && now - lastQ > 1400) {
+        await release();
+        if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
+          await page.keyboard.down(want); await page.waitForTimeout(30); await page.keyboard.up(want);
+        }
+        await page.keyboard.press('q'); lastQ = now;
+        await page.waitForTimeout(220); continue;
+      }
       // 先砍再退：贴脸时如果先退，墙角被堵会永远退不出去，形成 110s 软锁（实机第 2 关已复现）。
       if (dist <= 44 && now - lastAtk > 340) {
         if (held) { await release(); }
@@ -300,13 +347,17 @@ async function runStage(page, stageIndex, attempt) {
           await page.keyboard.down(want); await page.waitForTimeout(35); await page.keyboard.up(want);
         }
         await page.keyboard.press('Space'); lastAtk = now;
-        // 打一刀就退，等冷却再进；不让小怪贴住。
-        if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
+        // 近战小怪：打一刀就退，等冷却再进。
+        // 风筝怪：不能退，一退它就重新拉开 120px，整场都在追；贴着连续砍到死。
+        const hold = KITE.includes(e.k) ? want : away;
+        if (held !== hold) { await release(); await page.keyboard.down(hold); held = hold; }
         await page.waitForTimeout(230); continue;
       }
-      // 攻击冷却中且贴脸，才退半步，避免站桩吃碰撞。
+      // 攻击冷却中且贴脸：近战小怪退半步避免站桩吃碰撞；风筝怪必须继续贴住，
+      // 否则一退它又拉开 120px，整场都在追（蜘蛛/骷髅实机软锁的根因）。
       if (dist < 36) {
-        if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
+        const hold = KITE.includes(e.k) ? want : away;
+        if (held !== hold) { await release(); await page.keyboard.down(hold); held = hold; }
         await page.waitForTimeout(120); continue;
       }
       if (dist > 48) {
@@ -343,6 +394,23 @@ async function runStage(page, stageIndex, attempt) {
         }
         const path = pathNear(new Set(s.walls), sx, sy, gx, gy);
         const moveWant = stepKey(s, path) || keyFor(rest.x - s.px, rest.y - s.py);
+        if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
+        await page.waitForTimeout(120);
+        continue;
+      }
+      // 机关房：清完守卫后必须走到石像按 E 拉机关，否则门不开、机器人会在原地耗到超时。
+      const gate = s.roomType === 'gate' ? s.props.find((x) => x.k === 'gate') : null;
+      if (gate) {
+        const [sx, sy] = tileOf(s.px, s.py), [gx, gy] = tileOf(gate.x, gate.y);
+        const dist = Math.hypot(gate.x - s.px, gate.y - s.py);
+        if (dist <= 44) {
+          await release();
+          await page.keyboard.press('e');
+          await page.waitForTimeout(260);
+          continue;
+        }
+        const path = pathNear(new Set(s.walls), sx, sy, gx, gy);
+        const moveWant = stepKey(s, path) || keyFor(gate.x - s.px, gate.y - s.py);
         if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
         await page.waitForTimeout(120);
         continue;
@@ -414,6 +482,11 @@ mkdirSync(join(ROOT, 'docs/revamp/playtest'), { recursive: true });
 try {
   const ctx = await browser.newContext({ viewport: { width: 960, height: 540 } });
   const page = await ctx.newPage();
+  if (CI > 0) {
+    await page.addInitScript((s) => {
+      if (!localStorage.getItem('na.save')) localStorage.setItem('na.save', JSON.stringify(s));
+    }, seedSave);
+  }
   page.__base = base;
   page.on('pageerror', (e) => out.errors.push('PAGEERR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') out.errors.push('CONSOLE ' + m.text()); });
@@ -422,8 +495,8 @@ try {
   while (stage <= STAGES) {
     const attemptRec = await runStage(page, stage, attempt);
     out.stages.push(attemptRec);
-    await page.screenshot({ path: join(ROOT, `docs/revamp/playtest/ch1-${stage}-a${attempt}-${attemptRec.ended || 'timeout'}.png`) });
-    attemptRec.screenshot = `docs/revamp/playtest/ch1-${stage}-a${attempt}-${attemptRec.ended || 'timeout'}.png`;
+    await page.screenshot({ path: join(ROOT, `docs/revamp/playtest/${TAG}-${stage}-a${attempt}-${attemptRec.ended || 'timeout'}.png`) });
+    attemptRec.screenshot = `docs/revamp/playtest/${TAG}-${stage}-a${attempt}-${attemptRec.ended || 'timeout'}.png`;
     if (attemptRec.ended === 'dead') {
       if (attempt >= MAX_ATTEMPTS) {
         out.errors.push(`stage ${stage} dead after ${attempt} attempts; abort remaining stages`);
@@ -450,6 +523,6 @@ try {
 }
 out.passed = out.errors.length === 0;
 mkdirSync(join(ROOT, 'docs/audit'), { recursive: true });
-writeFileSync(join(ROOT, 'docs/audit/PLAYTEST-CH1.json'), JSON.stringify(out, null, 2));
+writeFileSync(join(ROOT, `docs/audit/${OUT_NAME}.json`), JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out, null, 2));
 if (!out.passed) process.exitCode = 1;

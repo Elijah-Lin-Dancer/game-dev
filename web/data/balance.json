@@ -63,7 +63,7 @@
   "larva": {
     "hp": 9,
     "speed": 56,
-    "dmg": 3,
+    "dmg": 2,
     "miniHp": 3,
     "miniSpeed": 74,
     "miniHalf": 10,
@@ -114,7 +114,7 @@
   "slime": {
     "hp": 7,
     "speed": 32,
-    "dmg": 3,
+    "dmg": 2,
     "splitHp": 3,
     "splitSpeed": 46,
     "splitCount": 2
@@ -153,7 +153,7 @@
   "mole": {
     "hp": 9,
     "speed": 38,
-    "dmg": 3,
+    "dmg": 2,
     "diveMs": 620,
     "emergeMs": 260,
     "diveRange": 260

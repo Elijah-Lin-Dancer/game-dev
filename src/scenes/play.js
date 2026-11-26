@@ -887,16 +887,23 @@ export class Play extends Phaser.Scene {
       return;
     }
     if (t === 'gate') {
-      // 机关房：3 个守卫 + 一尊机关石像；石像不拉，门不开
-      for (let i = 0; i < 3; i++) spawn(this.pickKind(room.idx), 170);
+      // 机关房：2 个守卫 + 一尊机关石像；石像不拉，门不开。机关房是解谜不是歼灭，
+      // 3 个守卫会把进 Boss 前的血线压到 5 以下（旧堡实机 3 次都倒在这里）。
+      for (let i = 0; i < 2; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
     // 竹林第一章是新手章：五关统一封顶 3 只。实机试点中 4 只（尤其 1–2 只眼怪）
     // 会把 20 血新手在第二战斗房磨死；Boss 血量仍随关深缩放，难度留在 Boss 与操作上。
     const early = this.spec && this.spec.chapterId === 'bamboo';
+    const fort = this.spec && this.spec.chapterId === 'fort';
     const extra = early ? Math.min(1, room.idx) : Math.min(2, room.idx);
     let n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + extra;
+    // 第一章新手 3 只；第二章怪更硬（蜘蛛/骷髅/钻地/分裂），统一 3 只，难度靠组合而不是数量。
+    // 实机首房 5 只（蜘蛛/鼹鼠/幼虫）12 秒团灭，20 血默认忍者没有操作空间。
     if (early) n = Math.min(3, n);
+    else if (fort) n = Math.min(3, n);
+    // 旧堡 1 关的首间是第二章的第一场战斗：只放 2 只，先教分裂与包围，不叠远程/钻地。
+    if (fort && this.spec.index === 1 && room.idx === 0) n = Math.min(2, n);
     for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
   }
 
@@ -976,13 +983,20 @@ export class Play extends Phaser.Scene {
   }
 
   /* 找一个不压墙、与玩家连通、且离玩家至少 minDist 的空地 */
-  findFreeSpot(minDistFromPlayer) {
+  findFreeSpot(minDistFromPlayer, needOpen = 2) {
     const reach = this.reachableTiles();
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 90; i++) {
       const x = Phaser.Math.Between(TILE + 16, RW - TILE - 16);
       const y = Phaser.Math.Between(TILE + 16, RH - TILE - 16);
       if (this.isWall(x, y, 14)) continue;
-      if (!reach.has(Math.floor(x / TILE) + ',' + Math.floor(y / TILE))) continue;
+      const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+      if (!reach.has(tx + ',' + ty)) continue;
+      // 不要把远程怪刷进 1 格死角：它会隔着墙角放弹幕，近战玩家绕半天还砍不到。
+      let open = 0;
+      for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if (!this.walls.has((tx + ox) + ',' + (ty + oy))) open += 1;
+      }
+      if (open < needOpen) continue;
       if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDistFromPlayer) continue;
       return { x, y };
     }
@@ -995,7 +1009,8 @@ export class Play extends Phaser.Scene {
   spawnFoe(kind, minDist, at) {
     // 同屏上限 8：再多就打不过来了，分裂/召唤也不会无限铺场
     if (this.enemiesAlive() >= 8) return null;
-    const spot = at || this.findFreeSpot(minDist || 200);
+    const needOpen = ['spider', 'skull', 'eye', 'octopus'].includes(kind) ? 3 : 2;
+    const spot = at || this.findFreeSpot(minDist || 200, needOpen);
     const cfg = kind === 'beast' ? {
       hp: CFG.enemyHp, speed: CFG.enemySpeed, dmg: CFG.touchDmg, half: 12,
     } : CFG[kind];
@@ -1031,6 +1046,11 @@ export class Play extends Phaser.Scene {
       const pool = ((this.spec.chapter && this.spec.chapter.monsters) || [])
         .filter((k) => k === 'beast' || CFG[k]);
       if (pool.length) {
+        if (this.spec.chapterId === 'fort' && this.spec.index === 1) {
+          // 旧堡第 1 关只教“分裂 + 钻地”，蜘蛛/骷髅的远程风筝留到第 2 关再上。
+          const intro = ['larva', 'slime', 'mole'].filter((k) => pool.includes(k));
+          if (intro.length) return intro[this.enemies.length % intro.length];
+        }
         if (idx <= 0) {
           // 首间只出低威胁怪，并按已生成数量交替，避免整间清一色同一种
           const easy = ['beast', 'larva', 'slime', 'racoon', 'spider', 'mole', 'snake', 'lizard', 'mouse', 'fish', 'axolot', 'mollusc', 'flam', 'demon']
@@ -1202,6 +1222,17 @@ export class Play extends Phaser.Scene {
       if (this.walls.has(tx + ',' + ty)) return true;
     }
     return false;
+  }
+
+  /* 远程怪必须看得见玩家才开火：否则骷髅/蜘蛛会隔墙磨血，玩家却打不到它。 */
+  lineOfSight(x1, y1, x2, y2) {
+    const dist = Phaser.Math.Distance.Between(x1, y1, x2, y2);
+    const steps = Math.max(1, Math.ceil(dist / 12));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      if (this.isWall(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, 3)) return false;
+    }
+    return true;
   }
 
   moveActor(spr, dx, dy, r) {
@@ -3820,6 +3851,7 @@ export class Play extends Phaser.Scene {
 
   /* 敌人弹体统一出口：颜色/速度/追踪可按怪单独调 */
   enemyShot(e, dirv, tint, speed, dmg, opt) {
+    if (!this.lineOfSight(e.spr.x, e.spr.y, this.player.x, this.player.y)) return null;
     const spr = this.add.sprite(e.spr.x, e.spr.y, 'ball', 0)
       .setScale((opt && opt.scale) || 1.35).setTint(tint).setDepth(4).play('ball-fly');
     this.shots.push(Object.assign({
@@ -4056,7 +4088,7 @@ export class Play extends Phaser.Scene {
         this.tweens.add({ targets: e.aura, alpha: 0, duration: 320 });
       }
     }
-    if (isBoss) this.time.delayedCall(900, () => this.win());
+    if (isBoss) this.time.delayedCall(1200, () => this.win());
   }
 
   dropItem(x, y, kind, up, id) {
@@ -4229,8 +4261,38 @@ export class Play extends Phaser.Scene {
       this.spec ? (this.spec.special ? { special: this.spec.special.id } : { chapterId: this.spec.chapterId, stage: this.spec.index }) : null);
   }
 
+  /* 结算时收走 Boss 脚下剩余的战利品：1.2 秒拾取窗口过后直接入账，
+     避免远程击杀时金币/心/强化来不及捡、结算界面又停掉拾取逻辑。 */
+  collectLootOnWin() {
+    if (!this.drops || !this.drops.length) return;
+    let coinGain = 0;
+    for (const it of this.drops) {
+      if (it.kind === 'coin') {
+        coinGain += Math.max(0, (1 + this.mods.coinBonus) * this.mods.coinMul);
+      } else if (it.kind === 'upg') {
+        this.upg[it.up] += 1;
+        this.resourceCount += 1;
+      } else if (it.kind === 'key') {
+        this.keyCount += 1;
+        this.resourceCount += 1;
+      } else if (it.kind === 'heart') {
+        this.hp = Math.min(this.maxHp(), this.hp + CFG.healAmount);
+        this.resourceCount += 1;
+      }
+    }
+    if (coinGain > 0) {
+      this.coinAcc = (this.coinAcc || 0) + coinGain;
+      const whole = Math.floor(this.coinAcc);
+      this.coinAcc -= whole;
+      this.coins += whole;
+    }
+    this.drops.forEach((d) => d.spr.destroy());
+    this.drops = [];
+  }
+
   win() {
     if (this.won) return;
+    this.collectLootOnWin();
     this.won = true;
     setMood('victory', { loop: false });
     if (this.spec) {
