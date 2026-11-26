@@ -618,3 +618,25 @@
 | W-159 | G4-6 Pages 线上 | 推送 `92a839e..101dde9` 后读 Pages 入口 / sw / `world.json`；960 灯前 NPC + gate；960 allDone offer；960 active / 3 束交付；640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.55b9c15d.js` + `assets.ccf47434.js`，`world.json v11`，PWA `na-b18-fef5cd06` / 12 条；960 灯前「守灯人 阿烬」/ `quest=lamp` / gate 休眠 /「归水灯在等一簇火」；960 allDone 无 gate，offer「六盏灯都亮了」+「长明芯」+ 重燃警示；active 3 束打开 `stage1 / rows2`，交付 `done / tokens20→24 / herbs3→0 / 归水灯 · 长明`；640 `scrollWidth640`、844 `scrollWidth844`；PWA 断网 reload 后 active 交付面板可用；`errs=[]`，26/26 PASS |
 
 线上证据：`docs/revamp/g4-6/g4-online-lampkeeper-gate-960.png`、`g4-online-lamp-offer-960.png`、`g4-online-lamp-choice-960.png`、`g4-online-lamp-done-960.png`、`g4-online-lamp-choice-640.png`、`g4-online-lamp-offer-844.png`、`g4-online-lamp-choice-pwa-960.png`；详见 `docs/BATCH26-G4-6.md` 第 9 节。
+
+## W-160. 批 27 / G4-7 守灯人阿烬独立立绘本地验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-160 | 独立立绘 / 阿芦回归 | 读 `world.json`；BASE 档进 `mire-6` 看阿烬；对比 `QUEST_PROFILE.mire`；`audit_scale.py` | 通过；阿烬 `texture=mireLampkeeper / role=lampkeeper / quest=lamp`；阿芦仍 `mireKeeper`；新立绘 64×64、首帧 bbox `(17,9,45,55)`、审计 **39.9px / 1.25×**；960 截图 `g4-7-lampkeeper-stand-960.png` |
+| W-161 | 灯前 / offer | BASE 灯前按 E；ALL 六 Boss done 按 E | 通过；灯前 `lampCore=null`，gate 休眠；offer 仍为「六盏灯都亮了」+「长明芯」+ 重燃警示；新立绘两处均生效；`g4-7-lampkeeper-offer-960.png` |
+| W-162 | done 暖灯 / 标牌 | ALL + `lampQuest done` 进 `mire-6`，读 `lampCore`、`embers.emitting / alive`、`memorialText`；再 applyScreen(35) | 通过；`lampCore.key='mire-6:lamp'`，`emitting=true / alive≥1`；标牌「归水灯 · 长明」`x=17050 / y=196`（灯上方）；回屏 key 相同、无重复；`g4-7-lamp-core-960.png` |
+| W-163 | 实际交付 / 离屏回屏 / 重燃 | ALL 接取 → `mireHerbs=3` → `deliverQuest`；离开 `mire-6` 再回；`rekindleExpedition(true)` | 通过；交付 `lampQuest=done / tokens20→24 / herbs3→0`，当场出现暖灯；离开后 `lampCore=null`，回屏重建；重燃 `exp1→2` / 六 Boss none / 暖灯清；`g4-7-lamp-core-delivered-960.png` |
+| W-164 | 640 / 844 | 640×360、844×390 进 done 档 `mire-6`，读暖灯与 `scrollWidth` | 通过；640 `scrollWidth=640`、844 `scrollWidth=844`，均有 `lampCore`；`g4-7-lamp-core-640.png` / `g4-7-lamp-core-844.png` |
+| W-165 | 单文件 / PWA | `file://…/web/game.html?world&debug`；PWA controller 后 `set_offline(true)` reload | 通过；单文件 `mireLampkeeper + lampCore + 归水灯 · 长明`；PWA `na-b18-a6875c40` / 12 条，离线同样可用；`errs=[]`；`g4-7-lamp-core-single-960.png` / `g4-7-lamp-core-pwa-960.png` |
+| W-166 | 回归 / 构建 | `g47`、`g47-deliver`、`g46`、`g46-reg`、`g45`；`smoke`；`audit_scale.py`；`npm run build -- --single` | 通过；`g47` **22/22**、`g47-deliver` **11/11**、`g46` **26/26**、`g46-reg` **8/8**、`g45` **15/15**；smoke 9 PASS；审计 **221 INSTANCES / 0 FAIL**；首屏 **1911 KB / gzip725 KB**；`game.c78659be.js` **383,543 B** + `assets.14770575.js` **132,345 B**；单文件 **2,042,191 B**；图集 **175 切片 / 123,697 B** |
+
+证据：`docs/revamp/g4-7/g4-7-lampkeeper-stand-960.png`、`g4-7-lampkeeper-offer-960.png`、`g4-7-lamp-core-960.png`、`g4-7-lamp-core-640.png`、`g4-7-lamp-core-844.png`、`g4-7-lamp-core-single-960.png`、`g4-7-lamp-core-pwa-960.png`、`g4-7-lamp-core-delivered-960.png`、`g4-7-lampkeeper-portrait-board.png`；详见 `docs/BATCH27-G4-7.md`。
+
+## W-167. 批 27 / G4-7 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-167 | G4-7 Pages 线上 | 推送 `b099246..b293de4` 后读 Pages 入口 / `world.json` / sw；960 灯前；960 offer；960 实际交付；640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.c78659be.js` + `assets.14770575.js`，`world.json v11 / lampQuest need3 / reward4`，PWA `na-b18-a6875c40` / 12 条；960 灯前 `texture=mireLampkeeper / quest=lamp` + gate 休眠；960 offer 有「长明芯」；960 实交付 `done / tokens20→24 / herbs3→0` + 当场暖灯；640 `scrollWidth=640`、844 `scrollWidth=844`；PWA 断网 reload 后新立绘 / 暖灯 / 标牌可用；`errs=[]`，17/17 PASS |
+
+线上证据：`docs/revamp/g4-7/g4-online-lampkeeper-stand-960.png`、`g4-online-lamp-offer-960.png`、`g4-online-lamp-core-delivered-960.png`、`g4-online-lamp-core-640.png`、`g4-online-lamp-core-844.png`、`g4-online-lamp-core-pwa-960.png`；详见 `docs/BATCH27-G4-7.md` 第 9 节。

@@ -50,3 +50,4 @@
 - game-icons.net：`Icons made by {作者}. Available on https://game-icons.net`
 - Incompetech：`"{曲名}" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0`
 | 归途 G4-2 雾泽终局 Boss 沉灯水魇 3D 像素（96×96 四向 × 待机 / 蓄力 / 咆哮） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
+| 归途 G4-7 守灯人 阿烬 3D 像素立绘（64×64 四向 / 256×64 源图集） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |

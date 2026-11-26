@@ -102,3 +102,5 @@ G4-6 把 G4-5 的纯对话 NPC「守灯人 阿烬」接成一条一次性小委�
 - 960 active / `mireHerbs=3`：按 E 打开「委托 · 守灯人的长明芯」面板 `stage1 / rows2`；交付后 `lampQuest=done / tokens20→24 / mireHerbs3→0 / memorial='归水灯 · 长明'`。
 - 640：交付面板 `scrollWidth=640` 无溢出；844：offer 面板 `scrollWidth=844` 无溢出。
 - PWA：controller 后断网 reload，`mire-6` NPC / active 交付面板仍可用；`errs=[]`。
+
+> 后续（G4-7）：阿烬已在批 27 换成独立 `mireLampkeeper` 立绘；本节「复用 `mireKeeper + flipX` / 无独立立绘」为 G4-6 当时口径，保留用于历史对照。委托数值、`lampQuest` 一次性与共享 `mireHerbs` 边界未变。

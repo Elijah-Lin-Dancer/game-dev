@@ -294,3 +294,18 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 审计：`python3 tools/audit_scale.py` **220 实例 / 0 FAIL**；`mireWraith` 三姿态 **3.0–3.29×**，在 2.2–3.3 内。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
+## G4-7 产出（2026-11-26）
+
+守灯人阿烬的独立 3D 像素立绘 1 件。此前 G4-5 / G4-6 的阿烬复用守泽人阿芦的 `mireKeeper + flipX`；本轮按 ink-studio 离线 SDF → 像素 → 四向图集生成，运行时只读成品 PNG。阿芦仍使用 `mireKeeper`，没有换脸。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 守灯人 阿烬 | `art-src/g4/mire-lampkeeper.cjs`（seed 406，四向） | 256×64，4 向 × 64×64 | `mire-lampkeeper-atlas.png` 256×64；首帧裁成 `mire-lampkeeper.png` 64×64 | `mire-6` NPC；bbox `(17,9,45,55)`；审计 **39.9px / 1.25×**；origin 54/64；scale 0.95 |
+
+- 造型：深灰高兜帽 + 灰披肩 + 左手长灯杆 + 胸前暖色灯笼 + 腰间余烬挂饰；与阿芦的斗笠 / 深绿蓑衣 / 木杖区分。
+- 帧序：0 前 / 1 左 / 2 后 / 3 右；运行时按 NPC 朝向切帧。
+- 对照板：`docs/revamp/g4-7/g4-7-lampkeeper-portrait-board.png`；源图集 / 元数据：`docs/revamp/g4-3d/mire-lampkeeper-atlas.png/.json`。
+- 审计：`python3 tools/audit_scale.py` **221 实例 / 0 FAIL**；阿烬 39.9px / 1.25×；阿芦仍 1.24×。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原图。
