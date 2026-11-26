@@ -589,3 +589,11 @@
 | W-151 | 回归 | 旧档 v13→v14；`g44` / `g44-reg`；`npm run smoke`；`audit_scale.py` | 通过；v13→v14 + gate 休眠；G4-4 14/14 + 6/6；smoke 9 PASS；审计 221 INSTANCES / 0 FAIL |
 
 证据：`docs/revamp/g4-5/g4-5-lampkeeper-scene-960.png`、`g4-5-lampkeeper-gate-960.png`、`g4-5-lampkeeper-gate-640.png`、`g4-5-lampkeeper-gate-844.png`、`g4-5-lampkeeper-all-960.png`、`g4-5-lampkeeper-tier2-960.png`、`g4-5-lampkeeper-single-960.png`、`g4-5-lampkeeper-pwa-960.png`；详见 `docs/BATCH26-G4-5.md`。
+
+## W-152. 批 26 / G4-5 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-152 | G4-5 Pages 线上 | 推送 `4ae23b8..19fee66` 后读 Pages 入口 / sw；960 灯前 NPC、960 六 Boss 全 done、640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.48b6f1c6.js` + `assets.845b6943.js`，PWA `na-b18-4707d526` / 12 条；960 灯前 `gate=true/boss=false` + NPC「守灯人 阿烬」，按 E「归水灯在等一簇火」；960 allDone 无 gate，提示「星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下」；640 `scrollWidth640`、844 `scrollWidth844`；PWA 断网 reload 后 gate / NPC / 对话可用；`errs=[]`，7/7 PASS |
+
+线上证据：`docs/revamp/g4-5/g4-online-lampkeeper-gate-960.png`、`g4-online-lampkeeper-all-960.png`、`g4-online-lampkeeper-640.png`、`g4-online-lampkeeper-844.png`、`g4-online-lampkeeper-pwa-960.png`；详见 `docs/BATCH26-G4-5.md` 第 9 节。

@@ -87,4 +87,11 @@ G4-5 只补 `mire-6` 的人物缺口：归水灯旁新增「守灯人 阿烬」�
 
 ## 9. Pages 线上
 
-待推送。线上当前仍为 G4-4（`game.9d324e8d.js` + `assets.8c75570a.js`，PWA `na-b18-ae4a669e`）。
+推送 `4ae23b8..19fee66` 后，Pages 入口切到 `game.48b6f1c6.js` + `assets.845b6943.js`，PWA `na-b18-4707d526` / 12 条。线上 7/7 PASS，`errs=[]`：
+
+- 960 `mire-6` 灯前：`gate=true / boss=false`，NPC「守灯人 阿烬」，按 E 出现「归水灯在等一簇火」；
+- 960 六 Boss 全 done：无 gate，NPC 提示「星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下」；
+- 640 / 844：`scrollWidth` 分别为 640 / 844；
+- PWA controller `https://elijah-lin-dancer.github.io/game-dev/sw.js`，cache `na-b18-4707d526`；断网 reload 后 `mire-6` gate、NPC、对话均可用。
+
+线上证据：`docs/revamp/g4-5/g4-online-lampkeeper-gate-960.png`、`g4-online-lampkeeper-all-960.png`、`g4-online-lampkeeper-640.png`、`g4-online-lampkeeper-844.png`、`g4-online-lampkeeper-pwa-960.png`。
