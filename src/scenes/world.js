@@ -1015,8 +1015,8 @@ export class World extends Phaser.Scene {
         const y = WORLD_Y + asNumber(h[1], 0);
         const glow = this.add.circle(x, y - 6, 17, UI.world.lampGlow, 0.20)
           .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
-        const sprite = this.add.sprite(x, y, 'mireHerb', 0)
-          .setOrigin(0.5, 32 / 48).setScale(1.35).setDepth(24).setTint(0xffb35c);
+        const sprite = this.add.sprite(x, y, 'mireLampHerb', 0)
+          .setOrigin(0.5, 32 / 48).setScale(1.35).setDepth(24);
         const spark = this.add.circle(x, y - 34, 2, UI.world.lampGlow, 0.9)
           .setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
         this.tweens.add({ targets: sprite, y: y - 3, duration: 820 + i * 90, yoyo: true, repeat: -1 });
@@ -1053,6 +1053,23 @@ export class World extends Phaser.Scene {
     const lq = this.world.lampQuest;
     if (!node || !node.lampOnly || !lq) return false;
     return this.save.lampQuest === 'active' && (this.save.lampHerbs || 0) < lq.need;
+  }
+
+  lampGatherFx(node, ready) {
+    const label = this.add.text(node.x, node.y - 40, ready ? '长明芯 3/3' : '长明芯 +1', {
+      fontFamily: UI.font, fontSize: '13px', color: '#ffe6a0',
+      stroke: '#3a230f', strokeThickness: 3,
+    }).setOrigin(0.5, 1).setDepth(84);
+    const ring = this.add.circle(node.x, node.y - 18, ready ? 13 : 9, UI.world.lampGlow, 0.52)
+      .setDepth(80).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({
+      targets: ring, scale: ready ? 2.8 : 2.2, alpha: 0, duration: ready ? 760 : 620,
+      ease: 'Sine.easeOut', onComplete: () => ring.destroy(),
+    });
+    this.tweens.add({
+      targets: label, y: node.y - 68, alpha: 0, duration: 900,
+      ease: 'Sine.easeOut', onComplete: () => label.destroy(),
+    });
   }
 
   refreshLampHerbs() {
@@ -2203,6 +2220,7 @@ export class World extends Phaser.Scene {
       const lq = this.world.lampQuest;
       const lampCount = (this.save.lampHerbs || 0) + lq.yield;
       this.save = patchWorldSave({ lampHerbs: lampCount });
+      this.lampGatherFx(node, lampCount >= lq.need);
       this.toast('采到长明芯草 ×' + lq.yield);
       if (lampCount >= lq.need) {
         this.toast('长明芯够了 · 回归水灯找阿烬');

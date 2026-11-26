@@ -27,6 +27,7 @@ BASE = {
     'mireDeadTree': 1.2, 'mireRock': 1.4, 'mireBush': 0.9,
 }
 # 群系资源点缩放，与 buildHerbs 同步
+LAMP_HERB = ('assets/01-primary/world/mire-lamp-herb.png', 1.35)
 HERB = {
     'field': ('assets/01-primary/NinjaAdventure/Items/Food/TeaLeaf.png', 1.0),
     'bamboo': ('assets/01-primary/NinjaAdventure/Items/Food/TeaLeaf.png', 1.0),
@@ -181,6 +182,13 @@ def main():
             if ratio > 1.15:
                 fails.append(f'{s["id"]} herb {ratio:.2f}x > 1.15')
             rows.append((s['id'], 'herb:' + biome, round(h, 1), round(ratio, 2)))
+        if s.get('lampHerbs'):
+            path, scale = LAMP_HERB
+            h = bbox_h(path) * scale
+            ratio = h / PLAYER_H
+            if ratio > 1.15:
+                fails.append(f'{s["id"]} lampHerb {ratio:.2f}x > 1.15')
+            rows.append((s['id'], 'lampHerb', round(h, 1), round(ratio, 2)))
     for b in data.get('bosses', []):
         cfg = BOSS_ART.get(b.get('art'))
         if not cfg:

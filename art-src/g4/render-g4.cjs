@@ -18,6 +18,7 @@ const specs = [
   { file: 'mire-reed.cjs', out: 'mire-reed-atlas', w: 64, h: 96, directions: 1, dist: 5.15 },
   { file: 'mire-shrine.cjs', out: 'mire-shrine-atlas', w: 96, h: 128, directions: 1, dist: 5.2 },
   { file: 'mire-herb.cjs', out: 'mire-herb-atlas', w: 32, h: 48, directions: 1, dist: 3.45 },
+  { file: 'mire-lamp-herb.cjs', out: 'mire-lamp-herb-atlas', w: 32, h: 48, directions: 1, dist: 3.45 },
   { file: 'mire-wraith.cjs', pose: 'idle', out: 'mire-wraith-idle', w: 96, h: 96, directions: 4, dist: 7.3 },
   { file: 'mire-wraith.cjs', pose: 'charge', out: 'mire-wraith-charge', w: 96, h: 96, directions: 4, dist: 7.3 },
   { file: 'mire-wraith.cjs', pose: 'roar', out: 'mire-wraith-roar', w: 96, h: 96, directions: 4, dist: 7.3 },

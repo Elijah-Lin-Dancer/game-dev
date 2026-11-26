@@ -11,6 +11,7 @@ Image.open(ROOT / 'docs/revamp/g4-3d/mire-lampkeeper-atlas.png').convert('RGBA')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-reed-atlas.png').convert('RGBA').save(OUT / 'mire-reed.png')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-shrine-atlas.png').convert('RGBA').save(OUT / 'mire-shrine.png')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-herb-atlas.png').convert('RGBA').save(OUT / 'mire-herb.png')
+Image.open(ROOT / 'docs/revamp/g4-3d/mire-lamp-herb-atlas.png').convert('RGBA').save(OUT / 'mire-lamp-herb.png')
 
 # 16px 雾泽地：TilesetField 纯色帧 21 调成湿苔绿，只重映射颜色，不重绘 tile。
 field = Image.open(ROOT / 'assets/00-raw/NinjaAdventure/Backgrounds/Tilesets/TilesetField.png').convert('RGBA')

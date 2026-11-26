@@ -1,0 +1,43 @@
+{
+  "width": 32,
+  "height": 48,
+  "tileWidth": 32,
+  "tileHeight": 48,
+  "directions": 1,
+  "fps": 12,
+  "pivot": [
+    0,
+    0.34,
+    0.04
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "direction": 0,
+      "yaw": 0.2,
+      "pitch": 0.15,
+      "unitsPerPixel": 0.04949709441038938,
+      "depthOrigin": 15.45,
+      "time": 0,
+      "duration": 0.08333333333333333,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 32,
+        "height": 48
+      },
+      "pivot": {
+        "x": 16,
+        "y": 24
+      }
+    }
+  ],
+  "normalSpace": "asset",
+  "emissionMode": "baked",
+  "encodings": {
+    "color": "straight RGBA"
+  },
+  "sourceScene": "mire-lamp-herb.cjs",
+  "renderer": "ink-studio CPU spriteAtlas",
+  "note": "RGBA color atlas; frames left-to-right, one row, directions 0..3"
+}
