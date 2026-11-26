@@ -467,6 +467,9 @@ export class World extends Phaser.Scene {
     this.panel = null;
     this.modal = null;
     this.victory = false;
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     this.dead = false;
     this.boss = null;
     this.bossActive = false;
@@ -1101,8 +1104,38 @@ export class World extends Phaser.Scene {
     this.updateHud();
   }
 
+  rekindleNext() {
+    return Math.min(99, (this.save.expedition || 1) + 1);
+  }
+
+  /* 星火重燃会清掉六 Boss，不能一点就重置：第一次先把按钮改成确认态。 */
+  requestRekindle(source = 'finale') {
+    if (!this.world.bosses.every((b) => this.save.bosses[b.id] === 'done')) return;
+    const next = this.rekindleNext();
+    if (!this.rekindleArmed) {
+      this.rekindleArmed = true;
+      if (this.rekindleLabel && this.rekindleLabel.active) {
+        this.rekindleLabel.setText('确认重燃 · 第 ' + next + ' 次远征');
+      }
+      if (source === 'travel') {
+        if (this.rekindleHint && this.rekindleHint.active) {
+          this.rekindleHint.setText('再点一次确认 · 六 Boss 会重置').setColor(UI.text.gold);
+        }
+      } else {
+        this.toast('再点一次确认 · 六 Boss 会重置 · 碎片 / 委托 / 成就保留');
+      }
+      return;
+    }
+    this.rekindleArmed = false;
+    if (source === 'travel') this.closePanel();
+    this.rekindleExpedition(source === 'travel');
+  }
+
   openTravel() {
     if (!this.travelUnlocked()) return;
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     if (this.bannerT) { this.bannerT.destroy(); this.bannerT = null; }
     const W = Math.min(390, VIEW_W - 40);
     const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
@@ -1116,7 +1149,12 @@ export class World extends Phaser.Scene {
       .setOrigin(0).setScrollFactor(0).setDepth(90).setInteractive();
     const p = screenPanel(this, { x, y, w: W, h: H, variant: 'raised', depth: 100 });
     p.add(makeText(this, 14, 12, '篝火 · 已记住的路', 'h2', { color: UI.text.heading }));
-    p.add(makeText(this, 14, 34, '只去已经走过的篝火 · 点击落点传送', 'caption', { color: UI.text.muted }));
+    const subtitle = allDone
+      ? '重燃会重置六 Boss · 碎片 / 委托 / 成就保留'
+      : '只去已经走过的篝火 · 点击落点传送';
+    const hint = makeText(this, 14, 34, subtitle, 'caption', { color: UI.text.muted });
+    p.add(hint);
+    this.rekindleHint = hint;
     const rows = this.campfires.map((c, i) => {
       const screen = this.screens[c.screenIndex];
       const visited = this.save.visited.includes(c.screen);
@@ -1140,11 +1178,13 @@ export class World extends Phaser.Scene {
       const card = makeCard(this, {
         x: x + 16, y: y + 62 + idx * 30, w: W - 32, h: 26,
         accent: UI.color.gold, depth: 104,
-        onClick: () => { this.closePanel(); this.rekindleExpedition(true); },
+        onClick: () => this.requestRekindle('travel'),
       });
       card.container.setScrollFactor(0);
       card.hit.setScrollFactor(0);
-      card.add(makeText(this, 12, 7, '星火重燃 · 第 ' + Math.min(99, (this.save.expedition || 1) + 1) + ' 次远征', 'body', { color: UI.text.gold }));
+      const text = makeText(this, 12, 7, '星火重燃 · 第 ' + this.rekindleNext() + ' 次远征', 'body', { color: UI.text.gold });
+      card.add(text);
+      this.rekindleLabel = text;
       rows.push({ card });
     }
     const close = makeCard(this, {
@@ -2303,6 +2343,9 @@ export class World extends Phaser.Scene {
       this.panel.panel.container.destroy();
       this.panel = null;
     }
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     this.panelOpen = false;
     if (this.hudHint) this.hudHint.setVisible(true);
     this.updatePrompts();
@@ -2635,10 +2678,12 @@ export class World extends Phaser.Scene {
     const tier = Math.max(1, Math.min(99, this.save.expedition || 1));
     const scaledHp = Math.round(b.hp * (1 + 0.12 * (tier - 1)));
     const scaledDmg = b.dmg + Math.floor((tier - 1) / 2);
+    // 周目不是只加难度：每多一轮远征，Boss 碎片 +1，给继续打下去一个实际回报。
+    const scaledReward = Math.min(20, b.rewardTokens + Math.max(0, tier - 1));
     this.boss = {
       id: b.id, def: b, art, tier,
       name: b.name, spr, mirror, glow, shadow, ring, label, x, y,
-      maxHp: scaledHp, hp: scaledHp, dmg: scaledDmg, rewardTokens: b.rewardTokens,
+      maxHp: scaledHp, hp: scaledHp, dmg: scaledDmg, rewardTokens: scaledReward,
       scale: art.scale, standoff: art.standoff,
       speed: b.speed || 34, pattern: b.pattern || '', specialGap: b.specialGap || 5200,
       state: 'idle', stateEnd: 0, nextAt: 0, specialAt: 0, target: null, warning: null, flash: 0,
@@ -3592,6 +3637,9 @@ export class World extends Phaser.Scene {
   rekindleExpedition(allowOutsideVictory = false) {
     if (!this.world.bosses.every((b) => this.save.bosses[b.id] === 'done')) return;
     if (!this.victory && !allowOutsideVictory) return;
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     this.clearBossGate();
     if (this.boss) {
       for (const key of ['spr', 'mirror', 'glow', 'shadow', 'ring', 'label', 'warning']) {
@@ -3635,6 +3683,9 @@ export class World extends Phaser.Scene {
 
   showVictory(reward, finale = false, newAch = []) {
     this.victory = true;
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     this.panelOpen = true;
     this.pointerTarget = null;
     // 胜利面板要独占视线：把入场 banner / 攻击提示 toast 清掉。
@@ -3652,12 +3703,15 @@ export class World extends Phaser.Scene {
     const rowFill = this.add.rectangle(x + 16, y + 100, W - 32, finale ? 74 : 34, UI.color.panelRaised, 0.92)
       .setOrigin(0).setScrollFactor(0).setDepth(103);
     const def = this.boss?.def || {};
+    const baseReward = Number(def.rewardTokens) || 0;
+    const rewardBonus = Math.max(0, reward - baseReward);
     const title = finale ? '星火归途 · 远征完成' : (def.victoryTitle || '星火的碎片 · 已归位');
     const body = finale
       ? '六片群系的星火重新连成一线，归途在火心尽头亮起。'
       : (def.victoryBody || '这片群系的远征，暂时告一段落。');
     p.add(makeText(this, 14, 12, title, 'h2', { color: UI.text.gold }));
-    p.add(makeText(this, 14, 36, (this.boss?.name || '世界 Boss') + '倒下，星火碎片 +' + reward + '。', 'body', { color: UI.text.body }));
+    p.add(makeText(this, 14, 36, (this.boss?.name || '世界 Boss') + '倒下，星火碎片 +' + reward
+      + (rewardBonus ? '（周目加成 +' + rewardBonus + '）' : '') + '。', 'body', { color: UI.text.body }));
     p.add(makeText(this, 14, 58, body, 'caption', { color: UI.text.muted }));
     if (newAch && newAch.length) {
       p.add(makeText(this, 14, 78, '新成就 · ' + newAch.join(' / '), 'caption', { color: UI.text.info }));
@@ -3665,7 +3719,7 @@ export class World extends Phaser.Scene {
     const actions = finale
       ? [
         ['回到小屋', () => this.leave()],
-        ['星火重燃 · 第 ' + Math.min(99, (this.save.expedition || 1) + 1) + ' 次远征', () => this.rekindleExpedition()],
+        ['星火重燃 · 第 ' + this.rekindleNext() + ' 次远征', () => this.requestRekindle('finale')],
       ]
       : [['继续探索', () => this.closeVictory()]];
     const rows = actions.map(([label, cb], i) => {
@@ -3677,7 +3731,9 @@ export class World extends Phaser.Scene {
       card.hit.setScrollFactor(0);
       // 胜利页按钮去掉卡片顶部的横向描边，避免它像一条压在文案上的分隔线。
       card.bg.setVisible(false);
-      card.add(makeText(this, 12, 14, label, 'body', { color: UI.text.primary }));
+      const text = makeText(this, 12, 14, label, 'body', { color: UI.text.primary });
+      card.add(text);
+      if (finale && i === 1) this.rekindleLabel = text;
       return { card };
     });
     this.modal = { dim, panel: p, rows, fill: rowFill };
@@ -3689,6 +3745,9 @@ export class World extends Phaser.Scene {
     this.restoreBossEdge();
     this.destroyModal();
     this.victory = false;
+    this.rekindleArmed = false;
+    this.rekindleLabel = null;
+    this.rekindleHint = null;
     this.panelOpen = false;
     if (this.hudHint) this.hudHint.setVisible(true);
     this.showMemorial();

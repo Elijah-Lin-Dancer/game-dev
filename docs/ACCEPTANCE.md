@@ -557,3 +557,16 @@
 | W-141 | G4-3 Pages 线上 | 推送 `35bcaed..433afe6` 后读 Pages 入口 / `world.json` / `sw.js`；960 `applyScreen(35)` + E + 终局 + 重燃；640 / 844 hasTouch；allDone 篝火；PWA controller 后 `set_offline(true)` 外部 probe + reload | 通过；入口 `game.c7d2c0ba.js` + `assets.8c75570a.js`；`world.json v10 / screens36 / bosses6 / bossGate250,246`；PWA `na-b18-9cf996b0`；v13→v14、gate 休眠、E 唤醒 `maxHp104/tier1`、终局 `rows2/fill74`、重燃 `exp2/screen0/六none/tokens26`、HUD「周目 2」；640 `scrollWidth640 / canvas640×360`；844 `touchCtl=true / canvas779×360`；allDone 篝火 8 行；PWA `activated` / probe `rejected:TypeError` / 离线 reload gate 休眠；`errs=[]`（PWA 仅预期断网 console） |
 
 线上证据：`docs/revamp/g4-3/g4-online-mire-gate-960.png`、`g4-online-mire-boss-960.png`、`g4-online-mire-finale-960.png`、`g4-online-mire-rekindle-960.png`、`g4-online-mire-travel-960.png`、`g4-online-mire-640.png`、`g4-online-mire-844.png`、`g4-online-mire-pwa-960.png`；详见 `docs/BATCH26-G4-3.md` 第 11 节。
+
+
+## W-142～W-146. 批 26 / G4-4 星火重燃二次确认 + 周目回报（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-142 | 终局面板两步确认 | 预置其余 5 只 done、`mireWraith none`；点灯 / 击杀；读 `rows / fillH / label`；点一次重燃；再点一次；关闭面板复位 | 通过；`rows=2 / fillH=74`，按钮初始「星火重燃 · 第 2 次远征」；第一次 `expedition=1 / armed=true / label="确认重燃 · 第 2 次远征"`，六 Boss 仍全 done、`tokens26` 未变；第二次 `expedition=2 / screen=0 / 六 Boss none / tokens26`，HUD「远征 · 村口 · 周目 2」；第一次后 `closeVictory()` 复位 `armed=false / expedition=1` |
+| W-143 | 篝火 allDone 两步确认 | 预置六 Boss done；960/640 `openTravel`；读 8 行、副标题；点一次；读 label / hint / panel；关闭复位；640 连点两次 | 通过；8 行；960 第一次 `armed=true / label="确认重燃 · 第 2 次远征" / hint="再点一次确认 · 六 Boss 会重置"`，面板仍开；`closePanel()` 后 `expedition=1 / armed=false / panel=false`；640 连点两次 `expedition=2 / panel=false / scrollWidth=640`；截图 `g4-4-travel-confirm-960.png` / `g4-4-travel-rekindle-640.png` |
+| W-144 | 周目碎片回报 | tier2 预置六 Boss none；`applyScreen(5)` 读草原 Boss 奖励；击杀读 tokens / 文案；`applyScreen(35)` 读雾泽奖励 / E | 通过；草原 `tier2 / maxHp72 / reward4`（基础 3 +1），击杀 `tokens20→24`，结算「苔背巨兽倒下，星火碎片 +4（周目加成 +1）」；雾泽 gate `tier2 / maxHp116 / reward7`（基础 6 +1），E 后唤醒；tier1 雾泽仍 `104 / 6` |
+| W-145 | 640 / 844 / 单文件 / PWA | 640×360 终局；844×390 hasTouch 终局确认；`file://` 单文件 gate / 终局确认；SW controller 后 `set_offline(true)` reload + `applyScreen(35)` | 通过；640 `scrollWidth=640`；844 `scrollWidth≤844 / armed / label`；单文件 `__SINGLE__ / gate 休眠 / E / rows2`；PWA `na-b18-ae4a669e` controller=true，离线 reload 后 gate 存在、`bossActive=false` |
+| W-146 | 构建 / 回归 | `npm run build -- --single`；`npm run smoke`；`audit_scale.py`；`/tmp/g44.py`、`/tmp/g44-reg.py`、`/tmp/g44-disarm.py` | 通过；首屏 **1903 KB / gzip723 KB**；图集 **123,265 B / 174 切片（无新增）**；`game.9d324e8d.js` **375,789 B** + `assets.8c75570a.js` **132,049 B**；单文件 **2,033,573 B**；PWA `na-b18-ae4a669e`；`smoke` 9 PASS；审计 220/0；`g44` **14/14**、`g44-reg` **6/6**、关闭复位 PASS；v13→v14 / gate 104 / tier2 gate 116 回归通过 |
+
+证据：`docs/revamp/g4-4/g4-4-finale-confirm-960.png`、`g4-4-finale-confirm-640.png`、`g4-4-finale-confirm-844.png`、`g4-4-travel-confirm-960.png`、`g4-4-travel-rekindle-640.png`、`g4-4-tier2-reward-960.png`、`g4-4-single-confirm-960.png`、`g4-4-pwa-offline-960.png`；详见 `docs/BATCH26-G4-4.md`。
