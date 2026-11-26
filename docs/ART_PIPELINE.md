@@ -309,3 +309,11 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 审计：`python3 tools/audit_scale.py` **221 实例 / 0 FAIL**；阿烬 39.9px / 1.25×；阿芦仍 1.24×。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原图。
+
+
+## G4-8 产出（2026-11-26）
+
+无新增美术，也没有新增图集切片。阿烬的「长明芯草」节点复用现有 `mireHerb` 64×64 帧，运行时加暖金 tint `0xffb35c`、`lampGlow` 光晕和 2px 上升金色光点，靠颜色与光效与阿芦的普通灯芯草区分；图集仍 **175 切片 / 123,697 B**。
+
+- 节点：`mire-4` 2 个、`mire-5` 1 个；不新建 3D 源文件，`art-src/g4/` 不变。
+- 若后续要做独立「长明芯草」3D 小件，按 ink-studio 离线 SDF → 像素 → 图集流程新增，只替换 `buildLampHerbs` 的 sprite，不动 `lampHerbs` 存档 / 委托。

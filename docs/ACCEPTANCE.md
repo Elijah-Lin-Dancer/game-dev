@@ -640,3 +640,28 @@
 | W-167 | G4-7 Pages 线上 | 推送 `b099246..b293de4` 后读 Pages 入口 / `world.json` / sw；960 灯前；960 offer；960 实际交付；640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.c78659be.js` + `assets.14770575.js`，`world.json v11 / lampQuest need3 / reward4`，PWA `na-b18-a6875c40` / 12 条；960 灯前 `texture=mireLampkeeper / quest=lamp` + gate 休眠；960 offer 有「长明芯」；960 实交付 `done / tokens20→24 / herbs3→0` + 当场暖灯；640 `scrollWidth=640`、844 `scrollWidth=844`；PWA 断网 reload 后新立绘 / 暖灯 / 标牌可用；`errs=[]`，17/17 PASS |
 
 线上证据：`docs/revamp/g4-7/g4-online-lampkeeper-stand-960.png`、`g4-online-lamp-offer-960.png`、`g4-online-lamp-core-delivered-960.png`、`g4-online-lamp-core-640.png`、`g4-online-lamp-core-844.png`、`g4-online-lamp-core-pwa-960.png`；详见 `docs/BATCH27-G4-7.md` 第 9 节。
+
+
+## W-168. 批 28 / G4-8 长明芯资源解耦本地验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-168 | 存档 / 迁移 | v15 `lampQuest active / mireHerbs 3` 读取；v16 `lampHerbs 999` 读取 | 通过；`v16`；`lampHerbs=3`、`mireHerbs` 仍 3；`lampHerbs` 上限 99；`na.world` 新增 `lampHerbs`，`mireHerbs / lampQuest / bosses / tokens` 保留 |
+| W-169 | 专属节点 / 接取 | `lampQuest none` 进 `mire-4 / mire-5`；`mire-6` offer 走完 | 通过；3 个节点（`mire-4` 2、`mire-5` 1）在 none 时全部隐藏；接取后全部 active / visible；`mire-6` HUD「长明芯 0 · 采集 0/3」 |
+| W-170 | 采集解耦 | `mire-4` 采专属节点；普通灯芯草节点 | 通过；专属节点只写 `lampHerbs`（0→1），`mireHerbs` 0；普通节点只写 `mireHerbs`（0→2），`lampHerbs` 0；HUD / prompt 可读 |
+| W-171 | 集满 / 双委托顺序 | 跨 `mire-4 / mire-5` 采 3 束；双 active 先交阿烬；双 active 先交阿芦 | 通过；`lampHerbs 3 / mireHerbs 0`；先交阿烬 `lampHerbs 0 / mireHerbs 7 / tokens20→24`；先交阿芦 `mireHerbs 0 / lampHerbs 3`，随后长明芯仍可交付 |
+| W-172 | HUD / 面板 / 交付 | `mire-6` 3 束；面板第一行 | 通过；HUD「长明芯 3 · 可交付 3/3」；面板「交付 3 束长明芯草 / 再等等」；交付 `done / lampHerbs 0 / tokens +4`，阿芦 `mireHerbs` 不动；暖灯沿用 G4-7 |
+| W-173 | 响应式 / 单文件 / PWA | 960 / 640 / 844；`web/game.html`；PWA `na-b18-44effc2c` 断网 reload | 通过；640 `scrollWidth=640`、844 `scrollWidth=844`；节点 / prompt / 暖金光点均可见；单文件 / PWA 离线可用；`errs=[]` |
+| W-174 | done / 重燃 | `lampQuest done` 进 `mire-4`；`rekindleExpedition` | 通过；done 节点隐藏；重燃后 `lampQuest done` 保留、节点仍隐藏；`lampHerbs` 不重置；只重置六 Boss |
+| W-175 | 回归 / 构建 | `g48`、`g47`、`g47-deliver`；`npm run smoke`；`audit_scale.py`；`npm run build -- --single` | 通过；`g48` **38/38**、`g47` **22/22**、`g47-deliver` **11/11**；smoke 9 PASS；审计 **221 INSTANCES / 0 FAIL**；首屏 **1914 KB / gzip726 KB**；`game.ed616f54.js` **386,447 B** + `assets.40dfdad3.js` **132,403 B**；单文件 **2,045,077 B**；图集 **175 切片 / 123,697 B**（无新增） |
+
+证据：`docs/revamp/g4-8/g4-8-lamp-herb-960.png`、`g4-8-lamp-herb-mire5-960.png`、`g4-8-lamp-herb-640.png`、`g4-8-lamp-herb-844.png`、`g4-8-lamp-herb-single-960.png`、`g4-8-lamp-herb-pwa-960.png`、`g4-8-offer-960.png`、`g4-8-choice-960.png`、`g4-8-hud-3of3-960.png`、`g4-8-delivered-960.png`；详见 `docs/BATCH28-G4-8.md`。
+
+
+## W-176. 批 28 / G4-8 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-176 | G4-8 Pages 线上 | 推送 `5ab6403..2569103` 后读 Pages 入口 / `world.json` / sw；线上跑 28 项：`none` / 接取 / 采集 / 集满 / 双委托顺序 / 640 / 844 / PWA | 通过；入口 `game.ed616f54.js` + `assets.40dfdad3.js`，`world.json v12 / 3 个 lampHerbs 节点`，PWA `na-b18-44effc2c` / 12 条；线上 **28/28 PASS**：`none` 节点隐藏、`active` 三节点出现、HUD 0/3、专属草 +1 且 `mireHerbs 0`、跨屏集满 3 后节点隐藏、`mire-6` HUD 3/3、先交阿烬保留 `mireHerbs 7` 且 `tokens20→24` + 暖灯、先交阿芦保留 `lampHerbs 3` 且长明芯仍可交付、640/844 无溢出、PWA 断网节点可见；`errs=[]` |
+
+线上证据：`docs/revamp/g4-8/g4-online-lamp-herb-960.png`、`g4-online-lamp-herb-mire5-960.png`、`g4-online-lamp-herb-640.png`、`g4-online-lamp-herb-844.png`、`g4-online-lamp-herb-pwa-960.png`、`g4-online-lamp-hud-3of3-960.png`、`g4-online-lamp-herb-delivered-960.png`；详见 `docs/BATCH28-G4-8.md` 第 10 节。
