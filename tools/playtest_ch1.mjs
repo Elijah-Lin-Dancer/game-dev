@@ -164,10 +164,16 @@ async function startFirstStage(page) {
 
 async function runStage(page, stageIndex, attempt) {
   await page.waitForFunction(() => window.__game.scene.isActive('play') && window.__state && window.__state.stageKey, null, { timeout: 20000 });
+  // 仅用于武器专项抽查，不参与正式验收；正式跑不设 PT_WEAPON。
+  if (process.env.PT_WEAPON) {
+    await page.evaluate((w) => window.__dbg && window.__dbg.give && window.__dbg.give(w), process.env.PT_WEAPON);
+    await page.waitForTimeout(180);
+  }
   const start = await state(page);
   const rec = { stage: start.stageKey, stageIndex, attempt, startHp: start.hp, maxHp: start.maxHp, weapon: start.weapon, rooms: [], startedAt: Date.now(), maxRoom: 0, minHp: start.hp, hitsApprox: 0, talents: [], rest: 0, ended: '' };
   const rooms = new Map();
   let lastRoom = null, held = null, lastAtk = 0, lastQ = 0, lastSnapAt = 0, lastHp = start.hp, lastTraceAt = 0;
+  let lastPosAt = Date.now(), lastPosX = start.px, lastPosY = start.py;
   const t0 = Date.now();
   const release = async () => { if (held) { await page.keyboard.up(held); held = null; } };
   while (Date.now() - t0 < STAGE_TIMEOUT) {
@@ -196,8 +202,9 @@ async function runStage(page, stageIndex, attempt) {
     if (s.panelOpen) {
       if (process.env.PT_DEBUG) console.error('PANEL ' + JSON.stringify({ room: s.roomType, coins: s.coins, hp: s.hp, maxHp: s.maxHp, type: s.panelType, labels: s.panelLabels }));
       await release();
-      // 篝火面板第一项是付费回血；只在这个明确场景按 1，避免误触事件献祭。
-      if (s.roomType === 'rest' && s.coins >= 2 && s.hp < s.maxHp && (s.panelLabels[0] || '').includes('回')) {
+      // 篝火面板第一项是回血；首领门前的篝火是免费的，不能再要求 2 金币才按 1。
+      const freeRest = (s.panelLabels[0] || '').includes('免费');
+      if (s.roomType === 'rest' && s.hp < s.maxHp && (s.coins >= 2 || freeRest) && (s.panelLabels[0] || '').includes('回')) {
         await page.keyboard.press('1');
         rec.rest = (rec.rest || 0) + 1;
         await page.waitForTimeout(240);
@@ -206,6 +213,20 @@ async function runStage(page, stageIndex, attempt) {
       await page.keyboard.press('Escape'); await page.waitForTimeout(160); continue;
     }
     if (s.talking) { await release(); await page.keyboard.press('Space'); await page.waitForTimeout(140); continue; }
+
+    // 顶墙脱困：机器人按路径顶住墙时，会一直保持同一方向直到超时。
+    // 连续 1.2s 几乎没位移就反方向退一步，下一轮重新算路径。
+    if (Date.now() - lastPosAt > 1200) {
+      const moved = Math.hypot(s.px - lastPosX, s.py - lastPosY);
+      if (held && moved < 5 && s.enemies.length === 0) {
+        const back = { a: 'd', d: 'a', w: 's', s: 'w' }[held];
+        await release();
+        if (back) { await page.keyboard.down(back); await page.waitForTimeout(320); await page.keyboard.up(back); }
+        lastPosAt = Date.now(); lastPosX = s.px; lastPosY = s.py;
+        continue;
+      }
+      lastPosAt = Date.now(); lastPosX = s.px; lastPosY = s.py;
+    }
 
     const now = Date.now();
     // 先看迎面弹体：预测 0.6s 内最近距离，小于 34px 就垂直位移让开。
@@ -268,6 +289,28 @@ async function runStage(page, stageIndex, attempt) {
       }
       // 不在危险相位就贴上去打；Boss 前摇一到，上面的 DANGER 分支会立刻接管躲避。
       // 不再只等 recover：青蛙 recover 只有 380ms，从 100 距离根本赶不上一刀。
+      const rangedBoss = s.weaponKind === 'ranged' || s.weaponKind === 'throw'
+        || ['wand', 'bow', 'kunai'].includes(s.weapon);
+      if (rangedBoss) {
+        // 远程武器不能按近战 46px 贴脸：保持 90–180px，够得着就出手，Boss 逼近就后撤。
+        if (bd < 72) {
+          if (held !== baway) { await release(); await page.keyboard.down(baway); held = baway; }
+          await page.waitForTimeout(140);
+          continue;
+        }
+        if (bd <= 185) {
+          if (held) await release();
+          if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[bwant]) {
+            await page.keyboard.down(bwant); await page.waitForTimeout(35); await page.keyboard.up(bwant);
+          }
+          if (now - lastAtk > 380) { await page.keyboard.press('Space'); lastAtk = now; }
+          await page.waitForTimeout(180);
+          continue;
+        }
+        if (bwant !== held) { await release(); await page.keyboard.down(bwant); held = bwant; }
+        await page.waitForTimeout(100);
+        continue;
+      }
       if (bd <= 46) {
         if (now - lastAtk > 340) {
           if (held) await release();
@@ -513,7 +556,9 @@ try {
       if (stage <= STAGES) await startFromMap(page, stage);
       continue;
     }
-    out.errors.push(`stage ${stage} timeout`);
+    // 超时后游戏仍停在 play 场景，afterRun 找不到地图，不能在这里重试；
+    // 让外层直接记录并中止，重跑由人工/下一轮探针发起。
+    out.errors.push(`stage ${stage} timeout after ${attempt} attempts`);
     break;
   }
   await ctx.close();

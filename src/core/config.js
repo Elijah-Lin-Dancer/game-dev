@@ -49,7 +49,7 @@ const CFG = {
   elite: { hpMul: 1.8, affix: { enrage: { speed: 1.4, dmg: 1.5, hp: 1.2 }, swift: { speed: 1.1, windup: 0.7 }, split: {}, shield: {} } },
   /* 第二只 Boss：蓝武士（横斩 / 突进斩 / 召小怪） */
   bossB: { hp: 34, speed: 58, dmg: 4, at: 0.5, slashWindup: 420, slashDmg: 4, slashReach: 96, slashWidth: 120,
-    chargeWindup: 480, chargeSpeed: 230, chargeTime: 300, chargeDmg: 5, summonCd: 2600, summonCount: 2 },
+    chargeWindup: 480, chargeSpeed: 230, chargeTime: 300, chargeDmg: 5, summonCd: 3200, summonCount: 1, summonCap: 1 },
   /* 批 10：巨浣熊（跃扑 + 抓击；半血后更急） */
   /* 批 36：浣熊跃扑原半径 74 / 前摇 440ms，玩家 96 速只能走 42px，走位必吃；
      抓击 64 / 300ms 同理。第一章 Boss 应可读可躲，改为半径 48 / 前摇 680ms，

@@ -861,6 +861,11 @@ export class Play extends Phaser.Scene {
     return this.enemies.filter((e) => e.hp > 0).length;
   }
 
+  /* 只数小怪，不把 Boss 算进召唤上限；否则“场上 <4”会在已有 2 只时再召 2 只。 */
+  foeAlive() {
+    return this.enemies.filter((e) => e.type === 'foe' && e.hp > 0).length;
+  }
+
   spawnRoomEnemies(room) {
     if (room.cleared && room.built) return;
     if (room.isBoss) { this.spawnBoss(); return; }
@@ -887,9 +892,11 @@ export class Play extends Phaser.Scene {
       return;
     }
     if (t === 'gate') {
-      // 机关房：2 个守卫 + 一尊机关石像；石像不拉，门不开。机关房是解谜不是歼灭，
-      // 3 个守卫会把进 Boss 前的血线压到 5 以下（旧堡实机 3 次都倒在这里）。
-      for (let i = 0; i < 2; i++) spawn(this.pickKind(room.idx), 170);
+      // 机关房：守卫 + 一尊机关石像；石像不拉，门不开。机关房是解谜不是歼灭。
+      // 旧堡第 1 关只放 1 个守卫：2 个守卫在实机里仍会把 14 血玩家磨到 4 血，
+      // 还没见到 Boss 前的免费篝火就先死。后续关仍按 2 个守卫。
+      const guards = (this.spec && this.spec.chapterId === 'fort' && this.spec.index === 1) ? 1 : 2;
+      for (let i = 0; i < guards; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
     // 竹林第一章是新手章：五关统一封顶 3 只。实机试点中 4 只（尤其 1–2 只眼怪）
@@ -902,8 +909,9 @@ export class Play extends Phaser.Scene {
     // 实机首房 5 只（蜘蛛/鼹鼠/幼虫）12 秒团灭，20 血默认忍者没有操作空间。
     if (early) n = Math.min(3, n);
     else if (fort) n = Math.min(3, n);
-    // 旧堡 1 关的首间是第二章的第一场战斗：只放 2 只，先教分裂与包围，不叠远程/钻地。
-    if (fort && this.spec.index === 1 && room.idx === 0) n = Math.min(2, n);
+    // 旧堡 1 关是第二章的教学关：所有战斗房封顶 2 只，先教分裂与包围，不叠远程/钻地。
+    // 实测 3 只（尤其 2 只近战贴脸）会在第二房把 20 血玩家 20 秒内围死。
+    if (fort && this.spec.index === 1) n = Math.min(2, n);
     for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
   }
 
@@ -1584,8 +1592,22 @@ export class Play extends Phaser.Scene {
   openRest(p) {
     const R = (this.story.rooms || {}).rest || {};
     const options = [];
+    // 首领门前的最后一处篝火免费：这一关的消耗已经够长，不能再让“没带够 2 金币”变成必死。
+    // 只对旧堡第 1 关生效，避免顺手改掉第一章和后续章节的既有经济。
+    const preBoss = this.room && this.room.type === 'rest' && this.spec
+      && this.spec.chapterId === 'fort' && this.room.idx === (this.spec.rooms || 6) - 2;
     if (p.used) {
       options.push({ label: R.spent || '已经休息过了', act: () => {}, dim: true });
+    } else if (preBoss) {
+      options.push({
+        label: `首领门前 · 免费回 ${CFG.healAmount + 4} 血`,
+        act: () => {
+          p.used = true;
+          this.usedRest = true;
+          p.spr.setTint(0x8f8a82);
+          this.heal(CFG.healAmount + 4);
+        },
+      });
     } else {
       options.push({
         label: `${R.pay || '付 2 金币'} · 回 ${CFG.healAmount + 2} 血`,
@@ -3093,9 +3115,13 @@ export class Play extends Phaser.Scene {
     }
     if (e.phase === 'summon') {
       if (e.phaseT <= 0) {
-        for (let i = 0; i < B.summonCount; i++) {
-          const at = { x: s.x + (i ? 40 : -40), y: s.y + 20 };
-          if (this.isWall(at.x, at.y, 14)) { at.x = s.x; at.y = s.y + (i ? -40 : 40); }
+        // 召唤上限按“小怪数量”算，不把 Boss 自己算进去；否则已有 2 只时还会再召 2 只。
+        const cap = B.summonCap || B.summonCount;
+        const n = Math.min(B.summonCount, Math.max(0, cap - this.foeAlive()));
+        if (n <= 0) { e.phase = 'recover'; e.phaseT = 320; return; }
+        for (let i = 0; i < n; i++) {
+          let at = { x: s.x + (i ? 40 : -40), y: s.y + 20 };
+          if (this.isWall(at.x, at.y, 14)) at = this.findFreeSpot(0, 2);
           this.spawnFoe('beast', 0, at);
         }
         playAct(this, 'roar', s.x, s.y - 6);
@@ -3124,7 +3150,7 @@ export class Play extends Phaser.Scene {
 
     if (dist < 110) {
       e.slashDir.copy(dirv);
-      if (e.sumT <= 0 && this.enemiesAlive() < 4) {
+      if (e.sumT <= 0 && this.foeAlive() < (B.summonCap || B.summonCount)) {
         e.sumT = B.summonCd;
         e.phase = 'summon'; e.phaseT = 300;
         return;
