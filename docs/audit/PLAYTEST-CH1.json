@@ -9,54 +9,54 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "2,0",
+          "key": "0,2",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687087054
+          "startedAt": 1795690590562
         },
         {
-          "key": "1,0",
+          "key": "1,2",
           "idx": 1,
           "type": "battle",
           "hpAt": 18,
           "enemiesAt": 3,
-          "startedAt": 1795687101315
+          "startedAt": 1795690608568
         }
       ],
-      "startedAt": 1795687087029,
+      "startedAt": 1795690590537,
       "maxRoom": 1,
       "minHp": 0,
-      "hitsApprox": 11,
+      "hitsApprox": 12,
       "talents": [
-        "狂战"
+        "厚皮"
       ],
       "rest": 0,
       "ended": "dead",
       "endHp": 0,
       "endRoom": 1,
-      "endRoomKey": "1,0",
-      "endedAt": 1795687118774,
-      "durationMs": 31745,
+      "endRoomKey": "1,2",
+      "endedAt": 1795690636596,
+      "durationMs": 46059,
       "kills": 5,
-      "coins": 3,
+      "coins": 2,
       "gems": 0,
       "talentsFinal": [
-        "berserk"
+        "tough"
       ],
       "bossKind": "",
       "bossEnd": null,
       "endEnemies": [
         {
           "k": "eye",
-          "x": 376,
-          "y": 394,
-          "hp": 5
+          "x": 406,
+          "y": 405,
+          "hp": 8
         }
       ],
-      "endPx": 397,
-      "endPy": 456,
+      "endPx": 436,
+      "endPy": 521,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-1-a1-dead.png"
     },
@@ -69,60 +69,54 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "2,2",
+          "key": "0,0",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687120573
+          "startedAt": 1795690638269
         },
         {
-          "key": "1,2",
+          "key": "1,0",
           "idx": 1,
           "type": "battle",
-          "hpAt": 15,
+          "hpAt": 10,
           "enemiesAt": 3,
-          "startedAt": 1795687133488
+          "startedAt": 1795690666082
         }
       ],
-      "startedAt": 1795687120543,
+      "startedAt": 1795690638246,
       "maxRoom": 1,
       "minHp": 0,
       "hitsApprox": 10,
       "talents": [
-        "厚皮"
+        "重击"
       ],
       "rest": 0,
       "ended": "dead",
       "endHp": 0,
       "endRoom": 1,
-      "endRoomKey": "1,2",
-      "endedAt": 1795687157711,
-      "durationMs": 37168,
-      "kills": 4,
-      "coins": 1,
+      "endRoomKey": "1,0",
+      "endedAt": 1795690686392,
+      "durationMs": 48146,
+      "kills": 5,
+      "coins": 2,
       "gems": 0,
       "talentsFinal": [
-        "tough"
+        "heavy"
       ],
       "bossKind": "",
       "bossEnd": null,
       "endEnemies": [
         {
           "k": "eye",
-          "x": 538,
-          "y": 44,
-          "hp": 8
-        },
-        {
-          "k": "eye",
-          "x": 146,
-          "y": 196,
+          "x": 471,
+          "y": 708,
           "hp": 8
         }
       ],
-      "endPx": 588,
-      "endPy": 78,
+      "endPx": 435,
+      "endPy": 625,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-1-a2-dead.png"
     },
@@ -135,73 +129,73 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "0,2",
+          "key": "0,0",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687159439
+          "startedAt": 1795690687996
         },
         {
-          "key": "1,2",
+          "key": "1,0",
           "idx": 1,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687175839
+          "startedAt": 1795690708422
         },
         {
-          "key": "2,2",
+          "key": "2,0",
           "idx": 2,
           "type": "shop",
-          "hpAt": 20,
+          "hpAt": 8,
           "enemiesAt": 0,
-          "startedAt": 1795687197952
+          "startedAt": 1795690736239
         },
         {
           "key": "2,1",
           "idx": 3,
           "type": "rest",
-          "hpAt": 20,
+          "hpAt": 8,
           "enemiesAt": 0,
-          "startedAt": 1795687208266
+          "startedAt": 1795690745470
         },
         {
           "key": "1,1",
           "idx": 4,
           "type": "boss",
-          "hpAt": 20,
+          "hpAt": 14,
           "enemiesAt": 1,
-          "startedAt": 1795687221329
+          "startedAt": 1795690759257
         }
       ],
-      "startedAt": 1795687159409,
+      "startedAt": 1795690687972,
       "maxRoom": 4,
-      "minHp": 20,
-      "hitsApprox": 0,
+      "minHp": 8,
+      "hitsApprox": 7,
       "talents": [
         "厚皮",
-        "吸血"
+        "狂战"
       ],
-      "rest": 0,
+      "rest": 1,
       "ended": "win",
-      "endHp": 21,
+      "endHp": 8,
       "endRoom": 4,
       "endRoomKey": "1,1",
-      "endedAt": 1795687230135,
-      "durationMs": 70726,
+      "endedAt": 1795690770557,
+      "durationMs": 82585,
       "kills": 7,
-      "coins": 0,
-      "gems": 4,
+      "coins": 2,
+      "gems": 3,
       "talentsFinal": [
         "tough",
-        "vampire"
+        "berserk"
       ],
       "bossKind": "frog",
       "bossEnd": null,
       "endEnemies": [],
-      "endPx": 488,
-      "endPy": 628,
+      "endPx": 395,
+      "endPy": 400,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-1-a3-win.png"
     },
@@ -214,60 +208,84 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "0,0",
+          "key": "2,2",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687232115
+          "startedAt": 1795690772395
         },
         {
-          "key": "1,0",
+          "key": "1,2",
           "idx": 1,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687252129
+          "startedAt": 1795690784301
+        },
+        {
+          "key": "0,2",
+          "idx": 2,
+          "type": "shop",
+          "hpAt": 3,
+          "enemiesAt": 0,
+          "startedAt": 1795690825960
+        },
+        {
+          "key": "0,1",
+          "idx": 3,
+          "type": "rest",
+          "hpAt": 3,
+          "enemiesAt": 0,
+          "startedAt": 1795690836381
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "boss",
+          "hpAt": 3,
+          "enemiesAt": 1,
+          "startedAt": 1795690842834
         }
       ],
-      "startedAt": 1795687232091,
-      "maxRoom": 1,
+      "startedAt": 1795690772371,
+      "maxRoom": 4,
       "minHp": 0,
       "hitsApprox": 11,
       "talents": [
-        "吸血"
+        "狂战",
+        "轻步"
       ],
       "rest": 0,
       "ended": "dead",
       "endHp": 0,
-      "endRoom": 1,
-      "endRoomKey": "1,0",
-      "endedAt": 1795687270140,
-      "durationMs": 38049,
-      "kills": 4,
-      "coins": 0,
+      "endRoom": 4,
+      "endRoomKey": "1,1",
+      "endedAt": 1795690850515,
+      "durationMs": 78144,
+      "kills": 6,
+      "coins": 1,
       "gems": 0,
       "talentsFinal": [
-        "vampire"
+        "berserk",
+        "light"
       ],
-      "bossKind": "",
-      "bossEnd": null,
+      "bossKind": "racoon",
+      "bossEnd": {
+        "ph": "swipeHit",
+        "hp": 24,
+        "maxHp": 27
+      },
       "endEnemies": [
         {
-          "k": "eye",
-          "x": 435,
-          "y": 505,
-          "hp": 8
-        },
-        {
-          "k": "eye",
-          "x": 443,
-          "y": 476,
-          "hp": 8
+          "k": "boss",
+          "x": 206,
+          "y": 411,
+          "hp": 24
         }
       ],
-      "endPx": 401,
-      "endPy": 379,
+      "endPx": 179,
+      "endPy": 418,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-2-a1-dead.png"
     },
@@ -280,72 +298,72 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "2,2",
+          "key": "0,2",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687271854
+          "startedAt": 1795690852151
         },
         {
           "key": "1,2",
           "idx": 1,
           "type": "battle",
-          "hpAt": 18,
+          "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687289563
+          "startedAt": 1795690865811
         },
         {
-          "key": "0,2",
+          "key": "2,2",
           "idx": 2,
           "type": "shop",
-          "hpAt": 15,
+          "hpAt": 16,
           "enemiesAt": 0,
-          "startedAt": 1795687307315
+          "startedAt": 1795690885295
         },
         {
-          "key": "0,1",
+          "key": "2,1",
           "idx": 3,
           "type": "rest",
           "hpAt": 16,
           "enemiesAt": 0,
-          "startedAt": 1795687319687
+          "startedAt": 1795690895067
         },
         {
           "key": "1,1",
           "idx": 4,
           "type": "boss",
-          "hpAt": 17,
+          "hpAt": 16,
           "enemiesAt": 1,
-          "startedAt": 1795687328963
+          "startedAt": 1795690904712
         }
       ],
-      "startedAt": 1795687271827,
+      "startedAt": 1795690852128,
       "maxRoom": 4,
-      "minHp": 14,
-      "hitsApprox": 2,
+      "minHp": 16,
+      "hitsApprox": 1,
       "talents": [
-        "铁胃",
-        "拾荒"
+        "厚皮",
+        "狂战"
       ],
       "rest": 0,
       "ended": "win",
-      "endHp": 20,
+      "endHp": 16,
       "endRoom": 4,
       "endRoomKey": "1,1",
-      "endedAt": 1795687336470,
-      "durationMs": 64643,
+      "endedAt": 1795690910987,
+      "durationMs": 58859,
       "kills": 7,
       "coins": 1,
-      "gems": 4,
+      "gems": 3,
       "talentsFinal": [
-        "ironstomach",
-        "scavenger"
+        "tough",
+        "berserk"
       ],
       "bossKind": "racoon",
       "bossEnd": null,
       "endEnemies": [],
-      "endPx": 92,
+      "endPx": 680,
       "endPy": 416,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-2-a2-win.png"
@@ -359,207 +377,75 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "0,2",
-          "idx": 0,
-          "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687338421
-        },
-        {
-          "key": "1,2",
-          "idx": 1,
-          "type": "battle",
-          "hpAt": 10,
-          "enemiesAt": 4,
-          "startedAt": 1795687354150
-        }
-      ],
-      "startedAt": 1795687338394,
-      "maxRoom": 1,
-      "minHp": 0,
-      "hitsApprox": 9,
-      "talents": [
-        "狂战"
-      ],
-      "rest": 0,
-      "ended": "dead",
-      "endHp": 0,
-      "endRoom": 1,
-      "endRoomKey": "1,2",
-      "endedAt": 1795687365558,
-      "durationMs": 27164,
-      "kills": 5,
-      "coins": 0,
-      "gems": 0,
-      "talentsFinal": [
-        "berserk"
-      ],
-      "bossKind": "",
-      "bossEnd": null,
-      "endEnemies": [
-        {
-          "k": "racoon",
-          "x": 365,
-          "y": 539,
-          "hp": 9
-        },
-        {
-          "k": "cyclope",
-          "x": 324,
-          "y": 483,
-          "hp": 8
-        },
-        {
-          "k": "eye",
-          "x": 423,
-          "y": 536,
-          "hp": 9
-        }
-      ],
-      "endPx": 342,
-      "endPy": 523,
-      "error": "",
-      "screenshot": "docs/revamp/playtest/ch1-3-a1-dead.png"
-    },
-    {
-      "stage": "bamboo:3",
-      "stageIndex": 3,
-      "attempt": 2,
-      "startHp": 20,
-      "maxHp": 20,
-      "weapon": "katana",
-      "rooms": [
-        {
-          "key": "0,2",
+          "key": "0,0",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687367233
-        },
-        {
-          "key": "1,2",
-          "idx": 1,
-          "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687380711
-        }
-      ],
-      "startedAt": 1795687367205,
-      "maxRoom": 1,
-      "minHp": 0,
-      "hitsApprox": 11,
-      "talents": [
-        "吸血"
-      ],
-      "rest": 0,
-      "ended": "dead",
-      "endHp": 0,
-      "endRoom": 1,
-      "endRoomKey": "1,2",
-      "endedAt": 1795687407375,
-      "durationMs": 40170,
-      "kills": 6,
-      "coins": 2,
-      "gems": 0,
-      "talentsFinal": [
-        "vampire"
-      ],
-      "bossKind": "",
-      "bossEnd": null,
-      "endEnemies": [
-        {
-          "k": "eye",
-          "x": 526,
-          "y": 185,
-          "hp": 9
-        }
-      ],
-      "endPx": 491,
-      "endPy": 244,
-      "error": "",
-      "screenshot": "docs/revamp/playtest/ch1-3-a2-dead.png"
-    },
-    {
-      "stage": "bamboo:3",
-      "stageIndex": 3,
-      "attempt": 3,
-      "startHp": 20,
-      "maxHp": 20,
-      "weapon": "katana",
-      "rooms": [
-        {
-          "key": "2,0",
-          "idx": 0,
-          "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 3,
-          "startedAt": 1795687409083
+          "startedAt": 1795690912827
         },
         {
           "key": "1,0",
           "idx": 1,
           "type": "battle",
           "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687421800
+          "enemiesAt": 3,
+          "startedAt": 1795690925670
         },
         {
-          "key": "0,0",
+          "key": "2,0",
           "idx": 2,
           "type": "shop",
-          "hpAt": 20,
+          "hpAt": 5,
           "enemiesAt": 0,
-          "startedAt": 1795687444165
+          "startedAt": 1795690940080
         },
         {
-          "key": "0,1",
+          "key": "2,1",
           "idx": 3,
           "type": "rest",
-          "hpAt": 20,
+          "hpAt": 5,
           "enemiesAt": 0,
-          "startedAt": 1795687456061
+          "startedAt": 1795690950320
         },
         {
           "key": "1,1",
           "idx": 4,
           "type": "boss",
-          "hpAt": 20,
+          "hpAt": 11,
           "enemiesAt": 1,
-          "startedAt": 1795687464684
+          "startedAt": 1795690968666
         }
       ],
-      "startedAt": 1795687409056,
+      "startedAt": 1795690912799,
       "maxRoom": 4,
-      "minHp": 20,
-      "hitsApprox": 0,
+      "minHp": 5,
+      "hitsApprox": 7,
       "talents": [
-        "厚皮",
-        "重击"
+        "稳手",
+        "吸血"
       ],
-      "rest": 0,
+      "rest": 1,
       "ended": "win",
-      "endHp": 20,
+      "endHp": 12,
       "endRoom": 4,
       "endRoomKey": "1,1",
-      "endedAt": 1795687474661,
-      "durationMs": 65605,
-      "kills": 8,
-      "coins": 1,
+      "endedAt": 1795690979769,
+      "durationMs": 66970,
+      "kills": 7,
+      "coins": 0,
       "gems": 4,
       "talentsFinal": [
-        "tough",
-        "heavy"
+        "steady",
+        "vampire"
       ],
       "bossKind": "frog",
       "bossEnd": null,
       "endEnemies": [],
-      "endPx": 289,
-      "endPy": 456,
+      "endPx": 583,
+      "endPy": 409,
       "error": "",
-      "screenshot": "docs/revamp/playtest/ch1-3-a3-win.png"
+      "screenshot": "docs/revamp/playtest/ch1-3-a1-win.png"
     },
     {
       "stage": "bamboo:4",
@@ -570,36 +456,36 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "0,0",
+          "key": "0,2",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687476663
+          "enemiesAt": 3,
+          "startedAt": 1795690981643
         },
         {
-          "key": "1,0",
+          "key": "1,2",
           "idx": 1,
           "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687491925
+          "hpAt": 18,
+          "enemiesAt": 3,
+          "startedAt": 1795690996206
         },
         {
-          "key": "2,0",
+          "key": "2,2",
           "idx": 2,
           "type": "shop",
-          "hpAt": 18,
+          "hpAt": 19,
           "enemiesAt": 0,
-          "startedAt": 1795687509679
+          "startedAt": 1795691025539
         },
         {
           "key": "2,1",
           "idx": 3,
           "type": "rest",
-          "hpAt": 18,
+          "hpAt": 20,
           "enemiesAt": 0,
-          "startedAt": 1795687517516
+          "startedAt": 1795691033353
         },
         {
           "key": "1,1",
@@ -607,36 +493,36 @@
           "type": "boss",
           "hpAt": 18,
           "enemiesAt": 1,
-          "startedAt": 1795687526348
+          "startedAt": 1795691040957
         }
       ],
-      "startedAt": 1795687476635,
+      "startedAt": 1795690981621,
       "maxRoom": 4,
-      "minHp": 15,
+      "minHp": 18,
       "hitsApprox": 2,
       "talents": [
-        "吸血",
-        "稳手"
+        "铁胃",
+        "吸血"
       ],
       "rest": 0,
       "ended": "win",
       "endHp": 18,
       "endRoom": 4,
       "endRoomKey": "1,1",
-      "endedAt": 1795687532226,
-      "durationMs": 55591,
-      "kills": 9,
-      "coins": 2,
+      "endedAt": 1795691046733,
+      "durationMs": 65112,
+      "kills": 7,
+      "coins": 1,
       "gems": 4,
       "talentsFinal": [
-        "vampire",
-        "steady"
+        "ironstomach",
+        "vampire"
       ],
       "bossKind": "racoon",
       "bossEnd": null,
       "endEnemies": [],
-      "endPx": 685,
-      "endPy": 413,
+      "endPx": 681,
+      "endPy": 416,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-4-a1-win.png"
     },
@@ -649,84 +535,54 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "2,2",
+          "key": "0,0",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687534145
+          "startedAt": 1795691048639
         },
         {
-          "key": "1,2",
+          "key": "1,0",
           "idx": 1,
           "type": "battle",
-          "hpAt": 10,
-          "enemiesAt": 4,
-          "startedAt": 1795687553406
-        },
-        {
-          "key": "0,2",
-          "idx": 2,
-          "type": "shop",
-          "hpAt": 10,
-          "enemiesAt": 0,
-          "startedAt": 1795687576688
-        },
-        {
-          "key": "0,1",
-          "idx": 3,
-          "type": "rest",
-          "hpAt": 10,
-          "enemiesAt": 0,
-          "startedAt": 1795687585400
-        },
-        {
-          "key": "1,1",
-          "idx": 4,
-          "type": "boss",
-          "hpAt": 10,
-          "enemiesAt": 1,
-          "startedAt": 1795687595316
+          "hpAt": 20,
+          "enemiesAt": 3,
+          "startedAt": 1795691061097
         }
       ],
-      "startedAt": 1795687534117,
-      "maxRoom": 4,
+      "startedAt": 1795691048613,
+      "maxRoom": 1,
       "minHp": 0,
-      "hitsApprox": 8,
+      "hitsApprox": 11,
       "talents": [
-        "厚皮",
-        "快手"
+        "吸血"
       ],
       "rest": 0,
       "ended": "dead",
       "endHp": 0,
-      "endRoom": 4,
-      "endRoomKey": "1,1",
-      "endedAt": 1795687607926,
-      "durationMs": 73809,
-      "kills": 7,
-      "coins": 1,
+      "endRoom": 1,
+      "endRoomKey": "1,0",
+      "endedAt": 1795691083167,
+      "durationMs": 34554,
+      "kills": 5,
+      "coins": 2,
       "gems": 0,
       "talentsFinal": [
-        "tough",
-        "quick"
+        "vampire"
       ],
-      "bossKind": "frog",
-      "bossEnd": {
-        "ph": "lunge",
-        "hp": 9,
-        "maxHp": 34
-      },
+      "bossKind": "",
+      "bossEnd": null,
       "endEnemies": [
         {
-          "k": "boss",
-          "x": 402,
-          "y": 414,
-          "hp": 9
+          "k": "eye",
+          "x": 287,
+          "y": 48,
+          "hp": 7
         }
       ],
-      "endPx": 416,
-      "endPy": 436,
+      "endPx": 240,
+      "endPy": 110,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-5-a1-dead.png"
     },
@@ -744,49 +600,61 @@
           "type": "battle",
           "hpAt": 20,
           "enemiesAt": 3,
-          "startedAt": 1795687609650
+          "startedAt": 1795691084759
         },
         {
           "key": "1,0",
           "idx": 1,
           "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687624269
+          "hpAt": 10,
+          "enemiesAt": 3,
+          "startedAt": 1795691102495
         }
       ],
-      "startedAt": 1795687609623,
+      "startedAt": 1795691084735,
       "maxRoom": 1,
       "minHp": 0,
-      "hitsApprox": 10,
+      "hitsApprox": 9,
       "talents": [
-        "厚皮"
+        "狂战"
       ],
       "rest": 0,
       "ended": "dead",
       "endHp": 0,
       "endRoom": 1,
       "endRoomKey": "1,0",
-      "endedAt": 1795687642398,
-      "durationMs": 32775,
-      "kills": 6,
-      "coins": 2,
+      "endedAt": 1795691110895,
+      "durationMs": 26160,
+      "kills": 3,
+      "coins": 3,
       "gems": 0,
       "talentsFinal": [
-        "tough"
+        "berserk"
       ],
       "bossKind": "",
       "bossEnd": null,
       "endEnemies": [
         {
-          "k": "eye",
-          "x": 382,
-          "y": 230,
-          "hp": 10
+          "k": "racoon",
+          "x": 138,
+          "y": 371,
+          "hp": 7
+        },
+        {
+          "k": "cyclope",
+          "x": 136,
+          "y": 425,
+          "hp": 6
+        },
+        {
+          "k": "racoon",
+          "x": 100,
+          "y": 339,
+          "hp": 1
         }
       ],
-      "endPx": 335,
-      "endPy": 269,
+      "endPx": 126,
+      "endPy": 371,
       "error": "",
       "screenshot": "docs/revamp/playtest/ch1-5-a2-dead.png"
     },
@@ -799,68 +667,79 @@
       "weapon": "katana",
       "rooms": [
         {
-          "key": "2,2",
+          "key": "0,2",
           "idx": 0,
           "type": "battle",
           "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687644093
+          "enemiesAt": 3,
+          "startedAt": 1795691112541
         },
         {
           "key": "1,2",
           "idx": 1,
           "type": "battle",
-          "hpAt": 20,
-          "enemiesAt": 4,
-          "startedAt": 1795687663256
-        }
-      ],
-      "startedAt": 1795687644060,
-      "maxRoom": 1,
-      "minHp": 0,
-      "hitsApprox": 11,
-      "talents": [
-        "厚皮"
-      ],
-      "rest": 0,
-      "ended": "dead",
-      "endHp": 0,
-      "endRoom": 1,
-      "endRoomKey": "1,2",
-      "endedAt": 1795687683203,
-      "durationMs": 39143,
-      "kills": 6,
-      "coins": 1,
-      "gems": 0,
-      "talentsFinal": [
-        "tough"
-      ],
-      "bossKind": "",
-      "bossEnd": null,
-      "endEnemies": [
-        {
-          "k": "eye",
-          "x": 559,
-          "y": 164,
-          "hp": 10
+          "hpAt": 19,
+          "enemiesAt": 3,
+          "startedAt": 1795691125071
         },
         {
-          "k": "beast",
-          "x": 641,
-          "y": 273,
-          "hp": 7
+          "key": "2,2",
+          "idx": 2,
+          "type": "shop",
+          "hpAt": 17,
+          "enemiesAt": 0,
+          "startedAt": 1795691144196
+        },
+        {
+          "key": "2,1",
+          "idx": 3,
+          "type": "rest",
+          "hpAt": 17,
+          "enemiesAt": 0,
+          "startedAt": 1795691152273
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "boss",
+          "hpAt": 17,
+          "enemiesAt": 1,
+          "startedAt": 1795691160117
         }
       ],
-      "endPx": 663,
-      "endPy": 212,
+      "startedAt": 1795691112514,
+      "maxRoom": 4,
+      "minHp": 15,
+      "hitsApprox": 3,
+      "talents": [
+        "快手",
+        "稳手"
+      ],
+      "rest": 0,
+      "ended": "win",
+      "endHp": 17,
+      "endRoom": 4,
+      "endRoomKey": "1,1",
+      "endedAt": 1795691171654,
+      "durationMs": 59140,
+      "kills": 7,
+      "coins": 0,
+      "gems": 3,
+      "talentsFinal": [
+        "quick",
+        "steady"
+      ],
+      "bossKind": "frog",
+      "bossEnd": null,
+      "endEnemies": [],
+      "endPx": 471,
+      "endPy": 558,
       "error": "",
-      "screenshot": "docs/revamp/playtest/ch1-5-a3-dead.png"
+      "screenshot": "docs/revamp/playtest/ch1-5-a3-win.png"
     }
   ],
-  "errors": [
-    "stage 5 dead after 3 attempts; abort remaining stages"
-  ],
+  "errors": [],
   "mode": "real-keyboard-input",
   "notes": "Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win.",
-  "passed": false
+  "passed": true
 }

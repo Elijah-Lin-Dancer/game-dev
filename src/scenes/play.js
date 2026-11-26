@@ -891,13 +891,12 @@ export class Play extends Phaser.Scene {
       for (let i = 0; i < 3; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
-    // 竹林第一章是新手章：1–2 关封顶 3 只，3–5 关封顶 4 只。
-    // 5 只眼/独眼叠弹幕时，20 血新手在 2 个战斗房内就会被磨死，实机试点连续卡在第 2 关。
+    // 竹林第一章是新手章：五关统一封顶 3 只。实机试点中 4 只（尤其 1–2 只眼怪）
+    // 会把 20 血新手在第二战斗房磨死；Boss 血量仍随关深缩放，难度留在 Boss 与操作上。
     const early = this.spec && this.spec.chapterId === 'bamboo';
-    const cap = early && this.spec.index <= 2 ? 3 : 4;
     const extra = early ? Math.min(1, room.idx) : Math.min(2, room.idx);
     let n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + extra;
-    if (early) n = Math.min(cap, n);
+    if (early) n = Math.min(3, n);
     for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
   }
 

@@ -247,27 +247,19 @@ async function runStage(page, stageIndex, attempt) {
         await page.waitForTimeout(100);
         continue;
       }
-      const window = b.ph === 'recover' || b.ph === 'hover' || b.ph === 'stalk';
-      if (window) {
-        if (bd > 44) {
-          if (bwant !== held) { await release(); await page.keyboard.down(bwant); held = bwant; }
-        } else if (now - lastAtk > 340) {
+      // 不在危险相位就贴上去打；Boss 前摇一到，上面的 DANGER 分支会立刻接管躲避。
+      // 不再只等 recover：青蛙 recover 只有 380ms，从 100 距离根本赶不上一刀。
+      if (bd <= 46) {
+        if (now - lastAtk > 340) {
           if (held) await release();
           if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[bwant]) {
             await page.keyboard.down(bwant); await page.waitForTimeout(35); await page.keyboard.up(bwant);
           }
           await page.keyboard.press('Space'); lastAtk = now;
-          if (held !== baway) { await release(); await page.keyboard.down(baway); held = baway; }
         }
-        await page.waitForTimeout(100);
-        continue;
+      } else if (bwant !== held) {
+        await release(); await page.keyboard.down(bwant); held = bwant;
       }
-      // approach：卡 70–100 距离勾招；太远逼近，太近后撤，别站桩吃大招。
-      if (bd < 66) {
-        if (held !== baway) { await release(); await page.keyboard.down(baway); held = baway; }
-      } else if (bd > 100) {
-        if (held !== bwant) { await release(); await page.keyboard.down(bwant); held = bwant; }
-      } else if (held) await release();
       await page.waitForTimeout(100);
       continue;
     }
@@ -301,12 +293,8 @@ async function runStage(page, stageIndex, attempt) {
         await page.keyboard.press('q'); lastQ = now;
         await page.waitForTimeout(140); continue;
       }
-      // 贴脸先退半步，避免站桩吃碰撞。
-      if (dist < 36) {
-        if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
-        await page.waitForTimeout(120); continue;
-      }
-      if (dist <= 48 && now - lastAtk > 340) {
+      // 先砍再退：贴脸时如果先退，墙角被堵会永远退不出去，形成 110s 软锁（实机第 2 关已复现）。
+      if (dist <= 44 && now - lastAtk > 340) {
         if (held) { await release(); }
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
           await page.keyboard.down(want); await page.waitForTimeout(35); await page.keyboard.up(want);
@@ -315,6 +303,11 @@ async function runStage(page, stageIndex, attempt) {
         // 打一刀就退，等冷却再进；不让小怪贴住。
         if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
         await page.waitForTimeout(230); continue;
+      }
+      // 攻击冷却中且贴脸，才退半步，避免站桩吃碰撞。
+      if (dist < 36) {
+        if (held !== away) { await release(); await page.keyboard.down(away); held = away; }
+        await page.waitForTimeout(120); continue;
       }
       if (dist > 48) {
         const path = epath;
