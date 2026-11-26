@@ -121,9 +121,9 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 
 | 批 | 范围 | 关键文件 | 验收 |
 |---|---|---|---|
-| **9 · 骨架** | `chapters.json`（六章/49 关/房数/系数/Boss 池/门槛）+ `map` 场景 + 关卡包装（房数按章、结算回地图、星级） | `src/scenes/map.js`、`src/systems/stages.js`、`play.js`、`save.js` v6、`web/data/chapters.json` | M1 六章可翻；M2 末房必 Boss；M3 房数按章生效（第五章 10 房）；M4 星写入并回地图；M5 v5→v6 迁移 |
-| **10 · 一、二章内容** | 两章怪物池/Boss 池/房型模板/图鉴补位 | `web/data/enemies.json`、`bosses.json`、`play.js` | N1 两章皮肤可分；N2 Boss 按池抽；N3 精英/宝箱密度符合表 |
-| **11 · 三、四章内容** | 沙漠/水素材接入、4 只 Boss、新怪 anchor、流沙/水沟机制 | `tools/build.mjs`、`web/data/*.json` | O1 皮肤可分；O2 流沙/水沟生效；O3 anchor 不飘 |
+| **9 · 骨架（已完成）** | `chapters.json`（六章/49 关/房数/系数/Boss 池/门槛）+ `map` 场景 + 关卡包装（房数按章、结算回地图、星级） | `src/scenes/map.js`、`src/systems/stages.js`、`play.js`、`save.js` v6、`web/data/chapters.json` | M1–M5 通过；13 个特殊关在批 14 接线；见 `docs/BATCH9-STAGE.md` |
+| **10 · 一、二章内容（已完成）** | 两章怪物池/Boss 池/房型模板/图鉴补位 | `web/data/enemies.json`、`bosses.json`、`play.js` | N1–N3 通过；见 `docs/BATCH10-CHAPTER12.md` |
+| **11 · 三、四章内容（已完成）** | 沙漠/水素材接入、4 只 Boss、新怪 anchor、流沙/水沟机制 | `tools/build.mjs`、`web/data/*.json` | O1–O3 通过；见 `docs/BATCH11-CHAPTER34.md` |
 | **12A · 五章（已完成）** | 熔岩素材、火雨/灼烧、9 关 ×10 房编排 | `tools/build.mjs`、`web/data/*.json`、`play.js` | P1 10 房关可通关；P3 火雨相对不掉帧；见 `docs/BATCH12A-LAVA.md` |
 | **12B · 终章（已完成）** | 影织者三阶段、终章编排、结局衔接 | `play.js`、`bosses.json`、`chapters.json` | Q1 终章 1 房可进；Q2 三幕可复现；Q3 结局写周目；见 `docs/BATCH12B-FINAL.md` |
 | **G0 · 开放世界雏形（已完成）** | 3 屏、2 气候、采集+1 NPC、`na.world` | `src/scenes/world.js`、`web/data/world.json`、`src/systems/worldSave.js` | W1–W5；见 `docs/G0.md` |
@@ -153,7 +153,7 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 | **34 · G4-9 长明芯草独立 3D + 采集反馈（已完成本地 / 单文件 / PWA / Pages）** | 长明芯草从 `mireHerb + 0xffb35c tint` 换成独立 `mireLampHerb`（seed407，32×48 单帧，bbox `(4,17,28,32)` / 可见高 15px，运行时 495 B）；造型深泥座 + 三根低位灯芯 + 中央琥珀灯果，普通灯芯草仍薄荷五芯簇；`buildLampHerbs` 换贴图 / 去 tint，保留 1.35× / origin / 暖光 / 火星；新增 `lampGatherFx`，采集浮「长明芯 +1」/「长明芯 3/3」+ 暖色环；`tools/build.mjs` 图集 176 切片 / 123,847 B；`world.json v12 / na.world v16` 与节点坐标不变，仍 3 束 / 4 碎片；无新屏 / Boss / 成就 | `art-src/g4/mire-lamp-herb.cjs`、`art-src/g4/render-g4.cjs`、`tools/crop_mire.py`、`tools/build.mjs`、`tools/audit_scale.py`、`src/scenes/world.js`、`assets/01-primary/world/mire-lamp-herb.png`、`docs/revamp/g4-3d/mire-lamp-herb-atlas.png/.json`、`dist/game.61c24f45.js`、`assets.f7d3dce6.js`、`web/game.html`、`sw.js` | W-177–W-178：新贴图 / 3 节点替换 / 普通草未换 / 浮字 +1 / 3/3 / 集满隐藏 / 交付 / 迁移·上限 / 640·844 / 单文件 / PWA / 冒烟 / 比例 / 构建 / Pages；见 `docs/BATCH29-G4-9.md` |
 | **29 · G4-4 重燃二次确认与周目回报（已完成）** | 终局 + 篝火 allDone 第 8 行改两步确认：第一次只进入确认态、不写档，第二次才重燃；关闭面板 / 离开复位；`rewardTokens = min(20, 基础 + tier - 1)`，tier2 草原 3→4 / 雾泽 6→7，结算显示「周目加成 +N」；`world.json v10 / na.world v14` 不变；无新增美术 / 成就 | `src/scenes/world.js`、`tools/build.mjs`、`dist/game.9d324e8d.js`、`assets.8c75570a.js`、`web/game.html`、`sw.js` | W-142–W-147：终局确认 / 篝火确认 / 取消复位 / tier2 奖励 / 640·844 / 单文件 / PWA / 冒烟 / 比例 / 构建 / Pages；见 `docs/BATCH26-G4-4.md` |
 
-**排期**：9 → 10 → 11 → 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → **22（已完成）** → **23 / G3（已完成 5/5）** → 25 / G2（已完成 10/10）→ **26 / G4-1 雾泽（已完成第一版）** → **27 / G4-2 雾泽终局（已完成）** → **28 / G4-3 终局闭环（已完成）** → **29 / G4-4 重燃安全与周目回报（已完成）** → **30 / G4-5 守灯人阿烬（已完成）** → **31 / G4-6 守灯人的长明芯（已完成本地 / 单文件 / PWA / Pages）** → **32 / G4-7 守灯人 阿烬的独立立绘与长明暖灯（已完成本地 / 单文件 / PWA / Pages）** → **33 / G4-8 长明芯资源解耦（已完成本地 / 单文件 / PWA / Pages）** → **34 / G4-9 长明芯草独立 3D + 采集反馈（已完成本地 / 单文件 / PWA / Pages）**。
+**排期**：9（已完成）→ 10（已完成）→ 11（已完成）→ 12A → 12B → **G0**（素材管线刚热）→ **G1**（提前落地六屏草原）→ **13（已完成）** → **14（已完成）** → **15（已完成）** → **16（已完成）** → **17（已完成）** → **18（已完成）** → **19（已完成）** → **20（已完成）** → **21（已完成）** → **22（已完成）** → **23 / G3（已完成 5/5）** → 25 / G2（已完成 10/10）→ **26 / G4-1 雾泽（已完成第一版）** → **27 / G4-2 雾泽终局（已完成）** → **28 / G4-3 终局闭环（已完成）** → **29 / G4-4 重燃安全与周目回报（已完成）** → **30 / G4-5 守灯人阿烬（已完成）** → **31 / G4-6 守灯人的长明芯（已完成本地 / 单文件 / PWA / Pages）** → **32 / G4-7 守灯人 阿烬的独立立绘与长明暖灯（已完成本地 / 单文件 / PWA / Pages）** → **33 / G4-8 长明芯资源解耦（已完成本地 / 单文件 / PWA / Pages）** → **34 / G4-9 长明芯草独立 3D + 采集反馈（已完成本地 / 单文件 / PWA / Pages）**。
 
 ---
 
@@ -194,4 +194,4 @@ NPC 弧光：引路人（守夜人 → 失去火声 / 退休）、铁匠（前�
 
 ## 11. 文档关系
 
-`ROADMAP.md`（批 1–7）→ 本文件（批 9–17 主线）→ `OPENWORLD.md`（G0–G4）→ `BATCH8-SHELL.md`（外壳与渲染坑）→ ADR 0015 / 0016 / 0017。
+`ROADMAP.md`（批 1–7）→ 本文件（批 9–17 主线）→ `OPENWORLD.md`（G0–G4）→ `BATCH8-SHELL.md`（外壳与渲染坑）→ ADR 0015 / 0016 / 0017。全案收口审计见 `docs/FULL-AUDIT.md`。

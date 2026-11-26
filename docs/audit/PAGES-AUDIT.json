@@ -1,0 +1,49 @@
+{
+  "entry": {
+    "chapters": 6,
+    "stages": 36,
+    "side": 6,
+    "hidden": 3,
+    "conditional": 4,
+    "screens": 36,
+    "bosses": 6,
+    "scripts": [
+      "./web/vendor/phaser.min.js",
+      "./dist/assets.f7d3dce6.js",
+      "./dist/game.61c24f45.js"
+    ],
+    "sw": false
+  },
+  "stage": {
+    "key": "lava:9",
+    "rooms": 10,
+    "plan": [
+      "0:battle",
+      "1:battle",
+      "2:battle",
+      "3:battle",
+      "4:elite",
+      "5:elite",
+      "6:treasure",
+      "7:shop",
+      "8:rest",
+      "9:boss"
+    ],
+    "total": 10,
+    "save": {
+      "v": 11,
+      "star": 3
+    }
+  },
+  "world": {
+    "screenIndex": 35,
+    "screenId": "mire-6",
+    "lampTex": true,
+    "lampNodes": 0,
+    "hud": "瘴雾 · 第 36/36 屏",
+    "visible": 1312,
+    "missing": []
+  },
+  "errors": [],
+  "passed": true
+}

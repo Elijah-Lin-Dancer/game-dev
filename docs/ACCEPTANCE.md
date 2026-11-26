@@ -683,3 +683,21 @@
 | W-178 | G4-9 Pages 线上 | 推送 `a2d2662..f7395b9` 后读 Pages 入口 / `world.json` / `sw`；线上跑 25 项：入口 / 纹理 / none / active / 采集 / 浮字 / 集满 / 交付 / 640 / 844 / PWA | 通过；入口 `game.61c24f45.js` + `assets.f7d3dce6.js`，`world.json v12`，PWA `na-b18-1ee6383d` / 12 条；线上 **25/25 PASS**：3 个专属节点换 `mireLampHerb`、普通 `mireHerb` 未换、`none` 隐藏、`active` 可见 + prompt「E 采长明芯草」、专属草 `lampHerbs 0→1` 且 `mireHerbs 0`、浮字「长明芯 +1」、HUD 1/3、跨屏 3 束节点隐藏、浮字「长明芯 3/3」、`mire-6` HUD 3/3、交付 `done / lampHerbs 0 / mireHerbs 7 / tokens20→24` + 暖灯、640/844 无溢出、PWA 断网节点可用；`errs=[]` |
 
 线上证据：`docs/revamp/g4-9/g4-online-lamp-herb-960.png`、`g4-online-gather-fx-960.png`、`g4-online-lamp-herb-mire5-960.png`、`g4-online-hud-3of3-960.png`、`g4-online-delivered-960.png`、`g4-online-lamp-herb-640.png`、`g4-online-lamp-herb-844.png`、`g4-online-lamp-herb-pwa-960.png`；详见 `docs/BATCH29-G4-9.md` 第 10 节。
+
+
+## W-179. 批 30 / 全案收口审计 · 本地全量（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-179 | 全案收口 / 49 关 + 36 屏 | `tools/audit_full.mjs`：49 关逐关启动 + `__dbg.next()` 逐房 + `__dbg.win()` 写星；36 屏 × 960/640/844；35 条跨屏边界；6 Boss 新档 | 通过；**49/49 关、328/328 房、108/108 屏、35/35 边界、6/6 Boss**；0 缺失纹理 / 0 pageerror；49 关 `save.v=11` 且全部写星；960/640/844 均无横向溢出；`mire-6` 新档 gate 休眠 / Boss 不可见；`smoke` 9 PASS、`audit_scale.py` 223/0；构建仍 `game.61c24f45.js` + `assets.f7d3dce6.js` |
+
+证据：`docs/audit/FULL-AUDIT.json`、`FULL-AUDIT.log`、`docs/FULL-AUDIT.md`；详见 `docs/FULL-AUDIT.md`。
+
+
+## W-180. 批 30 / 全案收口审计 · Pages 线上代表复核（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-180 | 全案收口 / Pages 复核 | `tools/audit_pages.mjs`：读 Pages 入口 / 数据规模；线上 `lava:9` 10 房逐房 + `win()`；`mire-6` 第 36 屏 + `mireLampHerb` | 通过；入口 `game.61c24f45.js` + `assets.f7d3dce6.js`，与本地构建一致；6 章 / 36 主线 / 6 支线 / 3 隐藏 / 4 条件 / 36 屏 / 6 Boss；`lava:9` 10 房 `0:battle … 9:boss`，`save.v=11 / star=3`；`mire-6`（index 35）`mireLampHerb` 在包内、HUD「瘴雾 · 第 36/36 屏」、可见 1312、0 缺失；`pageerror/console.error=0` |
+
+线上证据：`docs/audit/PAGES-AUDIT.json`；不是线上 49 关 / 108 屏全量重跑，线上入口哈希与本地全量审计构建一致。

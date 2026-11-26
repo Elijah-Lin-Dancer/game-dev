@@ -59,7 +59,7 @@ export function starsOf(save, chId, idx) {
   return Math.max(0, Math.min(3, Math.round(num(s[stageKey(chId, idx)], 0))));
 }
 
-/* 全表满星上限（49 关 × 3 = 147），给地图页眉用 */
+/* 主线满星上限（36 关 × 3 = 108）；特殊关另记，不计入地图页眉 */
 export function maxStars() {
   return chapters().reduce((n, c) => n + c.stages * 3, 0);
 }
