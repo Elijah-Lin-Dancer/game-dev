@@ -1,5 +1,10 @@
 /* 开放世界独立存档：只记远征进度，不碰主线 na.save
  *
+ * G4-8 v16：
+ *   - 长明芯改用独立 lampHerbs，不再与阿芦的 mireHerbs 共用；
+ *   - v15 旧档若 lampQuest=active，补 min(3, mireHerbs) 保留已有进度；
+ *   - 其余字段不动。
+ *
  * G4-3 v14：
  *   - 新增 expedition（远征周目，默认 1）；星火重燃时 +1，六 Boss 进度清零；
  *   - v13 旧档补 expedition 1，其余字段不动。
@@ -40,7 +45,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 15;
+const VERSION = 16;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -96,6 +101,7 @@ const defaults = () => ({
   mireQuest: 'none',
   mireQuest2: 'none',
   lampQuest: 'none',
+  lampHerbs: 0,
   expedition: 1,
   boss: 'none',
   bosses: bossDefaults(),
@@ -137,6 +143,9 @@ function migrate(old) {
     mireQuest: QUESTS.includes(old.mireQuest) ? old.mireQuest : 'none',
     mireQuest2: QUESTS.includes(old.mireQuest2) ? old.mireQuest2 : 'none',
     lampQuest: QUESTS.includes(old.lampQuest) ? old.lampQuest : 'none',
+    // v15 的 active 旧档可能已经攒了共享灯芯草；最多折 3 束进长明芯，不让玩家白跑。
+    lampHerbs: Math.min(99, Math.round(num(old.lampHerbs,
+      old.lampQuest === 'active' ? Math.min(num(old.mireHerbs), 3) : 0))),
     expedition: Math.max(1, Math.min(99, Math.round(num(old.expedition, 1)))),
     bosses: sanitizeBosses(old.bosses, old.bosses ? null : old.boss),
     boss: sanitizeBosses(old.bosses, old.bosses ? null : old.boss).mossBeast === 'done' ? 'done' : 'none',
@@ -187,6 +196,7 @@ export function patchWorldSave(patch) {
   next.mireQuest = QUESTS.includes(next.mireQuest) ? next.mireQuest : 'none';
   next.mireQuest2 = QUESTS.includes(next.mireQuest2) ? next.mireQuest2 : 'none';
   next.lampQuest = QUESTS.includes(next.lampQuest) ? next.lampQuest : 'none';
+  next.lampHerbs = Math.min(99, Math.round(num(next.lampHerbs)));
   const currentBosses = loadWorldSave().bosses;
   const bossPatch = patch && patch.bosses && typeof patch.bosses === 'object'
     ? { ...currentBosses, ...patch.bosses }

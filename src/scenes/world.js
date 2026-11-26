@@ -185,11 +185,11 @@ const QUEST_PROFILE = {
     readyHint2: '续祠的灯芯够了 · 回沉祠找阿芦',
   },
   lamp: {
-    biome: 'mire', questDef: 'lampQuest', questSave: 'lampQuest', herbSave: 'mireHerbs', npcName: '守灯人 阿烬',
-    item: '灯芯草', unit: '束', npcAsset: 'mireLampkeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.lampGlow,
+    biome: 'mire', questDef: 'lampQuest', questSave: 'lampQuest', herbSave: 'lampHerbs', npcName: '守灯人 阿烬',
+    item: '长明芯草', unit: '束', npcAsset: 'mireLampkeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.lampGlow,
     glowScale: 1.05, labelY: 56, promptY: 70,
     readyHint: '长明芯够了 · 回归水灯找阿烬',
-    respawn: '一束灯芯草重新抽芽了',
+    respawn: '一束长明芯草重新抽芽了',
   },
   volcano: {
     biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs', npcName: '熔匠赤砧',
@@ -288,6 +288,7 @@ function normalizeWorld(raw) {
     deco: Array.isArray(s.deco) ? s.deco : [],
     props: normalizeProps(s.props),
     herbs: Array.isArray(s.herbs) ? s.herbs.filter((h) => Array.isArray(h) && h.length >= 2) : [],
+    lampHerbs: Array.isArray(s.lampHerbs) ? s.lampHerbs.filter((h) => Array.isArray(h) && h.length >= 2) : [],
     pools: Array.isArray(s.pools) ? s.pools.filter((p) => Array.isArray(p) && p.length >= 4)
       .map((p) => [asNumber(p[0], 0), asNumber(p[1], 0), asNumber(p[2], 0), asNumber(p[3], 0)]) : [],
     npc: s.npc || null,
@@ -526,6 +527,7 @@ export class World extends Phaser.Scene {
     this.buildTerrain();
     this.buildNPC();
     this.buildHerbs();
+    this.buildLampHerbs();
     this.buildQuenches();
     this.buildCampfires();
     this.buildPlayer();
@@ -998,6 +1000,72 @@ export class World extends Phaser.Scene {
         });
         this.herbs.push(node);
       });
+    });
+  }
+
+  /* ---------- 长明芯专属草：只服务阿烬，绝不动阿芦的 mireHerbs ---------- */
+  buildLampHerbs() {
+    const lq = this.world.lampQuest;
+    if (!lq) return;
+    const on = this.save.lampQuest === 'active' && (this.save.lampHerbs || 0) < lq.need;
+    this.screens.forEach((s) => {
+      if (!s.lampHerbs.length) return;
+      s.lampHerbs.forEach((h, i) => {
+        const x = s.x + asNumber(h[0], 0);
+        const y = WORLD_Y + asNumber(h[1], 0);
+        const glow = this.add.circle(x, y - 6, 17, UI.world.lampGlow, 0.20)
+          .setDepth(23).setBlendMode(Phaser.BlendModes.ADD);
+        const sprite = this.add.sprite(x, y, 'mireHerb', 0)
+          .setOrigin(0.5, 32 / 48).setScale(1.35).setDepth(24).setTint(0xffb35c);
+        const spark = this.add.circle(x, y - 34, 2, UI.world.lampGlow, 0.9)
+          .setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: sprite, y: y - 3, duration: 820 + i * 90, yoyo: true, repeat: -1 });
+        this.tweens.add({
+          targets: spark, y: y - 46, alpha: 0, duration: 900 + i * 60, repeat: -1,
+          ease: 'Sine.easeOut',
+        });
+        const prompt = this.add.text(x, y - 34, 'E 采长明芯草', {
+          fontFamily: UI.font, fontSize: '12px', color: UI.text.heading,
+          backgroundColor: UI.hud.bg, padding: { x: 5, y: 2 },
+        }).setOrigin(0.5, 1).setDepth(46).setVisible(false);
+        sprite.setInteractive({ useHandCursor: true });
+        const node = {
+          id: s.id + '-lamp-' + i, screen: s.id, screenIndex: this.screens.indexOf(s), biome: s.biome,
+          x, y, sprite, glow, spark, prompt, active: on, respawnAt: 0, battle: false, heal: 0,
+          lampOnly: true, herbName: '长明芯草', herbUse: '长明芯草',
+        };
+        sprite.setVisible(on);
+        glow.setVisible(on);
+        spark.setVisible(on);
+        sprite.on('pointerdown', () => {
+          if (this.talking || this.panelOpen || this.gathering) return;
+          if (!node.active || !this.lampHerbAvailable(node)) return;
+          if (this.bossActive) return;
+          if (this.distPlayer(x, y) <= 48) this.startGather(node);
+          else this.pointerTarget = { x, y };
+        });
+        this.herbs.push(node);
+      });
+    });
+  }
+
+  lampHerbAvailable(node) {
+    const lq = this.world.lampQuest;
+    if (!node || !node.lampOnly || !lq) return false;
+    return this.save.lampQuest === 'active' && (this.save.lampHerbs || 0) < lq.need;
+  }
+
+  refreshLampHerbs() {
+    const lq = this.world.lampQuest;
+    if (!lq) return;
+    const on = this.save.lampQuest === 'active' && (this.save.lampHerbs || 0) < lq.need;
+    this.herbs.filter((n) => n.lampOnly).forEach((n) => {
+      n.active = on;
+      n.respawnAt = 0;
+      n.prompt.setVisible(false);
+      n.sprite.setVisible(on);
+      n.glow.setVisible(on);
+      if (n.spark) n.spark.setVisible(on);
     });
   }
 
@@ -1502,10 +1570,13 @@ export class World extends Phaser.Scene {
     const lampState = this.save.lampQuest || 'none';
     const mireBossDone = !!(this.save.bosses && this.save.bosses.mireWraith === 'done');
     let lampHud = false;
-    if (s.id === 'mire-6' && lamp && (lampState !== 'none' || mireBossDone)) {
+    // 长明芯草落在灯沼 / 无岸；这两屏只要委托 active 就把 HUD 让给长明芯，避免玩家看着“灯芯草 0”采长明芯。
+    const lampScreen = s.id === 'mire-6'
+      || (lampState === 'active' && (s.id === 'mire-4' || s.id === 'mire-5'));
+    if (lamp && lampScreen && (lampState !== 'none' || mireBossDone)) {
       lampHud = true;
       item = '长明芯';
-      count = Math.min(this.save.mireHerbs || 0, lamp.need);
+      count = Math.min(this.save.lampHerbs || 0, lamp.need);
       qs = lampState === 'done' ? '已完成'
         : (lampState === 'active' ? (count >= lamp.need ? '可交付 ' + count + '/' + lamp.need : '采集 ' + count + '/' + lamp.need) : '待接');
     } else if (q2 && questState === 'done') {
@@ -1556,8 +1627,8 @@ export class World extends Phaser.Scene {
     const lamp = this.world.lampQuest;
     const lampState = this.save.lampQuest || 'none';
     if (s.id === 'mire-6' && lamp && lampState === 'active') {
-      if (this.save.mireHerbs >= lamp.need) return '长明芯够了 · 找阿烬交付 · ESC 回小屋';
-      return '长明芯 · 还差 ' + (lamp.need - this.save.mireHerbs) + ' 束灯芯草 · ESC 回小屋';
+      if (this.save.lampHerbs >= lamp.need) return '长明芯够了 · 找阿烬交付 · ESC 回小屋';
+      return '长明芯 · 还差 ' + (lamp.need - this.save.lampHerbs) + ' 束长明芯草 · ESC 回小屋';
     }
     if (q2 && questState === 'done') {
       if (q2State === 'none') return '找' + (prof.npcName || '村民') + '接「' + q2.name + '」 · ESC 回小屋';
@@ -1967,6 +2038,7 @@ export class World extends Phaser.Scene {
     let bestD = 999;
     this.herbs.forEach((n) => {
       if (!n.active || (battleOnly && !n.battle)) return;
+      if (n.lampOnly && !this.lampHerbAvailable(n)) return;
       const d = this.distPlayer(n.x, n.y);
       if (d < bestD) { bestD = d; best = n; }
     });
@@ -2013,11 +2085,20 @@ export class World extends Phaser.Scene {
   updateRespawns(time) {
     this.herbs.forEach((n) => {
       if (!n.active && n.respawnAt && time >= n.respawnAt) {
+        if (n.lampOnly && !this.lampHerbAvailable(n)) {
+          n.respawnAt = 0;
+          n.sprite.setVisible(false);
+          n.glow.setVisible(false);
+          if (n.spark) n.spark.setVisible(false);
+          return;
+        }
         n.active = true;
         n.respawnAt = 0;
         n.sprite.setVisible(true);
         n.glow.setVisible(true);
-        this.toast(n.battle ? (BATTLE_HERB_LABEL[n.biome] || BATTLE_HERB_LABEL.field).respawn : profileFor(n.biome).respawn);
+        if (n.spark) n.spark.setVisible(true);
+        this.toast(n.lampOnly ? '一束长明芯草重新抽芽了'
+          : (n.battle ? (BATTLE_HERB_LABEL[n.biome] || BATTLE_HERB_LABEL.field).respawn : profileFor(n.biome).respawn));
       }
     });
   }
@@ -2025,6 +2106,7 @@ export class World extends Phaser.Scene {
   /* ---------- 采集读条 ---------- */
   startGather(node) {
     if (!node || !node.active || this.gathering) return;
+    if (node.lampOnly && !this.lampHerbAvailable(node)) return;
     if (node.battle) { this.pickBattleHerb(node); return; }
     if (this.bossActive) return;
     this.pointerTarget = null;
@@ -2116,6 +2198,19 @@ export class World extends Phaser.Scene {
     node.respawnAt = this.time.now + RESPAWN_MS;
     node.sprite.setVisible(false);
     node.glow.setVisible(false);
+    if (node.spark) node.spark.setVisible(false);
+    if (node.lampOnly && this.world.lampQuest) {
+      const lq = this.world.lampQuest;
+      const lampCount = (this.save.lampHerbs || 0) + lq.yield;
+      this.save = patchWorldSave({ lampHerbs: lampCount });
+      this.toast('采到长明芯草 ×' + lq.yield);
+      if (lampCount >= lq.need) {
+        this.toast('长明芯够了 · 回归水灯找阿烬');
+        this.refreshLampHerbs();
+      }
+      this.updateHud();
+      return;
+    }
     const prof = profileFor(node.biome);
     const q = this.world[prof.questDef];
     const key = prof.herbSave;
@@ -2129,11 +2224,6 @@ export class World extends Phaser.Scene {
       && this.save[prof.quest2Save] === 'active') {
       const q2 = this.world[prof.quest2Def];
       if (q2 && count >= q2.need) this.toast(prof.readyHint2);
-    }
-    const lamp = this.world.lampQuest;
-    if (node.biome === 'mire' && lamp && this.save.lampQuest === 'active'
-      && this.save.mireHerbs >= lamp.need) {
-      this.toast('长明芯够了 · 回归水灯找阿烬');
     }
   }
 
@@ -2236,7 +2326,7 @@ export class World extends Phaser.Scene {
     const tier = this.save.expedition || 1;
     const state = this.save.lampQuest || 'none';
     const q = this.world.lampQuest;
-    const count = this.save.mireHerbs || 0;
+    const count = this.save.lampHerbs || 0;
     if (state === 'done') {
       if (allDone && tier > 1) {
         this.say(npc.name, [
@@ -2263,8 +2353,8 @@ export class World extends Phaser.Scene {
     if (state === 'active') {
       if (count < q.need) {
         this.say(npc.name, [
-          '长明芯还差 ' + (q.need - count) + ' 束灯芯草。',
-          '浅汀和灯沼的草还有，采完会重新抽芽。',
+          '长明芯还差 ' + (q.need - count) + ' 束长明芯草。',
+          '灯沼和无岸的长明芯草还有，采完会重新抽芽。',
         ]);
         return;
       }
@@ -2280,29 +2370,30 @@ export class World extends Phaser.Scene {
       lines = [
         '第 ' + tier + ' 次远征，六只影子又沉下去了。',
         '长明芯还没搓，归水灯只是暂时亮着。',
-        '再采三束灯芯草，我给它续上。',
+        '再采三束长明芯草，我给它续上。',
       ];
     } else if (allDone) {
       lines = [
         '六盏灯都亮了。',
         '归水灯下面，沉灯水魇已经退了。',
-        '可灯里还缺一根长明芯。再采三束灯芯草，我给它收尾。',
+        '可灯里还缺一根长明芯。再采三束长明芯草，我给它收尾。',
         '若要星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下。',
       ];
     } else if (tier > 1) {
       lines = [
         '第 ' + tier + ' 次远征，水魇退了。',
-        '灯塔该有一根长明芯，帮我再采三束灯芯草。',
+        '灯塔该有一根长明芯，帮我再采三束长明芯草。',
       ];
     } else {
       lines = [
         '水魇退了，归水灯不再沉。',
         '可灯里还缺一根长明芯。',
-        '再采三束灯芯草，我给它收尾。',
+        '再采三束长明芯草，我给它收尾。',
       ];
     }
     this.say(npc.name, lines, () => {
       this.save = patchWorldSave({ lampQuest: 'active' });
+      this.refreshLampHerbs();
       this.updateHud();
       this.toast('新委托 · 守灯人的长明芯');
     });
@@ -2465,6 +2556,7 @@ export class World extends Phaser.Scene {
       tokens: this.save.tokens + q.rewardTokens,
     });
     this.closePanel();
+    if (npc.quest === 'lamp') this.refreshLampHerbs();
     this.updateHud();
     this.toast('委托完成 · 星火碎片 +' + q.rewardTokens);
     const doneLines = {
@@ -3892,6 +3984,7 @@ export class World extends Phaser.Scene {
     this.player.setAlpha(1);
     this.player.setPosition(this.screens[0].x + 72, WORLD_Y + 185);
     this.save = rekindleWorldSave();
+    this.refreshLampHerbs();
     this.applyScreen(0, true);
     this.updateLayer(true);
     this.cameras.main.scrollX = clamp(this.player.x - VIEW_W / 2, 0, this.worldWidth - VIEW_W);
