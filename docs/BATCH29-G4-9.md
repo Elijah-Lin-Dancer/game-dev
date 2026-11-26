@@ -107,4 +107,9 @@ G4-9 收掉 G4-8 唯一的视觉欠账：长明芯草不再复用阿芦的 `mire
 
 ## 10. Pages 线上验收
 
-待推送后回填。
+推送 `a2d2662..f7395b9` 后 Pages 已切 G4-9：
+
+- 入口 `game.61c24f45.js` + `assets.f7d3dce6.js`；`world.json v12`；PWA `na-b18-1ee6383d` / 12 条。
+- 线上 **25/25 PASS**：入口 / 纹理 / 3 个专属节点换 `mireLampHerb` / 普通 `mireHerb` 未换 / `none` 隐藏 / `active` 可见 + prompt / 专属草 +1 且 `mireHerbs 0` / 浮字「长明芯 +1」/ HUD 1/3 / 跨屏 3 束节点隐藏 / 浮字「长明芯 3/3」/ `mire-6` HUD 3/3 / 交付 `done / lampHerbs 0 / mireHerbs 7 / tokens20→24` + 暖灯 / 640·844 无溢出 / PWA 断网节点可用；`errs=[]`。
+- 8 张线上证据：`docs/revamp/g4-9/g4-online-lamp-herb-960.png`、`g4-online-gather-fx-960.png`、`g4-online-lamp-herb-mire5-960.png`、`g4-online-hud-3of3-960.png`、`g4-online-delivered-960.png`、`g4-online-lamp-herb-640.png`、`g4-online-lamp-herb-844.png`、`g4-online-lamp-herb-pwa-960.png`。
+
