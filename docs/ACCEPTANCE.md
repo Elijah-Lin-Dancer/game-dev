@@ -597,3 +597,16 @@
 | W-152 | G4-5 Pages 线上 | 推送 `4ae23b8..19fee66` 后读 Pages 入口 / sw；960 灯前 NPC、960 六 Boss 全 done、640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.48b6f1c6.js` + `assets.845b6943.js`，PWA `na-b18-4707d526` / 12 条；960 灯前 `gate=true/boss=false` + NPC「守灯人 阿烬」，按 E「归水灯在等一簇火」；960 allDone 无 gate，提示「星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下」；640 `scrollWidth640`、844 `scrollWidth844`；PWA 断网 reload 后 gate / NPC / 对话可用；`errs=[]`，7/7 PASS |
 
 线上证据：`docs/revamp/g4-5/g4-online-lampkeeper-gate-960.png`、`g4-online-lampkeeper-all-960.png`、`g4-online-lampkeeper-640.png`、`g4-online-lampkeeper-844.png`、`g4-online-lampkeeper-pwa-960.png`；详见 `docs/BATCH26-G4-5.md` 第 9 节。
+
+## W-153. 批 26 / G4-6 守灯人的长明芯本地验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-153 | 委托前置 / offer | BASE 档 `mireWraith none` 进 `mire-6`，按 E；ALL 档 `mireWraith done` 再按 E | 通过；灯前 `lampQuest=none`，不出现长明芯；水魇退后出现「可灯里还缺一根长明芯」/「再采三束灯芯草，我给它收尾」，对话完 `lampQuest=active`；六 Boss 全 done 的 offer 仍含星火重燃警示 |
+| W-154 | 采集 / 面板 | `lampQuest active`，雾泽实采 `mireHerbs 2→4`，回 `mire-6` 按 E | 通过；实采触发 toast「长明芯够了 · 回归水灯找阿烬」；`mireHerbs>=3` 打开「委托 · 守灯人的长明芯」面板，`rows2`，按钮「交付 3 束灯芯草 / 再等等」 |
+| W-155 | 交付 / 纪念文字 | 面板第一行交付 | 通过；`mireHerbs 3→0`、`tokens 20→24`、`lampQuest=done`；toast「委托完成 · 星火碎片 +4」；完成台词「长明芯够了。」；纪念标牌「归水灯 · 长明」 |
+| W-156 | 响应式 / 单文件 / PWA | 960 / 640 / 844；`web/game.html`；PWA `na-b18-fef5cd06` 断网 reload | 通过；640 交付面板 `scrollWidth=640` 无溢出；单文件 offer / NPC 可用；PWA 离线 reload 后 NPC/offer 可用；`errs=[]` |
+| W-157 | 旧档 / 重燃保留 | v14→v15；`rekindleExpedition` 后读档 | 通过；v14 补 `lampQuest:none`，`mireHerbs / mireQuest / mireQuest2 / bosses / tokens` 保留；重燃 `exp1→2`、六 Boss 全 none，`lampQuest` 仍 done |
+| W-158 | 回归 / 构建 | `g46`、`g46-reg`、`g45`；`npm run smoke`；`audit_scale.py`；`npm run build -- --single` | 通过；`g46` **26/26**、`g46-reg` **8/8**、`g45` **15/15**；smoke 9 PASS；审计 **221 INSTANCES / 0 FAIL**；首屏 **1909 KB / gzip724 KB**；`game.55b9c15d.js` **381,646 B** + `assets.ccf47434.js` **132,279 B**；单文件 **2,039,656 B**；图集 174 切片无新增 |
+
+证据：`docs/revamp/g4-6/g4-6-lampkeeper-gate-960.png`、`g4-6-lampkeeper-gate-640.png`、`g4-6-lampkeeper-gate-844.png`、`g4-6-lamp-offer-960.png`、`g4-6-lamp-choice-960.png`、`g4-6-lamp-done-960.png`、`g4-6-lamp-choice-640.png`、`g4-6-lamp-offer-single-960.png`、`g4-6-lamp-offer-pwa-960.png`；详见 `docs/BATCH26-G4-6.md`。

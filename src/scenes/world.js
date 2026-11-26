@@ -184,6 +184,13 @@ const QUEST_PROFILE = {
     quest2Def: 'mireQuest2', quest2Save: 'mireQuest2',
     readyHint2: '续祠的灯芯够了 · 回沉祠找阿芦',
   },
+  lamp: {
+    biome: 'mire', questDef: 'lampQuest', questSave: 'lampQuest', herbSave: 'mireHerbs', npcName: '守灯人 阿烬',
+    item: '灯芯草', unit: '束', npcAsset: 'mireKeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.mireGlow,
+    glowScale: 1.1, labelY: 56, promptY: 70,
+    readyHint: '长明芯够了 · 回归水灯找阿烬',
+    respawn: '一束灯芯草重新抽芽了',
+  },
   volcano: {
     biome: 'volcano', questDef: 'volcanoQuest', questSave: 'volcanoQuest', herbSave: 'volcanoHerbs', npcName: '熔匠赤砧',
     item: '火种', unit: '枚', npcAsset: 'volcanoSmith', npcScale: 0.95, glowTint: UI.world.ember,
@@ -300,6 +307,7 @@ function normalizeWorld(raw) {
   const vq2 = raw && raw.volcanoQuest2 ? raw.volcanoQuest2 : {};
   const mq = raw && raw.mireQuest ? raw.mireQuest : {};
   const mq2 = raw && raw.mireQuest2 ? raw.mireQuest2 : {};
+  const lq = raw && raw.lampQuest ? raw.lampQuest : {};
   const bossesRaw = Array.isArray(raw && raw.bosses)
     ? raw.bosses
     : (raw && raw.boss ? [raw.boss] : []);
@@ -401,6 +409,13 @@ function normalizeWorld(raw) {
       need: Math.max(1, Math.round(asNumber(mq2.need, 9))),
       yield: Math.max(1, Math.round(asNumber(mq2.yield, 2))),
       rewardTokens: Math.max(0, Math.round(asNumber(mq2.rewardTokens, 3))),
+    },
+    lampQuest: {
+      id: String(lq.id || 'lampCore3'),
+      name: String(lq.name || '守灯人的长明芯'),
+      need: Math.max(1, Math.round(asNumber(lq.need, 3))),
+      yield: Math.max(1, Math.round(asNumber(lq.yield, 1))),
+      rewardTokens: Math.max(0, Math.round(asNumber(lq.rewardTokens, 4))),
     },
     volcanoQuest2: {
       id: String(vq2.id || 'volcanoForge3'),
@@ -1483,7 +1498,17 @@ export class World extends Phaser.Scene {
     let item = prof.item;
     let count = herbCount;
     let qs = QUEST_LABEL[questState] || QUEST_LABEL.none;
-    if (q2 && questState === 'done') {
+    const lamp = this.world.lampQuest;
+    const lampState = this.save.lampQuest || 'none';
+    const mireBossDone = !!(this.save.bosses && this.save.bosses.mireWraith === 'done');
+    let lampHud = false;
+    if (s.id === 'mire-6' && lamp && (lampState !== 'none' || mireBossDone)) {
+      lampHud = true;
+      item = '长明芯';
+      count = Math.min(this.save.mireHerbs || 0, lamp.need);
+      qs = lampState === 'done' ? '已完成'
+        : (lampState === 'active' ? (count >= lamp.need ? '可交付 ' + count + '/' + lamp.need : '采集 ' + count + '/' + lamp.need) : '待接');
+    } else if (q2 && questState === 'done') {
       item = prof.item2 || prof.item;
       count = count2;
       qs = q2State === 'done' ? (prof.ventSave ? '已淬' : '已完成') : (q2State === 'active' ? (prof.ventSave ? '淬火' : '采集') : '待接');
@@ -1495,8 +1520,9 @@ export class World extends Phaser.Scene {
       qs = '采集 ' + Math.min(herbCount, q.need) + '/' + q.need;
       if (herbCount >= q.need) qs = '可交付 ' + q.need + '/' + q.need;
     }
-    this.hudQuest.setText(item + ' ' + count + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
-    const gold = questState === 'done' && (!q2 || q2State === 'done');
+    const hudLead = lampHud && lampState === 'done' ? item : (item + ' ' + count);
+    this.hudQuest.setText(hudLead + ' · ' + qs + ' · 碎片 ' + this.save.tokens);
+    const gold = lampHud ? (lampState === 'done') : (questState === 'done' && (!q2 || q2State === 'done'));
     this.hudQuest.setColor(gold ? UI.text.gold : UI.text.body);
     this.hudHint.setText(this.hudHintText());
     this.updateHp();
@@ -1527,6 +1553,12 @@ export class World extends Phaser.Scene {
     const q2 = prof.quest2Def ? this.world[prof.quest2Def] : null;
     const q2State = q2 ? this.save[prof.quest2Save] : 'none';
     const count2 = q2 ? this.secondCountFor(prof) : 0;
+    const lamp = this.world.lampQuest;
+    const lampState = this.save.lampQuest || 'none';
+    if (s.id === 'mire-6' && lamp && lampState === 'active') {
+      if (this.save.mireHerbs >= lamp.need) return '长明芯够了 · 找阿烬交付 · ESC 回小屋';
+      return '长明芯 · 还差 ' + (lamp.need - this.save.mireHerbs) + ' 束灯芯草 · ESC 回小屋';
+    }
     if (q2 && questState === 'done') {
       if (q2State === 'none') return '找' + (prof.npcName || '村民') + '接「' + q2.name + '」 · ESC 回小屋';
       if (q2State === 'active' && count2 < q2.need) {
@@ -2096,6 +2128,11 @@ export class World extends Phaser.Scene {
       const q2 = this.world[prof.quest2Def];
       if (q2 && count >= q2.need) this.toast(prof.readyHint2);
     }
+    const lamp = this.world.lampQuest;
+    if (node.biome === 'mire' && lamp && this.save.lampQuest === 'active'
+      && this.save.mireHerbs >= lamp.need) {
+      this.toast('长明芯够了 · 回归水灯找阿烬');
+    }
   }
 
   /* ---------- 村医 / 竹隐 / 沙婆与委托 ---------- */
@@ -2174,26 +2211,8 @@ export class World extends Phaser.Scene {
     return ['还差 ' + missing + ' 株' + prof.item + '。', '草原上那几丛，采完会重新长出来。'];
   }
 
-  lampkeeperLines() {
-    const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
-    const mireDone = this.save.bosses && this.save.bosses.mireWraith === 'done';
+  lampkeeperBaseLines() {
     const tier = this.save.expedition || 1;
-    if (allDone) {
-      if (tier > 1) return [
-        '第 ' + tier + ' 次远征，灯还记得你。',
-        '六只影子又沉下去了，碎片、委托、走过的路都还在。',
-        '要让灯再亮，回篝火，或等归水灯自己熄。',
-      ];
-      return [
-        '六盏灯都亮了。',
-        '归水灯下面，沉灯水魇已经退了。',
-        '若要星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下。',
-      ];
-    }
-    if (mireDone) return [
-      '水魇退了，归水灯不再沉。',
-      '雾泽的浅岸，终于能走人了。',
-    ];
     if (tier > 1) return [
       '第 ' + tier + ' 次远征。灯又沉下去了。',
       '走近归水灯按 E 点燃，水魇才会浮上来。',
@@ -2203,6 +2222,88 @@ export class World extends Phaser.Scene {
       '走近按 E 点燃，沉灯水魇才会浮上来。',
       '灯没亮之前，别在雾里停太久。',
     ];
+  }
+
+  lampkeeperLines() {
+    return this.lampkeeperBaseLines();
+  }
+
+  lampkeeperTalk(npc) {
+    const allDone = this.world.bosses.every((b) => this.save.bosses[b.id] === 'done');
+    const mireDone = this.save.bosses && this.save.bosses.mireWraith === 'done';
+    const tier = this.save.expedition || 1;
+    const state = this.save.lampQuest || 'none';
+    const q = this.world.lampQuest;
+    const count = this.save.mireHerbs || 0;
+    if (state === 'done') {
+      if (allDone && tier > 1) {
+        this.say(npc.name, [
+          '第 ' + tier + ' 次远征，灯还记得你。',
+          '长明芯在灯里，六只影子又沉下去了。',
+          '要让灯再亮，回篝火，或等归水灯自己熄。',
+        ]);
+        return;
+      }
+      if (allDone) {
+        this.say(npc.name, [
+          '六盏灯都亮了。',
+          '长明芯在灯里，归水灯不会再沉。',
+          '若要星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下。',
+        ]);
+        return;
+      }
+      this.say(npc.name, [
+        '长明芯在灯里，归水灯不会再沉。',
+        '雾泽的浅岸，终于能走人了。',
+      ]);
+      return;
+    }
+    if (state === 'active') {
+      if (count < q.need) {
+        this.say(npc.name, [
+          '长明芯还差 ' + (q.need - count) + ' 束灯芯草。',
+          '浅汀和灯沼的草还有，采完会重新抽芽。',
+        ]);
+        return;
+      }
+      this.showQuestChoice(npc);
+      return;
+    }
+    if (!mireDone) {
+      this.say(npc.name, this.lampkeeperBaseLines());
+      return;
+    }
+    let lines;
+    if (allDone && tier > 1) {
+      lines = [
+        '第 ' + tier + ' 次远征，六只影子又沉下去了。',
+        '长明芯还没搓，归水灯只是暂时亮着。',
+        '再采三束灯芯草，我给它续上。',
+      ];
+    } else if (allDone) {
+      lines = [
+        '六盏灯都亮了。',
+        '归水灯下面，沉灯水魇已经退了。',
+        '可灯里还缺一根长明芯。再采三束灯芯草，我给它收尾。',
+        '若要星火重燃：六 Boss 会重置，碎片 / 委托 / 成就都留下。',
+      ];
+    } else if (tier > 1) {
+      lines = [
+        '第 ' + tier + ' 次远征，水魇退了。',
+        '灯塔该有一根长明芯，帮我再采三束灯芯草。',
+      ];
+    } else {
+      lines = [
+        '水魇退了，归水灯不再沉。',
+        '可灯里还缺一根长明芯。',
+        '再采三束灯芯草，我给它收尾。',
+      ];
+    }
+    this.say(npc.name, lines, () => {
+      this.save = patchWorldSave({ lampQuest: 'active' });
+      this.updateHud();
+      this.toast('新委托 · 守灯人的长明芯');
+    });
   }
 
   npcLines(npc, state, count) {
@@ -2241,7 +2342,7 @@ export class World extends Phaser.Scene {
   interactNpc(npc) {
     if (!npc || this.talking || this.panelOpen || this.bossActive) return;
     if (npc.role === 'lampkeeper') {
-      this.say(npc.name, this.lampkeeperLines());
+      this.lampkeeperTalk(npc);
       return;
     }
     const prof = profileForNpc(npc);
@@ -2370,8 +2471,12 @@ export class World extends Phaser.Scene {
       snow: ['雪灯够了。', '收下这枚星火碎片，破祠的灯就拜托你了。'],
       volcano: ['火种够了。', '收下这枚星火碎片，铁砧的火就拜托你了。'],
       mire: ['灯芯草够了。', '收下这枚星火碎片，沉祠的灯就拜托你了。'],
+      lamp: ['长明芯够了。', '收下这枚星火碎片，归水灯会记得这束火。'],
     }[npc.quest] || ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。'];
     this.say(npc.name, doneLines);
+    if (npc.quest === 'lamp' && this.memorialText) {
+      this.memorialText.setText('归水灯 · 长明');
+    }
   }
 
   closePanel() {
@@ -3574,7 +3679,10 @@ export class World extends Phaser.Scene {
     }
     if (!this.memorial) this.addAuraAtBoss();
     if (!this.memorialText) {
-      this.memorialText = this.add.text(this.bossSpawn.x, this.bossSpawn.y - 66, d.memorialText || '星火已归位', {
+      const memorialLabel = d.id === 'mireWraith' && this.save.lampQuest === 'done'
+        ? '归水灯 · 长明'
+        : (d.memorialText || '星火已归位');
+      this.memorialText = this.add.text(this.bossSpawn.x, this.bossSpawn.y - 66, memorialLabel, {
         fontFamily: UI.font, fontSize: '12px', color: UI.text.gold,
         backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
       }).setOrigin(0.5, 1).setDepth(40);

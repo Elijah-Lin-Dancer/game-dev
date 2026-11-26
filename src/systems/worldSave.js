@@ -40,7 +40,7 @@
  *   - 坏档保留 na.world.broken，读档失败回默认。
  */
 const KEY = 'na.world';
-const VERSION = 14;
+const VERSION = 15;
 const SCREENS = [
   'field-1', 'field-2', 'field-3', 'field-4', 'field-5', 'field-6',
   'bamboo-1', 'bamboo-2', 'bamboo-3', 'bamboo-4', 'bamboo-5', 'bamboo-6',
@@ -95,6 +95,7 @@ const defaults = () => ({
   mireHerbs: 0,
   mireQuest: 'none',
   mireQuest2: 'none',
+  lampQuest: 'none',
   expedition: 1,
   boss: 'none',
   bosses: bossDefaults(),
@@ -135,6 +136,7 @@ function migrate(old) {
     mireHerbs: Math.min(99, Math.round(num(old.mireHerbs))),
     mireQuest: QUESTS.includes(old.mireQuest) ? old.mireQuest : 'none',
     mireQuest2: QUESTS.includes(old.mireQuest2) ? old.mireQuest2 : 'none',
+    lampQuest: QUESTS.includes(old.lampQuest) ? old.lampQuest : 'none',
     expedition: Math.max(1, Math.min(99, Math.round(num(old.expedition, 1)))),
     bosses: sanitizeBosses(old.bosses, old.bosses ? null : old.boss),
     boss: sanitizeBosses(old.bosses, old.bosses ? null : old.boss).mossBeast === 'done' ? 'done' : 'none',
@@ -181,6 +183,10 @@ export function patchWorldSave(patch) {
   next.volcanoHerbs = Math.min(99, Math.round(num(next.volcanoHerbs)));
   next.volcanoQuest = QUESTS.includes(next.volcanoQuest) ? next.volcanoQuest : 'none';
   next.volcanoQuest2 = QUESTS.includes(next.volcanoQuest2) ? next.volcanoQuest2 : 'none';
+  next.mireHerbs = Math.min(99, Math.round(num(next.mireHerbs)));
+  next.mireQuest = QUESTS.includes(next.mireQuest) ? next.mireQuest : 'none';
+  next.mireQuest2 = QUESTS.includes(next.mireQuest2) ? next.mireQuest2 : 'none';
+  next.lampQuest = QUESTS.includes(next.lampQuest) ? next.lampQuest : 'none';
   const currentBosses = loadWorldSave().bosses;
   const bossPatch = patch && patch.bosses && typeof patch.bosses === 'object'
     ? { ...currentBosses, ...patch.bosses }
