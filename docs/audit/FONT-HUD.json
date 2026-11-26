@@ -62,5 +62,28 @@
   "smoke": "9 PASS",
   "scale": "223 INSTANCES / 0 FAIL",
   "glyphAudit": "1414 CHARS / 3938 CMAP / 0 MISSING",
-  "note": "源字体不含 › − ≥ ✓ ✗；不补自绘 glyph，改用字体已有 > - >= ● ×，因此 UI 文案可覆盖、字体不再缺字。"
+  "note": "源字体不含 › − ≥ ✓ ✗；不补自绘 glyph，改用字体已有 > - >= ● ×，因此 UI 文案可覆盖、字体不再缺字。",
+  "pages": {
+    "site": "https://elijah-lin-dancer.github.io/game-dev/",
+    "entry": {
+      "game": "game.79e777bc.js",
+      "assets": "assets.7758173e.js"
+    },
+    "fontBytes": 133724,
+    "fontSha256": "9850143c3b4a17ce6a5dbdef3ea0259737bc505d82e69bbb153207d883066ae9",
+    "identicalToLocal": true,
+    "viewports": [
+      960,
+      640,
+      844
+    ],
+    "passed": true,
+    "evidence": "docs/audit/FONT-PAGES.json",
+    "pwa": {
+      "cache": "na-b18-1ac43899",
+      "offline": true,
+      "passed": true,
+      "evidence": "docs/audit/FONT-PWA.json"
+    }
+  }
 }

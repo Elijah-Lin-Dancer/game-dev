@@ -719,3 +719,12 @@
 | W-182 | 960 / 640 / 844 + 单文件 + smoke + 比例 | `tools/audit_font_ui.mjs` 三档 Title / Map；`tools/audit_font_single.mjs` `file://` 单文件；`npm run smoke`；`python3 tools/audit_scale.py` | 通过；三档 Map 均读 `特殊关卡 13 >` / `难度 普 ● 噩 × 地 ×`，`scrollWidth` 分别为 960 / 640 / 844；单文件同文案、`fontCheck=true`；`errs=[]`；smoke **9 PASS**、比例 **223 INSTANCES / 0 FAIL**；`na.save v11` / `na.world v16` / `world.json v12` 未改 |
 
 证据：`docs/audit/FONT-UI.json`、`FONT-SINGLE.json`、`docs/revamp/b30-font/` 7 张；详见 `docs/BATCH35-FONT-HUD.md` 第 6 节。
+
+
+## W-183. 批 35 / 字体 HUD 字形收口 · Pages 线上（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-183 | Pages 字体 / HUD 线上 | `tools/audit_font_pages.mjs`：读线上入口 / 字体；960 / 640 / 844 Title / Map；抓线上字体核对 SHA-256 + cmap | 通过；线上入口 `game.79e777bc.js` + `assets.7758173e.js`，字体 **133,724 B**，SHA-256 `9850143c...` 与本地一致；960/640/844 Map 均读 `特殊关卡 13 >` / `难度 普 ● 噩 × 地 ×`，`scrollWidth` 960/640/844；`fontReady=true`；线上字体 3938 cmap / 1414 字符 / 0 缺失；PWA `na-b18-1ac43899` 接管后断网 reload，Title / Map 可用、同文案、`scrollWidth 960`；`pageerror / console.error=0` |
+
+线上证据：`docs/revamp/b30-font/font-online-title-960.png`、`font-online-map-960.png`、`font-online-map-640.png`、`font-online-map-844.png`、`font-online-pwa-offline-960.png`、`docs/audit/FONT-PAGES.json` / `FONT-PWA.json`；详见 `docs/BATCH35-FONT-HUD.md` 第 9 节。

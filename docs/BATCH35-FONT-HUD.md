@@ -1,7 +1,7 @@
 # BATCH 35 · 字体 HUD 字形收口
 
 > 2026-11-26。范围仅限“运行时文案都有字形”，不改关卡、玩法、数值、存档或美术。  
-> 本地 / 单文件已完成；Pages 线上复核在第 9 节回填。
+> 本地 / 单文件 / Pages 已完成。
 
 ## 1. 目标
 
@@ -134,14 +134,27 @@ errors:  []
 2. **`›` / `✓` / `✗` 的视觉略变**：`>` 比 `›` 细、`●` / `×` 比 `✓` / `✗` 更几何化；这是像素字体可读性优先的取舍，三档截图已确认不挤压、不溢出。
 3. **没有给源字体补自绘 glyph**：若后续确需这些符号的原始造型，需要单独做 glyph 授权 / 自绘并重新审计；本轮不引入。
 
-## 9. Pages 线上复核
+## 9. Pages 线上复核（2026-11-26）
 
-待推送后回填。
+推送 `e447564..fe1cc4c` 后，线上入口已切到 `./dist/game.79e777bc.js` + `./dist/assets.7758173e.js`，`web/fonts/game.woff2` **133,724 B**，SHA-256 `9850143c...` 与本地一致。
+
+`tools/audit_font_pages.mjs` 线上 960 / 640 / 844：
+
+- 960：`特殊关卡 13 >`、`难度  普 ●  噩 ×  地 ×`，`scrollWidth 960`
+- 640：同文案，`scrollWidth 640`
+- 844：同文案，`scrollWidth 844`
+- `fontReady=true`；字体 200 / 133,724 B / cmap 3938 / 1414 字符 / 0 缺失；`pageerror / console.error=0`
+
+PWA 离线：`tools/audit_font_pwa.mjs` 等新 SW `na-b18-1ac43899` 接管后断网 reload，Title / Map 仍可进，`fontReady=true`，Map 同文案，`scrollWidth 960`，`errs=[]`；截图 `docs/revamp/b30-font/font-online-pwa-offline-960.png`。
+
+截图：`docs/revamp/b30-font/font-online-title-960.png`、`font-online-map-960.png`、`font-online-map-640.png`、`font-online-map-844.png`。机读：`docs/audit/FONT-PAGES.json` / `FONT-PWA.json`。
 
 ## 10. 证据
 
 - `docs/audit/FONT-HUD.json`：本轮汇总（修复前后、构建数字、脚本结果）。
 - `docs/audit/FONT-UI.json`：960 / 640 / 844 Title / Map 原始结果。
 - `docs/audit/FONT-SINGLE.json`：单文件原始结果。
-- `docs/revamp/b30-font/`：7 张截图。
+- `docs/audit/FONT-PAGES.json`：Pages 线上结果与字体 SHA-256。
+- `docs/audit/FONT-PWA.json`：PWA 断网结果。
+- `docs/revamp/b30-font/`：7 张本地 / 单文件截图 + 4 张线上截图 + 1 张 PWA 离线截图。
 - `tools/audit_glyphs.py`、`tools/audit_font_ui.mjs`、`tools/audit_font_single.mjs`。

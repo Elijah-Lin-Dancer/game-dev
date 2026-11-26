@@ -1,0 +1,49 @@
+{
+  "640": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "scroll": 640
+  },
+  "844": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "scroll": 844
+  },
+  "site": "https://elijah-lin-dancer.github.io/game-dev/",
+  "expected": {
+    "game": "game.79e777bc.js",
+    "assets": "assets.7758173e.js",
+    "fontBytes": 133724
+  },
+  "screenshots": [
+    "docs/revamp/b30-font/font-online-title-960.png",
+    "docs/revamp/b30-font/font-online-map-960.png",
+    "docs/revamp/b30-font/font-online-map-640.png",
+    "docs/revamp/b30-font/font-online-map-844.png"
+  ],
+  "entry": {
+    "scripts": [
+      "./dist/assets.7758173e.js",
+      "./dist/game.79e777bc.js"
+    ],
+    "chapters": 6,
+    "stages": 36,
+    "fontReady": true
+  },
+  "map960": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "scroll": 960
+  },
+  "font": {
+    "status": 200,
+    "bytes": 133724,
+    "sha256": "9850143c3b4a17ce6a5dbdef3ea0259737bc505d82e69bbb153207d883066ae9",
+    "cmap": 3938,
+    "chars": 1414,
+    "missing": 0,
+    "identicalToLocal": true
+  },
+  "errors": [],
+  "passed": true
+}

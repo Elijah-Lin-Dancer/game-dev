@@ -12,7 +12,9 @@
     "audit:pages": "node tools/audit_pages.mjs",
     "audit:font": "python3 tools/audit_glyphs.py",
     "audit:font:ui": "node tools/audit_font_ui.mjs",
-    "audit:font:single": "node tools/audit_font_single.mjs"
+    "audit:font:single": "node tools/audit_font_single.mjs",
+    "audit:font:pages": "node tools/audit_font_pages.mjs",
+    "audit:font:pwa": "node tools/audit_font_pwa.mjs"
   },
   "dependencies": {
     "esbuild": "^0.24.2"

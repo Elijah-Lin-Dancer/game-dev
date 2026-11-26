@@ -1,0 +1,20 @@
+{
+  "site": "https://elijah-lin-dancer.github.io/game-dev/",
+  "online": {
+    "controller": "https://elijah-lin-dancer.github.io/game-dev/sw.js",
+    "sw": true,
+    "cache": "na-b18-1ac43899"
+  },
+  "offlineTitle": {
+    "fontReady": true,
+    "scroll": 960
+  },
+  "offlineMap": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "scroll": 960
+  },
+  "screenshot": "docs/revamp/b30-font/font-online-pwa-offline-960.png",
+  "errors": [],
+  "passed": true
+}
