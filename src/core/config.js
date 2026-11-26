@@ -51,8 +51,11 @@ const CFG = {
   bossB: { hp: 34, speed: 58, dmg: 4, at: 0.5, slashWindup: 420, slashDmg: 4, slashReach: 96, slashWidth: 120,
     chargeWindup: 480, chargeSpeed: 230, chargeTime: 300, chargeDmg: 5, summonCd: 2600, summonCount: 2 },
   /* 批 10：巨浣熊（跃扑 + 抓击；半血后更急） */
-  racoonBoss: { pounceWindup: 440, pounceAir: 340, pounceRadius: 74, pounceDmg: 4,
-    swipeWindup: 300, swipeHit: 160, swipeReach: 64, swipeDmg: 3, at: 0.5, speedMul: 1.25 },
+  /* 批 36：浣熊跃扑原半径 74 / 前摇 440ms，玩家 96 速只能走 42px，走位必吃；
+     抓击 64 / 300ms 同理。第一章 Boss 应可读可躲，改为半径 48 / 前摇 680ms，
+     抓击 52 / 400ms；半血加速仍保留压力。 */
+  racoonBoss: { pounceWindup: 680, pounceAir: 340, pounceRadius: 48, pounceDmg: 4,
+    swipeWindup: 400, swipeHit: 160, swipeReach: 52, swipeDmg: 3, at: 0.5, speedMul: 1.25 },
   cycle: { hpMul: 0.15, bossMul: 0.2, legacyPower: 1, affixAtCycle: 2, affixChance: 0.55 },
   upgrades: { dropChance: 0.35, powerStep: 1, speedStep: 0.12, atkStep: 0.15, minAtkMul: 0.4 },
   boss2: { at: 0.5, roarMs: 650, slamWindup: 520, slamAir: 460, slamRadius: 78, slamDmg: 4, speedMul: 1.3, windupMul: 0.75 },

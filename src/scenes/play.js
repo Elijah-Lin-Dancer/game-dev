@@ -379,7 +379,7 @@ export class Play extends Phaser.Scene {
         }),
         pickChar: (id) => this.scene.restart({ char: id }),
         wallAt: (x, y, h) => this.isWall(x, y, h || 10),
-        bossInfo: () => { const b = this.enemies.find((e) => e.type === 'boss'); return b ? { x: Math.round(b.spr.x), y: Math.round(b.spr.y), ph: b.phase, dist: Math.round(Phaser.Math.Distance.Between(b.spr.x, b.spr.y, this.player.x, this.player.y)), px: Math.round(this.player.x), py: Math.round(this.player.y), speed: b.speed, blockedW: this.isWall(b.spr.x, b.spr.y, b.half) } : null; },
+        bossInfo: () => { const b = this.enemies.find((e) => e.type === 'boss'); return b ? { x: Math.round(b.spr.x), y: Math.round(b.spr.y), ph: b.phase, hp: b.hp, maxHp: b.maxHp, p2: !!b.phase2, ring: b.ring ? { x: Math.round(b.ring.x), y: Math.round(b.ring.y), r: b.ring.radius } : null, dist: Math.round(Phaser.Math.Distance.Between(b.spr.x, b.spr.y, this.player.x, this.player.y)), px: Math.round(this.player.x), py: Math.round(this.player.y), speed: b.speed, blockedW: this.isWall(b.spr.x, b.spr.y, b.half) } : null; },
         slowNow: () => (this.time.now < this.slowUntil ? Math.round(this.slowUntil - this.time.now) : 0),
         webAt: () => { this.slowUntil = this.time.now + CFG.spider.webSlowMs; return Math.round(this.slowUntil - this.time.now); },
       };
@@ -891,7 +891,13 @@ export class Play extends Phaser.Scene {
       for (let i = 0; i < 3; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
-    const n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + Math.min(2, room.idx);
+    // 竹林第一章是新手章：1–2 关封顶 3 只，3–5 关封顶 4 只。
+    // 5 只眼/独眼叠弹幕时，20 血新手在 2 个战斗房内就会被磨死，实机试点连续卡在第 2 关。
+    const early = this.spec && this.spec.chapterId === 'bamboo';
+    const cap = early && this.spec.index <= 2 ? 3 : 4;
+    const extra = early ? Math.min(1, room.idx) : Math.min(2, room.idx);
+    let n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + extra;
+    if (early) n = Math.min(cap, n);
     for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
   }
 
@@ -953,12 +959,31 @@ export class Play extends Phaser.Scene {
     return e;
   }
 
-  /* 找一个不压墙、且离玩家至少 minDist 的空地 */
+  /* 与玩家所在格连通的格子集合：避免小怪生成在墙后夹层里，玩家永远打不到。 */
+  reachableTiles() {
+    const sx = Math.floor(this.player.x / TILE), sy = Math.floor(this.player.y / TILE);
+    const seen = new Set([sx + ',' + sy]);
+    const q = [[sx, sy]];
+    while (q.length) {
+      const [x, y] = q.shift();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, k = nx + ',' + ny;
+        if (nx < 1 || ny < 1 || nx >= COLS - 1 || ny >= ROWS - 1) continue;
+        if (seen.has(k) || this.walls.has(k)) continue;
+        seen.add(k); q.push([nx, ny]);
+      }
+    }
+    return seen;
+  }
+
+  /* 找一个不压墙、与玩家连通、且离玩家至少 minDist 的空地 */
   findFreeSpot(minDistFromPlayer) {
+    const reach = this.reachableTiles();
     for (let i = 0; i < 60; i++) {
       const x = Phaser.Math.Between(TILE + 16, RW - TILE - 16);
       const y = Phaser.Math.Between(TILE + 16, RH - TILE - 16);
       if (this.isWall(x, y, 14)) continue;
+      if (!reach.has(Math.floor(x / TILE) + ',' + Math.floor(y / TILE))) continue;
       if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDistFromPlayer) continue;
       return { x, y };
     }
@@ -4817,6 +4842,11 @@ export class Play extends Phaser.Scene {
     const gateShut = this.room.type === 'gate' && !this.room.gateOpen;
     if (!this.room.cleared && this.enemiesAlive() === 0 && !this.room.isBoss && !gateShut) {
       this.room.cleared = true;
+      // 每间战斗房清场至少掉 1 金币：保证第一次篝火/商店至少有基础经济，不让回血完全靠运气。
+      if (!this.room.clearCoin) {
+        this.room.clearCoin = true;
+        this.dropItem(RW / 2, RH / 2, 'coin');
+      }
       if (Math.random() < CFG.upgrades.dropChance) {
         this.dropItem(this.player.x + 26, this.player.y - 10, 'upg', this.rollUpgrade());
       }
