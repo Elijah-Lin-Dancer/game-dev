@@ -36,7 +36,7 @@ def scan_chars():
                 chars.add(bytes([hi, lo]).decode('gb2312'))
             except UnicodeDecodeError:
                 pass
-    # 打印/排版常用符号
+    # 打印/排版常用符号；字体不支持 › − ≥ ✓ ✗，UI 文案统一用 > - >= ● ×
     chars |= set('　！＂＃＄％＆＇（）＊＋，－．／：；＜＝＞？＠［＼］＾＿｀｛｜｝～·—…“”‘’《》〈〉、。！？；：（）【】')
     return ''.join(sorted(c for c in chars if c.isprintable() or c == ' '))
 

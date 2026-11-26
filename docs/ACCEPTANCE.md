@@ -701,3 +701,21 @@
 | W-180 | 全案收口 / Pages 复核 | `tools/audit_pages.mjs`：读 Pages 入口 / 数据规模；线上 `lava:9` 10 房逐房 + `win()`；`mire-6` 第 36 屏 + `mireLampHerb` | 通过；入口 `game.61c24f45.js` + `assets.f7d3dce6.js`，与本地构建一致；6 章 / 36 主线 / 6 支线 / 3 隐藏 / 4 条件 / 36 屏 / 6 Boss；`lava:9` 10 房 `0:battle … 9:boss`，`save.v=11 / star=3`；`mire-6`（index 35）`mireLampHerb` 在包内、HUD「瘴雾 · 第 36/36 屏」、可见 1312、0 缺失；`pageerror/console.error=0` |
 
 线上证据：`docs/audit/PAGES-AUDIT.json`；不是线上 49 关 / 108 屏全量重跑，线上入口哈希与本地全量审计构建一致。
+
+
+## W-181. 批 35 / 字体 HUD 字形收口 · 字形审计与替换（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-181 | 运行时字符 / 字体 cmap | `tools/audit_glyphs.py` 扫 `src/**/*.js` + `web/data/*.json`，对照 `web/fonts/game.woff2`；根因核对源字体 cmap | 通过；修复前 **1419 字符 / 3938 cmap / 缺 5**：`› − ≥ ✓ ✗`；源字体 37,939 cmap 也不含这 5 个码位；按字体已收录优先替换 `›→>`、`✓→●`、`✗→×`、`−→-`、`≥→>=`；修复后 **1414 字符 / 0 缺失**；`tools/subset_font.py` 移除无效符号 |
+
+证据：`tools/audit_glyphs.py`、`docs/audit/FONT-HUD.json`、`docs/BATCH35-FONT-HUD.md` 第 2–4 节。
+
+
+## W-182. 批 35 / 字体 HUD 字形收口 · UI 三档 / 单文件 / 回归（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-182 | 960 / 640 / 844 + 单文件 + smoke + 比例 | `tools/audit_font_ui.mjs` 三档 Title / Map；`tools/audit_font_single.mjs` `file://` 单文件；`npm run smoke`；`python3 tools/audit_scale.py` | 通过；三档 Map 均读 `特殊关卡 13 >` / `难度 普 ● 噩 × 地 ×`，`scrollWidth` 分别为 960 / 640 / 844；单文件同文案、`fontCheck=true`；`errs=[]`；smoke **9 PASS**、比例 **223 INSTANCES / 0 FAIL**；`na.save v11` / `na.world v16` / `world.json v12` 未改 |
+
+证据：`docs/audit/FONT-UI.json`、`FONT-SINGLE.json`、`docs/revamp/b30-font/` 7 张；详见 `docs/BATCH35-FONT-HUD.md` 第 6 节。

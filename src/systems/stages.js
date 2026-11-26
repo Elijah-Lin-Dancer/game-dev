@@ -47,7 +47,7 @@ export function stageSpec(chId, stageIdx) {
   };
 }
 
-/* 章内递进：第 N 关再乘 1 + 0.05×(N−1) */
+/* 章内递进：第 N 关再乘 1 + 0.05×(N-1) */
 export function stageDiff(chapter, stageIdx) {
   return Math.max(0.5, chapter.diff * (1 + 0.05 * (Math.max(1, stageIdx) - 1)));
 }
@@ -90,7 +90,7 @@ export function stageUnlocked(save, chId, idx) {
   return starsOf(save, chId, idx - 1) >= 1;
 }
 
-/* 星级：★1 通关、★2 剩血 ≥70%、★3 本关没用休整房 */
+/* 星级：★1 通关、★2 剩血 >=70%、★3 本关没用休整房 */
 export function starRating({ hp, maxHp, usedRest }) {
   let n = 1;
   if (maxHp > 0 && hp / maxHp >= 0.7) n += 1;

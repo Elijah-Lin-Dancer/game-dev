@@ -1,0 +1,45 @@
+{
+  "640": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "start": null,
+    "scroll": 640,
+    "fontCheck": true,
+    "viewport": [
+      640,
+      360
+    ]
+  },
+  "844": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "start": null,
+    "scroll": 844,
+    "fontCheck": true,
+    "viewport": [
+      844,
+      390
+    ]
+  },
+  "960": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "start": null,
+    "scroll": 960,
+    "fontCheck": true,
+    "viewport": [
+      960,
+      540
+    ]
+  },
+  "screenshots": [
+    "docs/revamp/b30-font/font-title-960.png",
+    "docs/revamp/b30-font/font-map-960.png",
+    "docs/revamp/b30-font/font-title-640.png",
+    "docs/revamp/b30-font/font-map-640.png",
+    "docs/revamp/b30-font/font-title-844.png",
+    "docs/revamp/b30-font/font-map-844.png"
+  ],
+  "errors": [],
+  "passed": true
+}

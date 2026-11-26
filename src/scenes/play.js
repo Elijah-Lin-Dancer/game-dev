@@ -4241,7 +4241,7 @@ export class Play extends Phaser.Scene {
         );
         return;
       }
-      // 章节关：结算星级（通关 / 剩血 ≥70% / 未用休整房），取历史最高
+      // 章节关：结算星级（通关 / 剩血 >=70% / 未用休整房），取历史最高
       const got = starRating({ hp: this.hp, maxHp: this.maxHp(), usedRest: this.usedRest });
       let stars = got;
       if (this.tier === 'normal') {

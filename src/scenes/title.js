@@ -87,7 +87,7 @@ export class Title extends Phaser.Scene {
       const sub = makeText(this, 26, 21, item.note, 'caption', {
         color: i === this.idx ? UI.text.typeOpen : UI.text.muted,
       });
-      const arrow = makeText(this, 304, 11, '›', 'h2', {
+      const arrow = makeText(this, 304, 11, '>', 'h2', {
         color: i === this.idx ? UI.text.gold : UI.text.muted, origin: [1, 0],
       });
       card.add(name, sub, arrow);

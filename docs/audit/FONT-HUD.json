@@ -1,0 +1,66 @@
+{
+  "title": "字体 HUD 字形收口",
+  "date": "2026-11-26",
+  "sourceFont": "assets/01-primary/fonts/fusion-pixel-12px-monospaced-zh_hans.ttf.woff2",
+  "sourceCmap": 37939,
+  "before": {
+    "chars": 1419,
+    "cmap": 3938,
+    "missing": [
+      "›",
+      "−",
+      "≥",
+      "✓",
+      "✗"
+    ]
+  },
+  "after": {
+    "chars": 1414,
+    "cmap": 3938,
+    "missing": [],
+    "fontBytes": 133724
+  },
+  "replacements": {
+    "›": ">",
+    "✓": "●",
+    "✗": "×",
+    "−": "-",
+    "≥": ">="
+  },
+  "replacementCounts": {
+    "›": 5,
+    "✓": 3,
+    "✗": 2,
+    "−": 12,
+    "≥": 3
+  },
+  "build": {
+    "firstScreenKb": 1915,
+    "gzipKb": 726,
+    "game": "game.79e777bc.js",
+    "gameBytes": 386984,
+    "assets": "assets.7758173e.js",
+    "assetsBytes": 132445,
+    "single": "web/game.html",
+    "singleBytes": 2045872
+  },
+  "ui": {
+    "evidence": "docs/audit/FONT-UI.json",
+    "passed": true,
+    "viewports": [
+      960,
+      640,
+      844
+    ],
+    "errors": []
+  },
+  "singleFile": {
+    "evidence": "docs/audit/FONT-SINGLE.json",
+    "passed": true,
+    "errors": []
+  },
+  "smoke": "9 PASS",
+  "scale": "223 INSTANCES / 0 FAIL",
+  "glyphAudit": "1414 CHARS / 3938 CMAP / 0 MISSING",
+  "note": "源字体不含 › − ≥ ✓ ✗；不补自绘 glyph，改用字体已有 > - >= ● ×，因此 UI 文案可覆盖、字体不再缺字。"
+}

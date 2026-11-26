@@ -1,0 +1,11 @@
+{
+  "errors": [],
+  "screenshot": "docs/revamp/b30-font/font-map-single-960.png",
+  "info": {
+    "special": "特殊关卡 13 >",
+    "tier": "难度  普 ●  噩 ×  地 ×",
+    "scroll": 960,
+    "fontCheck": true
+  },
+  "passed": true
+}

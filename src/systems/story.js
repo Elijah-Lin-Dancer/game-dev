@@ -34,7 +34,7 @@ export function storySeen(save, id) {
   return !!(save && save.story && save.story.seen && save.story.seen[id]);
 }
 
-/* 顺序由数据里的 requires 决定；cycle2 额外要求周目 ≥ 2。 */
+/* 顺序由数据里的 requires 决定；cycle2 额外要求周目 >= 2。 */
 export function storyCanTrigger(save, id) {
   const node = storyNode(id);
   if (!node || storySeen(save, id)) return false;

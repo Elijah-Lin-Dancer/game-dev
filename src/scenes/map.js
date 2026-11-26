@@ -99,7 +99,7 @@ export class MapScene extends Phaser.Scene {
       .on('pointerdown', () => this.back());
     this.titleText = makeText(this, 102, 8, '世界地图', 'h2', { color: UI.text.heading });
     this.starText = makeText(this, S.W - 12, 8, '', 'body', { color: UI.text.info, origin: [1, 0] });
-    this.specialText = makeText(this, S.W - 12, 24, '特殊关卡 ' + specials().length + ' ›', 'body', { color: UI.text.special, origin: [1, 0] })
+    this.specialText = makeText(this, S.W - 12, 24, '特殊关卡 ' + specials().length + ' >', 'body', { color: UI.text.special, origin: [1, 0] })
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.openSpecial());
   }
@@ -193,9 +193,9 @@ export class MapScene extends Phaser.Scene {
 
   tierLine(c, open) {
     if (!open) return '难度  普 —  噩 —  地 —';
-    return '难度  普 ' + (tierUnlocked(this.meta, c.id, 'normal') ? '✓' : '—')
-      + '  噩 ' + (tierUnlocked(this.meta, c.id, 'nightmare') ? '✓' : '✗')
-      + '  地 ' + (tierUnlocked(this.meta, c.id, 'hell') ? '✓' : '✗');
+    return '难度  普 ' + (tierUnlocked(this.meta, c.id, 'normal') ? '●' : '—')
+      + '  噩 ' + (tierUnlocked(this.meta, c.id, 'nightmare') ? '●' : '×')
+      + '  地 ' + (tierUnlocked(this.meta, c.id, 'hell') ? '●' : '×');
   }
 
   openChapter(i) {
@@ -335,7 +335,7 @@ export class MapScene extends Phaser.Scene {
     this.keep(this.pDiff.container);
     this.keep(this.pDiff.hit);
     this.pStart = makeButton(this, {
-      x: S.W - 112, y: 0, w: 96, h: 24, label: '开始行动 ›', depth: 2,
+      x: S.W - 112, y: 0, w: 96, h: 24, label: '开始行动 >', depth: 2,
       onClick: () => this.enter(),
     });
     this.keep(this.pStart.container);
@@ -391,7 +391,7 @@ export class MapScene extends Phaser.Scene {
     const tm = tierMeta(this.tier);
     this.pTitle.setText('第' + CN[this.ci] + '章 · ' + c.name + ' · 第 ' + this.si + ' 关');
     this.pStars.setText('本章 ' + (this.tier === 'normal' ? '' : tm.name + ' ') + '★ ' + this.chapterStars(c, this.tier) + ' / ' + (c.stages * 3));
-    this.pDiff.setLabel('难度 ' + tm.name + ' ›');
+    this.pDiff.setLabel('难度 ' + tm.name + ' >');
     const press = (c.pressure || []).map((k) => PRESSURE[k] || k).join(' / ') || '无';
     this.pLine.setText(c.stages + ' 关 · 首关 ' + (c.rooms[0] || 5) + ' 房 · 章内 +5% · 压力 ' + press);
     const spec = stageSpec(c.id, this.si);
@@ -662,7 +662,7 @@ export class MapScene extends Phaser.Scene {
     }).setDepth(depth + 4);
     objs.push(this.specialDetail);
     const start = makeButton(this, {
-      x: panelX + 494, y: panelY + 274, w: 88, h: 24, label: '开始挑战 ›', depth: depth + 4,
+      x: panelX + 494, y: panelY + 274, w: 88, h: 24, label: '开始挑战 >', depth: depth + 4,
       onClick: () => this.enterSpecial(),
     });
     this.specialStart = start;
