@@ -186,8 +186,8 @@ const QUEST_PROFILE = {
   },
   lamp: {
     biome: 'mire', questDef: 'lampQuest', questSave: 'lampQuest', herbSave: 'mireHerbs', npcName: '守灯人 阿烬',
-    item: '灯芯草', unit: '束', npcAsset: 'mireKeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.mireGlow,
-    glowScale: 1.1, labelY: 56, promptY: 70,
+    item: '灯芯草', unit: '束', npcAsset: 'mireLampkeeper', npcScale: 0.95, npcOriginY: 54 / 64, glowTint: UI.world.lampGlow,
+    glowScale: 1.05, labelY: 56, promptY: 70,
     readyHint: '长明芯够了 · 回归水灯找阿烬',
     respawn: '一束灯芯草重新抽芽了',
   },
@@ -1618,6 +1618,8 @@ export class World extends Phaser.Scene {
   applyScreen(index, initial = false) {
     const s = this.screens[index];
     if (!s) return;
+    // 离开归水屏时回收长明灯火，避免离屏发射器继续跑粒子。
+    if (this.lampCore && this.screenIndex !== index) this.clearLampCoreFlame();
     this.screenIndex = index;
     this.screenId = s.id;
     this.applyWeather(s);
@@ -2474,8 +2476,9 @@ export class World extends Phaser.Scene {
       lamp: ['长明芯够了。', '收下这枚星火碎片，归水灯会记得这束火。'],
     }[npc.quest] || ['这些草药够了。', '收下这枚星火碎片吧，路上用得上。'];
     this.say(npc.name, doneLines);
-    if (npc.quest === 'lamp' && this.memorialText) {
-      this.memorialText.setText('归水灯 · 长明');
+    if (npc.quest === 'lamp') {
+      if (this.memorialText) this.memorialText.setText('归水灯 · 长明');
+      if (this.bossSpawn) this.addLampCoreFlame(this.bossSpawn.def);
     }
   }
 
@@ -3655,6 +3658,72 @@ export class World extends Phaser.Scene {
     this.showVictory(reward, allDone, this.newAch);
   }
 
+  lampCorePos(def) {
+    const gate = def && def.bossGate;
+    if (!gate || !this.bossSpawn) return null;
+    return {
+      x: this.bossSpawn.screen.x + gate.x,
+      y: WORLD_Y + gate.y,
+    };
+  }
+
+  clearLampCoreFlame() {
+    if (!this.lampCore) return;
+    for (const key of ['aura', 'ring', 'flame', 'flameGlow']) {
+      const o = this.lampCore[key];
+      if (!o) continue;
+      this.tweens.killTweensOf(o);
+      o.destroy();
+    }
+    if (this.lampCore.embers) {
+      this.lampCore.embers.stop();
+      this.lampCore.embers.destroy();
+    }
+    this.lampCore = null;
+  }
+
+  /* 长明芯交付后，归水灯从冷焰变成一盏持续燃烧的暖灯；只加视觉，不改判定。 */
+  addLampCoreFlame(def) {
+    const p = this.lampCorePos(def);
+    if (!p) return;
+    const key = this.bossSpawn.screen.id + ':lamp';
+    if (this.lampCore && this.lampCore.key === key) {
+      if (this.memorialText) this.memorialText.setPosition(p.x, p.y - 94);
+      return;
+    }
+    this.clearLampCoreFlame();
+    const warm = UI.world.lampGlow;
+    const aura = this.add.image(p.x, p.y - 22, 'aura', 0)
+      .setScale(2.4).setAlpha(0.42).setTint(warm)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(26);
+    const ring = this.add.ellipse(p.x, p.y - 2, 64, 18, warm, 0.20).setDepth(27);
+    const flame = this.add.circle(p.x, p.y - 61, 5, 0xffd28a, 0.95)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(39);
+    const flameGlow = this.add.circle(p.x, p.y - 61, 14, warm, 0.20)
+      .setBlendMode(Phaser.BlendModes.ADD).setDepth(38);
+    this.tweens.add({
+      targets: aura, alpha: 0.14, scale: 2.9, duration: 1050, yoyo: true, repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    this.tweens.add({
+      targets: [flame, flameGlow], alpha: 0.62, scale: 1.3, duration: 520, yoyo: true, repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    const embers = this.add.particles(p.x, p.y - 62, 'dust', {
+      lifespan: { min: 800, max: 1500 },
+      speedX: { min: -10, max: 10 },
+      speedY: { min: -38, max: -14 },
+      scale: { start: 0.55, end: 0 },
+      alpha: { start: 0.8, end: 0 },
+      quantity: 1,
+      frequency: 70,
+      tint: UI.world.ember,
+      blendMode: 'ADD',
+    }).setDepth(38);
+    this.lampCore = { key, aura, ring, flame, flameGlow, embers };
+    if (this.memorialText) this.memorialText.setPosition(p.x, p.y - 94);
+  }
+
   addAuraAtBoss() {
     if (!this.bossSpawn) return;
     const { x, y } = this.bossSpawn;
@@ -3672,14 +3741,18 @@ export class World extends Phaser.Scene {
     if (!this.bossSpawn) return;
     const d = def || this.boss?.def || this.bossSpawn.def;
     const key = this.bossSpawn.screen.id + ':' + d.id;
+    const lampDone = d.id === 'mireWraith' && this.save.lampQuest === 'done';
     if (this.memorial && this.memorial.key !== key) {
       this.memorial.aura.destroy();
       if (this.memorialText) { this.memorialText.destroy(); this.memorialText = null; }
       this.memorial = null;
     }
+    if (this.lampCore && this.lampCore.key !== this.bossSpawn.screen.id + ':lamp') {
+      this.clearLampCoreFlame();
+    }
     if (!this.memorial) this.addAuraAtBoss();
     if (!this.memorialText) {
-      const memorialLabel = d.id === 'mireWraith' && this.save.lampQuest === 'done'
+      const memorialLabel = lampDone
         ? '归水灯 · 长明'
         : (d.memorialText || '星火已归位');
       this.memorialText = this.add.text(this.bossSpawn.x, this.bossSpawn.y - 66, memorialLabel, {
@@ -3687,6 +3760,8 @@ export class World extends Phaser.Scene {
         backgroundColor: UI.hud.bgSoft, padding: { x: 5, y: 2 },
       }).setOrigin(0.5, 1).setDepth(40);
     }
+    if (lampDone) this.addLampCoreFlame(d);
+    else if (this.lampCore) this.clearLampCoreFlame();
   }
 
   worldDown() {
@@ -3794,6 +3869,7 @@ export class World extends Phaser.Scene {
       if (this.boss.breath) this.boss.breath.remove();
       this.boss = null;
     }
+    this.clearLampCoreFlame();
     if (this.memorial) {
       this.tweens.killTweensOf(this.memorial.aura);
       this.memorial.aura.destroy();

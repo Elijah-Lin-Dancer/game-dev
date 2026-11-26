@@ -14,6 +14,7 @@ fs.mkdirSync(outDir, { recursive: true });
 
 const specs = [
   { file: 'mire-keeper.cjs', out: 'mire-keeper-atlas', w: 64, h: 64, directions: 4, dist: 4.35 },
+  { file: 'mire-lampkeeper.cjs', out: 'mire-lampkeeper-atlas', w: 64, h: 64, directions: 4, dist: 4.5 },
   { file: 'mire-reed.cjs', out: 'mire-reed-atlas', w: 64, h: 96, directions: 1, dist: 5.15 },
   { file: 'mire-shrine.cjs', out: 'mire-shrine-atlas', w: 96, h: 128, directions: 1, dist: 5.2 },
   { file: 'mire-herb.cjs', out: 'mire-herb-atlas', w: 32, h: 48, directions: 1, dist: 3.45 },

@@ -94,6 +94,7 @@ const UI = {
     mireWater: 0x24463a,
     mireVeil: 0x3f5a48,
     mireGlow: 0xb7f0c3,
+    lampGlow: 0xffc46a,
     mireSpore: 0x9de7b1,
     cave: 0x30382e,
     caveVeil: 0x08100d,

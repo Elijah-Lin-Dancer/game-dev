@@ -179,6 +179,7 @@ const img = {
   mireReed: join(ROOT, 'assets/01-primary/world/mire-reed.png'),
   mireShrine: join(ROOT, 'assets/01-primary/world/mire-shrine.png'),
   mireKeeper: join(ROOT, 'assets/01-primary/world/mire-keeper.png'),
+  mireLampkeeper: join(ROOT, 'assets/01-primary/world/mire-lampkeeper.png'),
   mireHerb: join(ROOT, 'assets/01-primary/world/mire-herb.png'),
   mireTile: join(ROOT, 'assets/01-primary/world/mire-tile.png'),
   /* G3-1 世界 Boss：ink-studio 苔背巨兽 96×96 四向 idle / charge / roar */
@@ -258,7 +259,7 @@ const FRAME = {
   volcanoSpire: [64, 96], volcanoVent: [64, 48],
   volcanoForge: [96, 128], volcanoSmith: [64, 64], volcanoEmber: [32, 48],
   volcanoLava: [64, 48], volcanoTile: [16, 16],
-  mireReed: [64, 96], mireShrine: [96, 128], mireKeeper: [64, 64], mireHerb: [32, 48], mireTile: [16, 16],
+  mireReed: [64, 96], mireShrine: [96, 128], mireKeeper: [64, 64], mireLampkeeper: [64, 64], mireHerb: [32, 48], mireTile: [16, 16],
   mossBeastIdle: [96, 96], mossBeastCharge: [96, 96], mossBeastRoar: [96, 96],
   bambooMirageIdle: [96, 96], bambooMirageCharge: [96, 96], bambooMirageRoar: [96, 96],
   sandMirageIdle: [96, 96], sandMirageCharge: [96, 96], sandMirageRoar: [96, 96],

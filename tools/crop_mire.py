@@ -7,6 +7,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 # G4-1 ink-studio 源图集 -> 运行时帧
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-keeper-atlas.png').convert('RGBA').crop((0, 0, 64, 64)).save(OUT / 'mire-keeper.png')
+Image.open(ROOT / 'docs/revamp/g4-3d/mire-lampkeeper-atlas.png').convert('RGBA').crop((0, 0, 64, 64)).save(OUT / 'mire-lampkeeper.png')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-reed-atlas.png').convert('RGBA').save(OUT / 'mire-reed.png')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-shrine-atlas.png').convert('RGBA').save(OUT / 'mire-shrine.png')
 Image.open(ROOT / 'docs/revamp/g4-3d/mire-herb-atlas.png').convert('RGBA').save(OUT / 'mire-herb.png')
