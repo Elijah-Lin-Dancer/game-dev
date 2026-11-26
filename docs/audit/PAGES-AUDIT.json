@@ -9,8 +9,8 @@
     "bosses": 6,
     "scripts": [
       "./web/vendor/phaser.min.js",
-      "./dist/assets.f7d3dce6.js",
-      "./dist/game.61c24f45.js"
+      "./dist/assets.dbbb01d3.js",
+      "./dist/game.7fa205fd.js"
     ],
     "sw": false
   },
