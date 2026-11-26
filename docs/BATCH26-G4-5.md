@@ -27,7 +27,7 @@ G4-5 只补 `mire-6` 的人物缺口：归水灯旁新增「守灯人 阿烬」�
 - `web/data/world.json`
   - `mire-6` 的 `npc` 从 `null` 改为 `{ id: 'mireLampkeeper', name: '守灯人 阿烬', x: 110, y: 190, quest: 'mire', role: 'lampkeeper', flipX: true }`。
   - 位置在归水灯左侧、现有采集点 46px 交互半径之外；玩家走近时先看到 NPC，而不是误触采集。
-- 无改动：`worldSave.js`、委托数据、成就数据、图集、Boss 数据、`sw` 预缓存列表。
+- 未改动：`worldSave.js`、委托数据、成就数据、图集、Boss 数据；`sw` 只随构建哈希更新，未改缓存策略。
 
 ## 4. 实测
 
