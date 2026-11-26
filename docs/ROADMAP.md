@@ -432,3 +432,5 @@
 | `LEDGER.md` | 每批一条，编号接着往 21 排 |
 | `CURRENT.md` | 只写"当前批 + 下一步"，不写长计划（长计划就是本文件） |
 | `docs/PLAYTEST-*.md` | 每批完成后补一节实测，含采样脚本与数值 |
+| `docs/BACKLOG.md` | 已明确但暂缓的事项，含进入条件；当前列有真多边形碰撞与 49 关全量地形重做 |
+| `docs/decisions/0018-terrain-art-direction.md` | 地形美术方向：ink-studio 视觉套件，逻辑仍走 32px 格子 |
