@@ -665,3 +665,19 @@
 | W-176 | G4-8 Pages 线上 | 推送 `5ab6403..2569103` 后读 Pages 入口 / `world.json` / sw；线上跑 28 项：`none` / 接取 / 采集 / 集满 / 双委托顺序 / 640 / 844 / PWA | 通过；入口 `game.ed616f54.js` + `assets.40dfdad3.js`，`world.json v12 / 3 个 lampHerbs 节点`，PWA `na-b18-44effc2c` / 12 条；线上 **28/28 PASS**：`none` 节点隐藏、`active` 三节点出现、HUD 0/3、专属草 +1 且 `mireHerbs 0`、跨屏集满 3 后节点隐藏、`mire-6` HUD 3/3、先交阿烬保留 `mireHerbs 7` 且 `tokens20→24` + 暖灯、先交阿芦保留 `lampHerbs 3` 且长明芯仍可交付、640/844 无溢出、PWA 断网节点可见；`errs=[]` |
 
 线上证据：`docs/revamp/g4-8/g4-online-lamp-herb-960.png`、`g4-online-lamp-herb-mire5-960.png`、`g4-online-lamp-herb-640.png`、`g4-online-lamp-herb-844.png`、`g4-online-lamp-herb-pwa-960.png`、`g4-online-lamp-hud-3of3-960.png`、`g4-online-lamp-herb-delivered-960.png`；详见 `docs/BATCH28-G4-8.md` 第 10 节。
+
+
+## W-177. 批 29 / G4-9 本地 / 单文件 / PWA（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-177 | 长明芯草独立 3D / 采集反馈 / 回归 | `g49` 27 项 + `g49-reg` 11 项；960 / 640 / 844；单文件；PWA `na-b18-1ee6383d` 断网 reload；`smoke`；`audit_scale.py` | 通过；`mireLampHerb` 加载、3 个专属节点全部换新贴图、普通 `mireHerb` 未换；none 隐藏 / active 可见 + prompt；专属草 `lampHerbs 0→1` 且 `mireHerbs 0`，浮字「长明芯 +1」；普通草 `mireHerbs 0→2`、长明芯 0；跨屏 3 束节点隐藏、浮字「长明芯 3/3」、`mire-6` HUD 3/3；先交阿烬 `mireHerbs 7 / tokens20→24` 且暖灯 `emitting=true`；v15→v16 / 上限 99 / 先交阿芦 / done / 重燃 11/11；640 `scrollWidth=640`、844 `scrollWidth=844`；单文件 / PWA 离线可用；`errs=[]`。`g49` **27/27**、`g49-reg` **11/11**、smoke 9 PASS、审计 **223 INSTANCES / 0 FAIL**（`mire-4/5` 各 20.2px / 0.63×）。首屏 **1915 KB / gzip726 KB**；`game.61c24f45.js` 387,013 B + `assets.f7d3dce6.js` 132,467 B；单文件 2,045,983 B；图集 **176 切片 / 123,847 B** |
+
+证据：`docs/revamp/g4-9/g4-9-herb-board.png`、`g4-9-lamp-herb-960.png`、`g4-9-lamp-herb-mire5-960.png`、`g4-9-gather-fx-960.png`、`g4-9-hud-3of3-960.png`、`g4-9-delivered-960.png`、`g4-9-lamp-herb-640.png`、`g4-9-lamp-herb-844.png`、`g4-9-lamp-herb-single-960.png`、`g4-9-lamp-herb-pwa-960.png`；详见 `docs/BATCH29-G4-9.md`。
+
+
+## W-178. 批 29 / G4-9 Pages 线上验收（待回填）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-178 | G4-9 Pages 线上 | 推送后读 Pages 入口 / `world.json` / sw；线上验 960 / 640 / 844 / PWA / 交互 | 待推送后回填 |

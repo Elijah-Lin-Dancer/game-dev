@@ -317,3 +317,20 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 
 - 节点：`mire-4` 2 个、`mire-5` 1 个；不新建 3D 源文件，`art-src/g4/` 不变。
 - 若后续要做独立「长明芯草」3D 小件，按 ink-studio 离线 SDF → 像素 → 图集流程新增，只替换 `buildLampHerbs` 的 sprite，不动 `lampHerbs` 存档 / 委托。
+
+
+## G4-9 产出（2026-11-26）
+
+长明芯草独立 3D 像素小件 1 件。G4-8 先用 `mireHerb + 0xffb35c tint` 区分，本轮按 ink-studio 离线 SDF → 像素 → 图集流程新增独立源，运行时只读成品 PNG；普通灯芯草仍用 `mireHerb`，两者不再靠 tint 区分。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 长明芯草 | `art-src/g4/mire-lamp-herb.cjs`（seed 407，单帧） | 32×48 | `mire-lamp-herb-atlas.png` 32×48 / 316 B | `assets/01-primary/world/mire-lamp-herb.png` 32×48 / 495 B；bbox `(4,17,28,32)` / 可见高 15px；scale 1.35，审计 **20.2px / 0.63×** |
+
+- 造型：深色湿泥底座 + 三根低位灯芯 + 中央一枚琥珀灯芯果；果体有亮芯与深色笼骨，左右各一束浅金芽。
+- 区分：普通灯芯草是薄荷 / 冰蓝五芯簇；长明芯草是琥珀 / 暖金三芯 + 中央灯果，32×48 下仍能读出「灯」而非普通草。
+- 图集：`mireLampHerb` 进 `tools/build.mjs`，`web/atlas/core.png` **176 切片 / 123,847 B**；`tools/crop_mire.py` 新增 `mire-lamp-herb` 裁切。
+- 审计：`python3 tools/audit_scale.py` **223 实例 / 0 FAIL**；`mire-4 / mire-5` 的 `lampHerb` 均 20.2px / 0.63×，普通 `mireHerb` 不变。
+- 对照板：`docs/revamp/g4-9/g4-9-herb-board.png`（普通 / 长明芯 12× 最近邻）；源图集 / 元数据：`docs/revamp/g4-3d/mire-lamp-herb-atlas.png/.json`。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原图。
