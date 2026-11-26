@@ -610,3 +610,11 @@
 | W-158 | 回归 / 构建 | `g46`、`g46-reg`、`g45`；`npm run smoke`；`audit_scale.py`；`npm run build -- --single` | 通过；`g46` **26/26**、`g46-reg` **8/8**、`g45` **15/15**；smoke 9 PASS；审计 **221 INSTANCES / 0 FAIL**；首屏 **1909 KB / gzip724 KB**；`game.55b9c15d.js` **381,646 B** + `assets.ccf47434.js` **132,279 B**；单文件 **2,039,656 B**；图集 174 切片无新增 |
 
 证据：`docs/revamp/g4-6/g4-6-lampkeeper-gate-960.png`、`g4-6-lampkeeper-gate-640.png`、`g4-6-lampkeeper-gate-844.png`、`g4-6-lamp-offer-960.png`、`g4-6-lamp-choice-960.png`、`g4-6-lamp-done-960.png`、`g4-6-lamp-choice-640.png`、`g4-6-lamp-offer-single-960.png`、`g4-6-lamp-offer-pwa-960.png`；详见 `docs/BATCH26-G4-6.md`。
+
+## W-159. 批 26 / G4-6 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-159 | G4-6 Pages 线上 | 推送 `92a839e..101dde9` 后读 Pages 入口 / sw / `world.json`；960 灯前 NPC + gate；960 allDone offer；960 active / 3 束交付；640 / 844；PWA controller 后 `set_offline(true)` reload | 通过；入口 `game.55b9c15d.js` + `assets.ccf47434.js`，`world.json v11`，PWA `na-b18-fef5cd06` / 12 条；960 灯前「守灯人 阿烬」/ `quest=lamp` / gate 休眠 /「归水灯在等一簇火」；960 allDone 无 gate，offer「六盏灯都亮了」+「长明芯」+ 重燃警示；active 3 束打开 `stage1 / rows2`，交付 `done / tokens20→24 / herbs3→0 / 归水灯 · 长明`；640 `scrollWidth640`、844 `scrollWidth844`；PWA 断网 reload 后 active 交付面板可用；`errs=[]`，26/26 PASS |
+
+线上证据：`docs/revamp/g4-6/g4-online-lampkeeper-gate-960.png`、`g4-online-lamp-offer-960.png`、`g4-online-lamp-choice-960.png`、`g4-online-lamp-done-960.png`、`g4-online-lamp-choice-640.png`、`g4-online-lamp-offer-844.png`、`g4-online-lamp-choice-pwa-960.png`；详见 `docs/BATCH26-G4-6.md` 第 9 节。

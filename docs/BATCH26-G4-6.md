@@ -1,4 +1,4 @@
-# 批 26 · G4-6 守灯人的长明芯 · 阿烬的第三条委托
+# 批 26 · G4-6 守灯人的长明芯 · 阿烬的委托
 
 ## 1. 结论
 
@@ -95,4 +95,10 @@ G4-6 把 G4-5 的纯对话 NPC「守灯人 阿烬」接成一条一次性小委�
 
 ## 9. Pages 线上
 
-待推送后回填：入口 `game.55b9c15d.js + assets.ccf47434.js`，PWA `na-b18-fef5cd06`；线上验证 offer / active / choice / done / 640 / 844 / PWA 离线。
+已推送 `101dde9`；Pages 入口 **`game.55b9c15d.js + assets.ccf47434.js`**，`world.json v11`，PWA **`na-b18-fef5cd06`** / 12 条；线上 **26/26 PASS**，`errs=[]`。
+
+- 960 灯前：`mire-6` 1 个 NPC「守灯人 阿烬」，`role=lampkeeper / quest=lamp`，gate 休眠、`boss=false`，按 E 出「归水灯在等一簇火」，`lampQuest=none`。
+- 960 六 Boss 全 done：无 gate，NPC offer 含「六盏灯都亮了」+「可灯里还缺一根长明芯」+ 星火重燃警示；关闭对话后 `lampQuest=active`。
+- 960 active / `mireHerbs=3`：按 E 打开「委托 · 守灯人的长明芯」面板 `stage1 / rows2`；交付后 `lampQuest=done / tokens20→24 / mireHerbs3→0 / memorial='归水灯 · 长明'`。
+- 640：交付面板 `scrollWidth=640` 无溢出；844：offer 面板 `scrollWidth=844` 无溢出。
+- PWA：controller 后断网 reload，`mire-6` NPC / active 交付面板仍可用；`errs=[]`。
