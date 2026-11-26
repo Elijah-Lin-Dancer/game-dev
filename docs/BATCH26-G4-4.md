@@ -169,4 +169,10 @@ const rewardBonus = Math.max(0, reward - baseReward);
 
 ## 9. 提交与 Pages
 
-（提交 / Pages 线上证据见下一节回填。）
+- 代码 / 构建 / 本地证据 / 文档提交 **`31737f8`**；推送 `005d954..31737f8` 到 `origin/main`。
+- Pages 入口 **`game.9d324e8d.js` + `assets.8c75570a.js`**，PWA **`na-b18-ae4a669e` / 12 条**。
+- 线上 960：终局 `rows=2 / fillH=74`；第一次点重燃 `expedition=1 / armed / 按钮="确认重燃 · 第 2 次远征" / 六 Boss 仍 done / tokens26`；第二次 `expedition=2 / screen=0 / 六 Boss none / tokens26`。
+- 线上 960 篝火：allDone 8 行；第一次点击 `armed / 副标题="再点一次确认 · 六 Boss 会重置" / 面板仍开`。
+- 线上 640：终局确认态 `scrollWidth=640 / rows=2`；线上 844×390：`scrollWidth≤844 / rows=2`。
+- 线上 PWA：controller `sw.js` / cache `na-b18-ae4a669e`；断网 reload + `applyScreen(35)` 后 gate 存在、Boss 休眠。
+- 线上截图：`g4-online-finale-confirm-960.png`、`g4-online-travel-confirm-960.png`、`g4-online-finale-confirm-640.png`、`g4-online-finale-confirm-844.png`、`g4-online-pwa-offline-960.png`。

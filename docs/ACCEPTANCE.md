@@ -570,3 +570,11 @@
 | W-146 | 构建 / 回归 | `npm run build -- --single`；`npm run smoke`；`audit_scale.py`；`/tmp/g44.py`、`/tmp/g44-reg.py`、`/tmp/g44-disarm.py` | 通过；首屏 **1903 KB / gzip723 KB**；图集 **123,265 B / 174 切片（无新增）**；`game.9d324e8d.js` **375,789 B** + `assets.8c75570a.js` **132,049 B**；单文件 **2,033,573 B**；PWA `na-b18-ae4a669e`；`smoke` 9 PASS；审计 220/0；`g44` **14/14**、`g44-reg` **6/6**、关闭复位 PASS；v13→v14 / gate 104 / tier2 gate 116 回归通过 |
 
 证据：`docs/revamp/g4-4/g4-4-finale-confirm-960.png`、`g4-4-finale-confirm-640.png`、`g4-4-finale-confirm-844.png`、`g4-4-travel-confirm-960.png`、`g4-4-travel-rekindle-640.png`、`g4-4-tier2-reward-960.png`、`g4-4-single-confirm-960.png`、`g4-4-pwa-offline-960.png`；详见 `docs/BATCH26-G4-4.md`。
+
+## W-147. 批 26 / G4-4 Pages 线上验收（2026-11-26）
+
+| 编号 | 项目 | 操作 | 结果 |
+|---|---|---|---|
+| W-147 | G4-4 Pages 线上 | 推送 `005d954..31737f8` 后读 Pages 入口 / sw / `world.json`；960 终局确认 + 第二次重燃；960 篝火确认；640 / 844 终局确认；PWA controller 后 `set_offline(true)` reload + `applyScreen(35)` | 通过；入口 `game.9d324e8d.js` + `assets.8c75570a.js`，PWA `na-b18-ae4a669e` / 12 条；960 `rows2/fill74`、第一次 `exp1/armed/六 Boss done/tokens26`、第二次 `exp2/screen0/六 none/tokens26`；960 篝火 8 行、`hint="再点一次确认 · 六 Boss 会重置"`；640 `scrollWidth640`、844 `scrollWidth844` 均 `rows2`；PWA 断网 reload 后 `mire-6` gate 存在、`bossActive=false`；`errs=[]` |
+
+线上证据：`docs/revamp/g4-4/g4-online-finale-confirm-960.png`、`g4-online-travel-confirm-960.png`、`g4-online-finale-confirm-640.png`、`g4-online-finale-confirm-844.png`、`g4-online-pwa-offline-960.png`；详见 `docs/BATCH26-G4-4.md` 第 9 节。
