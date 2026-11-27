@@ -234,19 +234,30 @@ async function runStage(page, stageIndex, attempt) {
     }
 
     const now = Date.now();
-    // 先看迎面弹体：预测 0.6s 内最近距离，小于 34px 就垂直位移让开。
+    // 先看迎面弹体：骷髅弹会转向，不能只在 36px 处做一次垂直位移；
+    // 提前 0.85s 预判，并按“房间哪边空间大”选侧移方向，避免贴墙时原地吃弹。
+    // 受击后的 700ms 无敌帧是靠近窗口：不要在这段时间继续躲，直接贴脸换血推进。
     let danger = null, dangerT = 9;
-    for (const sh of s.shots || []) {
-      const rx = s.px - sh.x, ry = s.py - sh.y;
-      const vv = sh.vx * sh.vx + sh.vy * sh.vy || 1;
-      const t = -(rx * sh.vx + ry * sh.vy) / vv;
-      if (t < 0 || t > 0.65) continue;
-      const cx = rx + sh.vx * t, cy = ry + sh.vy * t;
-      const d = Math.hypot(cx, cy);
-      if (d < 36 && t < dangerT) { danger = { sh, d }; dangerT = t; }
+    if (!(s.iframe > 80)) {
+      for (const sh of s.shots || []) {
+        const rx = s.px - sh.x, ry = s.py - sh.y;
+        const vv = sh.vx * sh.vx + sh.vy * sh.vy || 1;
+        const t = -(rx * sh.vx + ry * sh.vy) / vv;
+        if (t < 0 || t > 0.85) continue;
+        const cx = rx + sh.vx * t, cy = ry + sh.vy * t;
+        const d = Math.hypot(cx, cy);
+        if (d < 42 && t < dangerT) { danger = { sh, d }; dangerT = t; }
+      }
     }
     if (danger) {
-      const side = Math.abs(danger.sh.vx) > Math.abs(danger.sh.vy) ? (danger.sh.vx > 0 ? 's' : 'w') : (danger.sh.vy > 0 ? 'd' : 'a');
+      let side;
+      if (Math.abs(danger.sh.vx) > Math.abs(danger.sh.vy)) {
+        // 横向弹：上下躲，优先往房间中间/空间大的一侧。
+        side = s.py < 540 ? 's' : 'w';
+      } else {
+        // 纵向弹：左右躲。
+        side = s.px < 384 ? 'd' : 'a';
+      }
       if (held !== side) { await release(); await page.keyboard.down(side); held = side; }
       await page.waitForTimeout(100);
       continue;
@@ -391,7 +402,7 @@ async function runStage(page, stageIndex, attempt) {
         await page.waitForTimeout(220); continue;
       }
       // 低血先面朝反方向疾影冲刺，借落地无敌脱离包围。
-      if (s.hp <= 12 && s.qready && now - lastQ > 1000) {
+      if (s.hp <= 14 && s.qready && now - lastQ > 1000) {
         await release();
         const back = { d: 'a', a: 'd', s: 'w', w: 's' }[want];
         await page.keyboard.down(back); await page.waitForTimeout(30); await page.keyboard.up(back);
@@ -400,7 +411,7 @@ async function runStage(page, stageIndex, attempt) {
       }
       // 远程/风筝怪（蜘蛛、骷髅、眼怪等）站在 120+ 距离放弹幕，慢慢追只会被磨死。
       // 距离 70–170 且 Q 就绪时向前疾影冲刺 100px，落地无敌帧正好贴脸，再进入近战循环。
-      if (KITE.includes(e.k) && dist >= 70 && dist <= 170 && s.qready && now - lastQ > 1400) {
+      if (KITE.includes(e.k) && dist >= 70 && dist <= 220 && s.qready && now - lastQ > 1400) {
         await release();
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
           await page.keyboard.down(want); await page.waitForTimeout(30); await page.keyboard.up(want);
@@ -413,12 +424,15 @@ async function runStage(page, stageIndex, attempt) {
       // 否则会在 48–54px 原地空挥到超时（fort:4 第二房蜘蛛超时根因）。
       const axisX = Math.abs(dx) >= Math.abs(dy);
       const cross = axisX ? Math.abs(dy) : Math.abs(dx);
-      if (dist <= 54 && cross > 24) {
+      // 只在“还够得着但斜轴太偏”时对齐；dist <= 46 时直接砍。
+      // 旧逻辑在 45° 斜角、dist 35 时也要求对齐，机器人贴墙后永远不出手，
+      // 会在只剩 1 HP 的蜘蛛面前站到死（fort:2 单蜘蛛卡死根因）。
+      if (dist > 46 && dist <= 60 && cross > 29) {
         const alignKey = axisX ? (dy > 0 ? 's' : 'w') : (dx > 0 ? 'd' : 'a');
         if (held !== alignKey) { await release(); await page.keyboard.down(alignKey); held = alignKey; }
         await page.waitForTimeout(90); continue;
       }
-      if (dist <= 54 && now - lastAtk > 340) {
+      if (dist <= 58 && now - lastAtk > 340) {
         if (held) { await release(); }
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
           await page.keyboard.down(want); await page.waitForTimeout(35); await page.keyboard.up(want);

@@ -1,0 +1,242 @@
+{
+ "chapter": "fort",
+ "mode": "real-keyboard-input",
+ "notes": "Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win. G5-2 samRed verification, 2026-11-27.",
+ "passed": true,
+ "errors": [],
+ "runs": [
+  {
+   "stage": "fort:2",
+   "stageIndex": 2,
+   "attempt": 1,
+   "startHp": 22,
+   "maxHp": 22,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795782106994
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795782124591
+    },
+    {
+     "key": "0,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 12,
+     "enemiesAt": 0,
+     "startedAt": 1795782152700
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795782163586
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 24,
+     "enemiesAt": 1,
+     "startedAt": 1795782183799
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 24,
+     "enemiesAt": 0,
+     "startedAt": 1795782205893
+    },
+    {
+     "key": "2,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 26,
+     "enemiesAt": 1,
+     "startedAt": 1795782230275
+    }
+   ],
+   "startedAt": 1795782106958,
+   "maxRoom": 6,
+   "minHp": 3,
+   "hitsApprox": 17,
+   "talents": [
+    "厚皮",
+    "快手",
+    "稳手"
+   ],
+   "rest": 2,
+   "ended": "win",
+   "endHp": 7,
+   "endRoom": 6,
+   "endRoomKey": "2,0",
+   "endedAt": 1795782245693,
+   "durationMs": 138735,
+   "kills": 18,
+   "coins": 4,
+   "gems": 3,
+   "talentsFinal": [
+    "tough",
+    "quick",
+    "steady"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [
+    {
+     "k": "beast",
+     "x": 601,
+     "y": 408,
+     "hp": 7
+    }
+   ],
+   "endPx": 694,
+   "endPy": 396,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-2-g5-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "stageIndex": 4,
+   "attempt": 1,
+   "startHp": 26,
+   "maxHp": 26,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795782269998
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 14,
+     "enemiesAt": 2,
+     "startedAt": 1795782289654
+    },
+    {
+     "key": "0,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 12,
+     "enemiesAt": 0,
+     "startedAt": 1795782313365
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 30,
+     "enemiesAt": 2,
+     "startedAt": 1795782337301
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 30,
+     "enemiesAt": 1,
+     "startedAt": 1795782356232
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 30,
+     "enemiesAt": 0,
+     "startedAt": 1795782386599
+    },
+    {
+     "key": "2,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 30,
+     "enemiesAt": 1,
+     "startedAt": 1795782398991
+    }
+   ],
+   "startedAt": 1795782269962,
+   "maxRoom": 6,
+   "minHp": 6,
+   "hitsApprox": 15,
+   "talents": [
+    "厚皮",
+    "铁胃",
+    "疾风"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 10,
+   "endRoom": 6,
+   "endRoomKey": "2,0",
+   "endedAt": 1795782412148,
+   "durationMs": 142186,
+   "kills": 14,
+   "coins": 3,
+   "gems": 4,
+   "talentsFinal": [
+    "tough",
+    "ironstomach",
+    "swift"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [
+    {
+     "k": "beast",
+     "x": 524,
+     "y": 177,
+     "hp": 2
+    }
+   ],
+   "endPx": 598,
+   "endPy": 177,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-4-g5-a1-win.png"
+  }
+ ],
+ "summary": {
+  "fort:2": {
+   "attempts": 1,
+   "wins": 1,
+   "endHp": 7,
+   "maxHpHud": 28,
+   "minHp": 3,
+   "durationMs": 138735,
+   "kills": 18,
+   "bossKind": "sam",
+   "bossHpStart": 39
+  },
+  "fort:4": {
+   "attempts": 1,
+   "wins": 1,
+   "endHp": 10,
+   "maxHpHud": 30,
+   "minHp": 6,
+   "durationMs": 142186,
+   "kills": 14,
+   "bossKind": "sam",
+   "bossHpStart": 43
+  }
+ },
+ "selectionProof": "fort bossPool=[samBlue,samRed]; pickBossKind uses pool[(stageIndex-1)%2]; stage 2 and stage 4 both resolve to samRed."
+}
