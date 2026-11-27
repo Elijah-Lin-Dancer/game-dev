@@ -93,6 +93,11 @@ export class Play extends Phaser.Scene {
       ? (this.stageData.special ? specialSpec(this.stageData.special) : stageSpec(this.stageData.chapter, this.stageData.index))
       : null;
     this.stageMul = this.spec ? this.spec.diff : 1;
+    // 旧堡 2–6 关没有永久成长，7 房长线只靠 20 血硬扛；每深一关 +2 最大生命，
+    // 让第 2 关 22、第 6 关 30，和第 1 关的 20 血教学档拉开可玩的梯度。
+    this.fortHpBonus = this.spec && this.spec.chapterId === 'fort' ? (this.spec.index - 1) * 2 : 0;
+    // 旧堡 2–6 的怪池更硬，第 2 关起武器淬火 +1 平伤；第 1 关保持 3 伤教学。
+    this.fortDmgBonus = this.spec && this.spec.chapterId === 'fort' && this.spec.index >= 2 ? 1 : 0;
     this.usedRest = false;
     this.hitsTaken = 0;
     // 熔炉核心：本关 3 处火盆，当前房未点燃则锁门；点满后 Boss 门才开
@@ -870,6 +875,7 @@ export class Play extends Phaser.Scene {
     if (room.cleared && room.built) return;
     if (room.isBoss) { this.spawnBoss(); return; }
     const t = room.type || 'battle';
+    const fort = this.spec && this.spec.chapterId === 'fort';
 
     // 非战斗房直接算清场：门锁不拦路，玩家可以安心翻箱
     if (t === 'shop' || t === 'shrine' || t === 'rest') { room.cleared = true; return; }
@@ -893,25 +899,20 @@ export class Play extends Phaser.Scene {
     }
     if (t === 'gate') {
       // 机关房：守卫 + 一尊机关石像；石像不拉，门不开。机关房是解谜不是歼灭。
-      // 旧堡第 1 关只放 1 个守卫：2 个守卫在实机里仍会把 14 血玩家磨到 4 血，
-      // 还没见到 Boss 前的免费篝火就先死。后续关仍按 2 个守卫。
-      const guards = (this.spec && this.spec.chapterId === 'fort' && this.spec.index === 1) ? 1 : 2;
+      // 旧堡只放 1 个守卫：2 个守卫会把残血玩家磨死，还没摸到机关就先倒。
+      const guards = fort ? 1 : 2;
       for (let i = 0; i < guards; i++) spawn(this.pickKind(room.idx), 170);
       return;
     }
     // 竹林第一章是新手章：五关统一封顶 3 只。实机试点中 4 只（尤其 1–2 只眼怪）
     // 会把 20 血新手在第二战斗房磨死；Boss 血量仍随关深缩放，难度留在 Boss 与操作上。
     const early = this.spec && this.spec.chapterId === 'bamboo';
-    const fort = this.spec && this.spec.chapterId === 'fort';
     const extra = early ? Math.min(1, room.idx) : Math.min(2, room.idx);
     let n = Phaser.Math.Between(CFG.roomEnemiesMin, CFG.roomEnemiesMax) + extra;
-    // 第一章新手 3 只；第二章怪更硬（蜘蛛/骷髅/钻地/分裂），统一 3 只，难度靠组合而不是数量。
-    // 实机首房 5 只（蜘蛛/鼹鼠/幼虫）12 秒团灭，20 血默认忍者没有操作空间。
+    // 第一章新手 3 只；旧堡怪更硬（蜘蛛/骷髅/钻地/分裂），2–6 关统一 2 只，
+    // 难度靠组合、房间密度和 Boss，不靠数量围殴。3 只实测会在第二房把 20 血玩家围死。
     if (early) n = Math.min(3, n);
-    else if (fort) n = Math.min(3, n);
-    // 旧堡 1 关是第二章的教学关：所有战斗房封顶 2 只，先教分裂与包围，不叠远程/钻地。
-    // 实测 3 只（尤其 2 只近战贴脸）会在第二房把 20 血玩家 20 秒内围死。
-    if (fort && this.spec.index === 1) n = Math.min(2, n);
+    else if (fort) n = Math.min(2, n);
     for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
   }
 
@@ -1061,7 +1062,8 @@ export class Play extends Phaser.Scene {
         }
         if (idx <= 0) {
           // 首间只出低威胁怪，并按已生成数量交替，避免整间清一色同一种
-          const easy = ['beast', 'larva', 'slime', 'racoon', 'spider', 'mole', 'snake', 'lizard', 'mouse', 'fish', 'axolot', 'mollusc', 'flam', 'demon']
+          // 蜘蛛是 120px 外风筝的远程怪，不能进首间；首间保持近战/分裂/钻地教学。
+          const easy = ['beast', 'larva', 'slime', 'racoon', 'mole', 'snake', 'lizard', 'mouse', 'fish', 'axolot', 'mollusc', 'flam', 'demon']
             .filter((k) => pool.includes(k));
           if (easy.length) return easy[this.enemies.length % easy.length];
           return pool[0];
@@ -1104,7 +1106,10 @@ export class Play extends Phaser.Scene {
     this.bossKind = def.kind;
     this.markSeen('bosses', def.seen || def.id);
     const cyc = 1 + CFG.cycle.bossMul * (this.cycle - 1);
-    const hp = Math.round((def.hp || CFG.bossHp) * cyc * this.diff.hp * this.stageMul);
+    // 旧堡 2–6 的 Boss 仍随关深涨，但不按满额 stageMul：46→39 这一档实测会让
+    // 7 房长线后的 22–30 血玩家在 Boss 前 1/3 血被磨死。保留 15% 递减。
+    const fortBossMul = this.spec && this.spec.chapterId === 'fort' && this.spec.index >= 2 ? 0.85 : 1;
+    const hp = Math.round((def.hp || CFG.bossHp) * cyc * this.diff.hp * this.stageMul * fortBossMul);
     const dmg = (def.dmg || CFG.bossDmg) * (1 + (this.stageMul - 1) * 0.3);
     const speed = def.speed || CFG.bossSpeed;
     const half = def.half || 24;
@@ -1612,19 +1617,25 @@ export class Play extends Phaser.Scene {
     const R = (this.story.rooms || {}).rest || {};
     const options = [];
     // 首领门前的最后一处篝火免费：这一关的消耗已经够长，不能再让“没带够 2 金币”变成必死。
-    // 只对旧堡第 1 关生效，避免顺手改掉第一章和后续章节的既有经济。
+    // 第 1 关只回 8 血；2–6 关普通篝火也免费回满，避免 7 房长线被经济卡死。
     const preBoss = this.room && this.room.type === 'rest' && this.spec
       && this.spec.chapterId === 'fort' && this.room.idx === (this.spec.rooms || 6) - 2;
+    // 旧堡 2–6 关的战斗房密度高于第 1 关，金币又主要来自主怪；普通篝火若仍收 2 金币，
+    // 低血玩家会带着 1 金币死在机关房前。第 2 关起篝火免费，避免经济卡死。
+    const freeFortRest = this.room && this.room.type === 'rest' && this.spec
+      && this.spec.chapterId === 'fort' && this.spec.index >= 2;
     if (p.used) {
       options.push({ label: R.spent || '已经休息过了', act: () => {}, dim: true });
-    } else if (preBoss) {
+    } else if (preBoss || freeFortRest) {
+      // 旧堡 2–6 的篝火免费回满；第 1 关首领门前仍只回 8，保留原教学关节奏。
+      const full = freeFortRest;
       options.push({
-        label: `首领门前 · 免费回 ${CFG.healAmount + 4} 血`,
+        label: `${preBoss ? '首领门前' : '旧堡'} · 免费回${full ? '满' : ' ' + (CFG.healAmount + 4) + ' 血'}`,
         act: () => {
           p.used = true;
           this.usedRest = true;
           p.spr.setTint(0x8f8a82);
-          this.heal(CFG.healAmount + 4);
+          this.heal(full ? this.maxHp() : CFG.healAmount + 4);
         },
       });
     } else {
@@ -4026,13 +4037,14 @@ export class Play extends Phaser.Scene {
   }
 
   /* 强化：翻倍吃到就叠层，直接改伤害/攻速/移速 */
-  maxHp() { return Math.max(1, (this.char ? this.char.hp : CFG.maxHp) + this.mods.maxHp); }
+  maxHp() { return Math.max(1, (this.char ? this.char.hp : CFG.maxHp) + this.mods.maxHp + (this.fortHpBonus || 0)); }
   atkCd() {
     const base = Math.max(CFG.atkCd * CFG.upgrades.minAtkMul, CFG.atkCd * (1 - CFG.upgrades.atkStep * this.upg.atk));
     return Math.max(120, base * (1 + this.mods.atkCd));
   }
   dmg() {
-    const flat = (this.char ? this.char.dmg : CFG.playerDmg) + CFG.upgrades.powerStep * this.upg.power + this.mods.atk;
+    const flat = (this.char ? this.char.dmg : CFG.playerDmg) + (this.fortDmgBonus || 0)
+      + CFG.upgrades.powerStep * this.upg.power + this.mods.atk;
     return Math.max(1, Math.round(flat * this.mods.dmgMul));
   }
   moveSpeed() { return (this.char ? this.char.speed : 96) * Math.max(0.4, 1 + CFG.upgrades.speedStep * this.upg.speed + this.mods.speed); }

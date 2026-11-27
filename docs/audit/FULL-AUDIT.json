@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-11-26T07:46:38.023Z",
+  "startedAt": "2026-11-27T09:10:10.241Z",
   "stages": [
     {
       "chapter": "bamboo",
@@ -141,26 +141,28 @@
       "chapterName": "旧堡",
       "index": 1,
       "key": "fort:1",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 19,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.15
@@ -170,26 +172,28 @@
       "chapterName": "旧堡",
       "index": 2,
       "key": "fort:2",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 20,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.21
@@ -199,26 +203,28 @@
       "chapterName": "旧堡",
       "index": 3,
       "key": "fort:3",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 20,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.26
@@ -228,26 +234,28 @@
       "chapterName": "旧堡",
       "index": 4,
       "key": "fort:4",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 20,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.32
@@ -257,26 +265,28 @@
       "chapterName": "旧堡",
       "index": 5,
       "key": "fort:5",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 21,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.38
@@ -286,26 +296,28 @@
       "chapterName": "旧堡",
       "index": 6,
       "key": "fort:6",
-      "rooms": 6,
+      "rooms": 7,
       "kind": "main",
       "pass": true,
       "issues": [],
       "plan": [
         "0:battle",
         "1:battle",
-        "2:treasure",
-        "3:elite",
+        "2:rest",
+        "3:battle",
         "4:gate",
-        "5:boss"
+        "5:rest",
+        "6:boss"
       ],
-      "textures": 20,
-      "roomsVisited": 6,
+      "textures": 18,
+      "roomsVisited": 7,
       "roomTypes": [
         "battle",
         "battle",
-        "treasure",
-        "elite",
+        "rest",
+        "battle",
         "gate",
+        "rest",
         "boss"
       ],
       "stageDiff": 1.44
@@ -328,7 +340,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 20,
+      "textures": 19,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -359,7 +371,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -390,7 +402,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -421,7 +433,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -483,7 +495,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 20,
+      "textures": 19,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -514,7 +526,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -645,7 +657,7 @@
         "6:shrine",
         "7:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 8,
       "roomTypes": [
         "battle",
@@ -744,7 +756,7 @@
         "6:shrine",
         "7:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 8,
       "roomTypes": [
         "battle",
@@ -1184,7 +1196,7 @@
         "1:battle",
         "2:boss"
       ],
-      "textures": 21,
+      "textures": 20,
       "roomsVisited": 3,
       "roomTypes": [
         "battle",
@@ -1209,7 +1221,7 @@
         "3:elite",
         "4:boss"
       ],
-      "textures": 20,
+      "textures": 21,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -1284,7 +1296,7 @@
         "1:battle",
         "2:boss"
       ],
-      "textures": 22,
+      "textures": 21,
       "roomsVisited": 3,
       "roomTypes": [
         "battle",
@@ -1310,7 +1322,7 @@
         "4:battle",
         "5:boss"
       ],
-      "textures": 20,
+      "textures": 21,
       "roomsVisited": 6,
       "roomTypes": [
         "battle",
@@ -1338,7 +1350,7 @@
         "3:battle",
         "4:boss"
       ],
-      "textures": 23,
+      "textures": 20,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -1367,7 +1379,7 @@
         "5:battle",
         "6:boss"
       ],
-      "textures": 21,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -1396,7 +1408,7 @@
         "3:battle",
         "4:boss"
       ],
-      "textures": 22,
+      "textures": 20,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -1423,7 +1435,7 @@
         "3:battle",
         "4:boss"
       ],
-      "textures": 21,
+      "textures": 22,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -1451,7 +1463,7 @@
         "4:battle",
         "5:boss"
       ],
-      "textures": 23,
+      "textures": 22,
       "roomsVisited": 6,
       "roomTypes": [
         "battle",
@@ -1479,7 +1491,7 @@
         "3:battle",
         "4:boss"
       ],
-      "textures": 24,
+      "textures": 22,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -4077,7 +4089,7 @@
     }
   ],
   "errors": [],
-  "finishedAt": "2026-11-26T07:48:19.231Z",
+  "finishedAt": "2026-11-27T09:11:52.544Z",
   "summary": {
     "stagesExpected": 49,
     "stagesRun": 49,

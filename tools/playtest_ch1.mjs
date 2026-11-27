@@ -15,7 +15,10 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const args = process.argv.slice(2);
 const opt = (name, dflt) => { const a = args.find((x) => x.startsWith('--' + name + '=')); return a ? a.split('=')[1] : dflt; };
 const CHAPTER = opt('chapter', 'bamboo');
+// --stages=N 保留旧语义（从 --start 起跑 N 关）；--start / --end 用于单章分段回归。
+const START = Math.max(1, Number(opt('start', 1)) || 1);
 const STAGES = Math.max(1, Math.min(5, Number(opt('stages', 5)) || 5));
+const END = Math.max(START, Math.min(6, Number(opt('end', START + STAGES - 1)) || (START + STAGES - 1)));
 const STAGE_TIMEOUT = Number(opt('stageTime', 150000));
 const MAX_ATTEMPTS = Math.max(1, Math.min(5, Number(opt('attempts', 3)) || 3));
 const TAG = CHAPTER === 'bamboo' ? 'ch1' : CHAPTER;
@@ -26,10 +29,12 @@ const out = { chapter: CHAPTER, stages: [], errors: [], mode: 'real-keyboard-inp
 const CHAPTERS = JSON.parse(readFileSync(join(ROOT, 'web/data/chapters.json'), 'utf8')).chapters || [];
 const CI = CHAPTERS.findIndex((c) => c.id === CHAPTER);
 const seedStars = {};
-if (CI > 0) {
+if (CI >= 0) {
+  // 前序章节全通；目标章节只补 START 之前的关卡，当前关仍要真实打。
   for (const c of CHAPTERS.slice(0, CI)) {
     for (let i = 1; i <= c.stages; i++) seedStars[`${c.id}:${i}`] = 1;
   }
+  for (let i = 1; i < START; i++) seedStars[`${CHAPTER}:${i}`] = 1;
 }
 const seedSave = { v: 11, stars: seedStars, coins: 12, gem: 6, chars: ['ninja'], lastChar: 'ninja' };
 
@@ -144,7 +149,7 @@ async function openSelect(page) {
   await page.waitForFunction(() => window.__game.scene.isActive('select'), null, { timeout: 15000 });
 }
 
-async function startFirstStage(page) {
+async function startFirstStage(page, startStage = START) {
   await page.goto(`${page.__base}/index.html?debug=1`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => window.__game && window.__chaptersData, null, { timeout: 30000 });
   await page.waitForTimeout(500);
@@ -154,7 +159,7 @@ async function startFirstStage(page) {
   await page.waitForFunction(() => window.__game.scene.isActive('map'), null, { timeout: 30000 });
   if (CHAPTER !== 'bamboo') {
     // 测试夹具：直接带 chapterId 进入目标章节选关页；关卡解锁仍由真实存档校验。
-    await page.evaluate((ch) => window.__game.scene.start('map', { chapterId: ch, stage: 1 }), CHAPTER);
+    await page.evaluate((arg) => window.__game.scene.start('map', { chapterId: arg.ch, stage: arg.st }), { ch: CHAPTER, st: startStage });
     await page.waitForTimeout(350);
   }
   await openSelect(page);
@@ -188,7 +193,7 @@ async function runStage(page, stageIndex, attempt) {
     }
     if (process.env.PT_DEBUG && Date.now() - lastTraceAt > 1500) {
       lastTraceAt = Date.now();
-      console.error('TRACE ' + JSON.stringify({ t: Date.now() - t0, room: s.roomKey, idx: s.roomIdx, type: s.roomType, cleared: s.cleared, hp: s.hp, px: s.px, py: s.py, held, doors: s.doors, nextDoors: s.nextDoors, enemies: s.enemies.map((e) => ({ k: e.k, x: e.x, y: e.y, hp: e.hp })) }));
+      console.error('TRACE ' + JSON.stringify({ t: Date.now() - t0, room: s.roomKey, idx: s.roomIdx, type: s.roomType, cleared: s.cleared, hp: s.hp, px: s.px, py: s.py, held, qready: s.qready, qleft: s.qleft, slowLeft: s.slowLeft, doors: s.doors, nextDoors: s.nextDoors, enemies: s.enemies.map((e) => ({ k: e.k, x: e.x, y: e.y, hp: e.hp })) }));
     }
     if (s.dead) { rec.ended = 'dead'; break; }
     if (s.won) { rec.ended = 'win'; break; }
@@ -317,6 +322,17 @@ async function runStage(page, stageIndex, attempt) {
       // 近战出手距离按玩家真实攻击盒算：忍者刀 reach 30 + box 17 + Boss half 22 ≈ 69，
       // 不是贴脸 46；否则大体积 Boss 会永远停在 70–100 的外圈，机器人一刀不还手。
       const meleeReach = s.weapon === 'katana' ? 68 : 60;
+      // Boss 刚退到 70–130 的外圈时，用疾影冲刺贴脸；否则恢复期只有 360ms，
+      // 从 96px 外跑回去根本赶不上，长血 Boss 会被拖到超时。
+      if (bd > meleeReach && bd < 132 && s.qready && now - lastQ > 1200) {
+        if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[bwant]) {
+          await release();
+          await page.keyboard.down(bwant); await page.waitForTimeout(30); await page.keyboard.up(bwant);
+        }
+        await page.keyboard.press('q'); lastQ = now;
+        await page.waitForTimeout(200);
+        continue;
+      }
       if (bd <= meleeReach) {
         if (now - lastAtk > 340) {
           if (held) await release();
@@ -392,8 +408,17 @@ async function runStage(page, stageIndex, attempt) {
         await page.keyboard.press('q'); lastQ = now;
         await page.waitForTimeout(220); continue;
       }
-      // 先砍再退：贴脸时如果先退，墙角被堵会永远退不出去，形成 110s 软锁（实机第 2 关已复现）。
-      if (dist <= 44 && now - lastAtk > 340) {
+      // 小怪也按真实攻击盒出手：忍者刀 reach 30 + box 17 + 小怪 half 12 ≈ 59。
+      // 但攻击盒是 34×30 的前向矩形，斜 40px 时纵轴会擦空；先在副轴对齐再砍，
+      // 否则会在 48–54px 原地空挥到超时（fort:4 第二房蜘蛛超时根因）。
+      const axisX = Math.abs(dx) >= Math.abs(dy);
+      const cross = axisX ? Math.abs(dy) : Math.abs(dx);
+      if (dist <= 54 && cross > 24) {
+        const alignKey = axisX ? (dy > 0 ? 's' : 'w') : (dx > 0 ? 'd' : 'a');
+        if (held !== alignKey) { await release(); await page.keyboard.down(alignKey); held = alignKey; }
+        await page.waitForTimeout(90); continue;
+      }
+      if (dist <= 54 && now - lastAtk > 340) {
         if (held) { await release(); }
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
           await page.keyboard.down(want); await page.waitForTimeout(35); await page.keyboard.up(want);
@@ -407,7 +432,7 @@ async function runStage(page, stageIndex, attempt) {
       }
       // 攻击冷却中且贴脸：近战小怪退半步避免站桩吃碰撞；风筝怪必须继续贴住，
       // 否则一退它又拉开 120px，整场都在追（蜘蛛/骷髅实机软锁的根因）。
-      if (dist < 36) {
+      if (dist < 46) {
         const hold = KITE.includes(e.k) ? want : away;
         if (held !== hold) { await release(); await page.keyboard.down(hold); held = hold; }
         await page.waitForTimeout(120); continue;
@@ -434,7 +459,9 @@ async function runStage(page, stageIndex, attempt) {
         }
       }
       // 篝火：血量不满且 2 金币时，先走到火堆按 E 付钱回血，再走门。
-      const rest = s.roomType === 'rest' && s.hp < s.maxHp && s.coins >= 2 ? s.props.find((x) => x.k === 'rest') : null;
+      // 旧堡 2–6 的篝火免费，不能再用“至少 2 金币”把自己挡在火堆外。
+      const restAffordable = String(s.stageKey || '').startsWith('fort:') || s.coins >= 2;
+      const rest = s.roomType === 'rest' && s.hp < s.maxHp && restAffordable ? s.props.find((x) => x.k === 'rest') : null;
       if (rest) {
         const [sx, sy] = tileOf(s.px, s.py), [gx, gy] = tileOf(rest.x, rest.y);
         const dist = Math.hypot(rest.x - s.px, rest.y - s.py);
@@ -534,7 +561,7 @@ mkdirSync(join(ROOT, 'docs/revamp/playtest'), { recursive: true });
 try {
   const ctx = await browser.newContext({ viewport: { width: 960, height: 540 } });
   const page = await ctx.newPage();
-  if (CI > 0) {
+  if (CI >= 0) {
     await page.addInitScript((s) => {
       if (!localStorage.getItem('na.save')) localStorage.setItem('na.save', JSON.stringify(s));
     }, seedSave);
@@ -543,8 +570,8 @@ try {
   page.on('pageerror', (e) => out.errors.push('PAGEERR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') out.errors.push('CONSOLE ' + m.text()); });
   await startFirstStage(page);
-  let stage = 1, attempt = 1;
-  while (stage <= STAGES) {
+  let stage = START, attempt = 1;
+  while (stage <= END) {
     const attemptRec = await runStage(page, stage, attempt);
     out.stages.push(attemptRec);
     await page.screenshot({ path: join(ROOT, `docs/revamp/playtest/${TAG}-${stage}-a${attempt}-${attemptRec.ended || 'timeout'}.png`) });
@@ -562,11 +589,15 @@ try {
     if (attemptRec.ended === 'win') {
       await afterRun(page, true);
       stage += 1; attempt = 1;
-      if (stage <= STAGES) await startFromMap(page, stage);
+      if (stage <= END) await startFromMap(page, stage);
       continue;
     }
-    // 超时后游戏仍停在 play 场景，afterRun 找不到地图，不能在这里重试；
-    // 让外层直接记录并中止，重跑由人工/下一轮探针发起。
+    // 超时后游戏仍停在 play，直接重载并重新进本关；不算通关，只给同一关多一次真实输入机会。
+    if (attempt < MAX_ATTEMPTS) {
+      attempt += 1;
+      await startFirstStage(page, stage);
+      continue;
+    }
     out.errors.push(`stage ${stage} timeout after ${attempt} attempts`);
     break;
   }
