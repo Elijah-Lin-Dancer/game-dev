@@ -40,6 +40,7 @@
 更正（G2-3）：`desert-palm.png` 已从 G2-2 的 `TilesetDesert` 48×48 树冠切片替换为 ink-studio 生成的 64×96 完整树；上表 `TilesetDesert 沙棕切片` 行仅保留为 G2-2 历史记录。雪松 / 雪中小祠的源文件未变，正式尺寸由 64×96 / 64×80 改为 96×128；运行时与来源仍为 ink-studio 生成。
 
 更正（G2-5）：本轮 **0 新增美术件**。`field-1` / `bamboo-4` 新增的两个篝火落点复用既有 **krial CC0** `16x16 Animated Campfire`；三处炉眼复用 G2-4 的 `volcanoVent`，火种复用 `volcanoEmber`，均为 **ink-studio 生成 / G2 后备件重导**。16px 地形仍为 NinjaAdventure CC0 调色。未新增源文件，未改变授权。
+| 归途 G5-1 旧堡 Boss 蓝武士 3D 像素（96×96 四向 × 待机 / 行走 / 横斩 / 突进 / 咆哮） | Elijah-Lin-Dancer（本项目）；生成工具 siliconjungle | 成品自制；工具 MIT（已随包保留） | https://github.com/siliconjungle/shapeshift-labs-ink-studio | 否（工具 MIT；成品版权归本项目） | `3D pixel assets generated with siliconjungle/shapeshift-labs-ink-studio (MIT)` | `assets/01-primary/world/ink-studio-LICENSE.txt` |
 
 ## 鸣谢页生成
 

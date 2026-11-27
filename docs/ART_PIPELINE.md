@@ -334,3 +334,19 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 对照板：`docs/revamp/g4-9/g4-9-herb-board.png`（普通 / 长明芯 12× 最近邻）；源图集 / 元数据：`docs/revamp/g4-3d/mire-lamp-herb-atlas.png/.json`。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g4/render-g4.cjs`，再 `python3 tools/crop_mire.py`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原图。
+
+## G5-1 产出（2026-11-27）
+
+旧堡第 1 关 Boss「蓝武士」由 Ninja Adventure 96×48 贴图改为 ink-studio 离线 SDF → 像素 → 四向图集；运行时只读成品 PNG，没有运行时 3D / splat，也没有把原 Boss 图换色或 image-to-image。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 蓝武士 | `art-src/g5/sam-blue.cjs`（seed 3901，5 姿态） | 384×96，4 向 × 96×96 | `docs/revamp/g5-3d/sam-blue-{idle,walk,slash,charge,roar}.png` + 同名 `.json` | `assets/01-primary/world/sam-blue-*.png`；构建键 `samBlue*`；`FRAME [96,96]`；`samBlue.art3d`；scale 1.5、half 22 |
+
+- 帧序 0 前 / 1 左 / 2 后 / 3 右；运行时按姿态与朝向切帧，不再 `setFlipX`，`samBlue` 不再生成 96×96 攻击 overlay。
+- alpha bbox：正面 / 背面约 51×75，侧面约 39×76；scale 1.5 下约 112px 高。
+- 第一版侧视为一整块近黑柱；第二版把胸甲内衬改 `steelDark`、下摆改 `clothLight` 并收窄，另加侧胸板 / 侧腰草摺 / 窄金线，只改材质与轮廓。
+- 对照板：`docs/revamp/g5-3d/sam-blue-board.png`；实机：`docs/revamp/playtest/fort-1-boss3d-960.png`、`-844.png`、`-640.png`。
+- 验收：`npm run smoke` `SMOKE OK`；`npm run audit:font` 1422 字符 / 0 缺失；`fort:1` 真实键盘 **2/2**（100.6s / 115.0s），Boss 均清；详见 `docs/BATCH39-G5-SAMBLUE.md`。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-g5.cjs`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。

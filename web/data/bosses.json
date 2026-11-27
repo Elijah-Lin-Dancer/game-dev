@@ -36,7 +36,8 @@
       "dmg": 4,
       "speed": 58,
       "half": 22,
-      "scale": 1.5
+      "scale": 1.5,
+      "art3d": "samBlue"
     },
     {
       "id": "samRed",

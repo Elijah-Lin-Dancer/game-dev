@@ -1112,10 +1112,14 @@ export class Play extends Phaser.Scene {
     if (def.kind === 'sam') {
       const B = CFG.bossB;
       const prefix = def.prefix || 'sam';
-      const spr = this.add.sprite(bx, by, prefix + 'Idle', 0).setScale(def.scale || 1.5).setDepth(2);
-      spr.play(prefix + '-idle');
+      const art3d = def.art3d || null;
+      const baseScale = def.scale || 1.5;
+      const spr = this.add.sprite(bx, by, art3d ? art3d + 'Idle' : prefix + 'Idle', 0)
+        .setScale(baseScale).setDepth(2);
+      if (!art3d) spr.play(prefix + '-idle');
       this.enemies.push({
-        type: 'boss', bossKind: 'sam', bossId: def.id, prefix, spr,
+        type: 'boss', bossKind: 'sam', bossId: def.id, prefix, art3d, baseScale, spr,
+        samPose: 'Idle', samDir: 0,
         hp, maxHp: hp,
         kb: new Phaser.Math.Vector2(), flash: 0, dir: 'down',
         speed, dmg, half,
@@ -1222,6 +1226,21 @@ export class Play extends Phaser.Scene {
   }
 
   /* ---------- 移动与碰撞 ---------- */
+  /* 3D 蓝武士四向帧：0 前 / 1 左 / 2 后 / 3 右；水平差大走左右，否则走上下。 */
+  samuraiFacing(dx, dy) {
+    if (Math.abs(dx) > Math.abs(dy) * 0.9) return dx < 0 ? 1 : 3;
+    return dy < 0 ? 2 : 0;
+  }
+
+  samuraiArt(e, pose, dx, dy) {
+    if (!e.art3d) return;
+    const dir = this.samuraiFacing(dx, dy);
+    if (e.samPose === pose && e.samDir === dir) return;
+    e.spr.setTexture(e.art3d + pose, dir);
+    e.samPose = pose;
+    e.samDir = dir;
+  }
+
   isWall(px, py, r) {
     const pts = [[px - r, py - r], [px + r, py - r], [px - r, py + r], [px + r, py + r]];
     for (const [x, y] of pts) {
@@ -3055,6 +3074,7 @@ export class Play extends Phaser.Scene {
     const Q = e.prefix || 'sam';
     e.phaseT -= dt;
     e.sumT = (e.sumT || 0) - dt;
+    const bscale = e.baseScale || 1.5;
 
     if (!e.phase2 && e.phase !== 'roar' && e.hp <= e.maxHp * B.at) {
       e.phase = 'roar';
@@ -3067,12 +3087,13 @@ export class Play extends Phaser.Scene {
       return;
     }
     if (e.phase === 'roar') {
-      s.setScale(1.5 + 0.16 * Math.sin(this.time.now / 40));
+      this.samuraiArt(e, 'Roar', p.x - s.x, p.y - s.y);
+      s.setScale(bscale + 0.16 * Math.sin(this.time.now / 40));
       if (e.phaseT <= 0) {
         e.phase2 = true;
         e.phase = 'approach';
         e.speed *= 1.3;
-        s.setScale(1.5).setTint(0xffc8b8);
+        s.setScale(bscale).setTint(0xffc8b8);
       }
       return;
     }
@@ -3083,21 +3104,24 @@ export class Play extends Phaser.Scene {
     dirv.normalize();
 
     if (e.phase === 'slashWindup') {
+      this.samuraiArt(e, 'Idle', p.x - s.x, p.y - s.y);
       s.setTint(0xffe08a);
-      s.setScale(1.5 + 0.06 * Math.sin(this.time.now / 45));
+      s.setScale(bscale + 0.06 * Math.sin(this.time.now / 45));
       if (e.phaseT <= 0) {
         e.phase = 'slashHit';
         e.phaseT = 220;
-        s.clearTint().setScale(1.5);
+        s.clearTint().setScale(bscale);
         this.samuraiSlash(e);
       }
       return;
     }
     if (e.phase === 'slashHit') {
+      this.samuraiArt(e, 'Slash', e.slashDir.x, e.slashDir.y);
       if (e.phaseT <= 0) { e.phase = 'recover'; e.phaseT = 360; }
       return;
     }
     if (e.phase === 'chargeWindup') {
+      this.samuraiArt(e, 'Charge', p.x - s.x, p.y - s.y);
       s.setTint(0x9fd8ff);
       if (e.phaseT <= 0) {
         e.phase = 'charge';
@@ -3108,12 +3132,14 @@ export class Play extends Phaser.Scene {
       return;
     }
     if (e.phase === 'charge') {
+      this.samuraiArt(e, 'Charge', e.lunge.x, e.lunge.y);
       const sp = B.chargeSpeed * (dt / 1000);
       this.moveActor(s, e.lunge.x * sp, e.lunge.y * sp, e.half);
       if (e.phaseT <= 0) { e.phase = 'recover'; e.phaseT = 420; }
       return;
     }
     if (e.phase === 'summon') {
+      this.samuraiArt(e, 'Roar', p.x - s.x, p.y - s.y);
       if (e.phaseT <= 0) {
         // 召唤上限按“小怪数量”算，不把 Boss 自己算进去；否则已有 2 只时还会再召 2 只。
         const cap = B.summonCap || B.summonCount;
@@ -3132,6 +3158,7 @@ export class Play extends Phaser.Scene {
       return;
     }
     if (e.phase === 'recover') {
+      this.samuraiArt(e, 'Idle', p.x - s.x, p.y - s.y);
       if (e.phaseT <= 0) e.phase = 'approach';
       return;
     }
@@ -3142,11 +3169,13 @@ export class Play extends Phaser.Scene {
     if (dist > 90) {
       const sp = e.speed * (dt / 1000);
       this.moveActor(s, dirv.x * sp, dirv.y * sp, e.half);
-      if (!s.anims.isPlaying || s.anims.currentAnim.key !== Q + '-walk') s.play(Q + '-walk');
-    } else if (s.anims.currentAnim && s.anims.currentAnim.key === Q + '-walk') {
-      s.play(Q + '-idle');
+      if (e.art3d) this.samuraiArt(e, 'Walk', dirv.x, dirv.y);
+      else if (!s.anims.isPlaying || s.anims.currentAnim.key !== Q + '-walk') s.play(Q + '-walk');
+    } else {
+      if (e.art3d) this.samuraiArt(e, 'Idle', dirv.x, dirv.y);
+      else if (s.anims.currentAnim && s.anims.currentAnim.key === Q + '-walk') s.play(Q + '-idle');
     }
-    s.setFlipX(dirv.x < 0);
+    if (!e.art3d) s.setFlipX(dirv.x < 0);
 
     if (dist < 110) {
       e.slashDir.copy(dirv);
@@ -3176,11 +3205,15 @@ export class Play extends Phaser.Scene {
     const d = e.slashDir;
     const cx = s.x + d.x * (B.slashReach / 2);
     const cy = s.y + d.y * (B.slashReach / 2);
-    // 攻击帧本身带身体（96×96），和本体同尺寸同中心叠加，避免出现"两个武士"
-    const overlay = this.add.sprite(s.x, s.y, d.x < 0 ? Q + 'AtkL' : Q + 'AtkR', 0)
-      .setOrigin(0.5, 0.5).setScale(1.5).setDepth(2.2);
-    overlay.play(d.x < 0 ? Q + '-atkL' : Q + '-atkR');
-    this.time.delayedCall(320, () => overlay.destroy());
+    if (e.art3d) {
+      this.samuraiArt(e, 'Slash', d.x, d.y);
+    } else {
+      // 攻击帧本身带身体（96×96），和本体同尺寸同中心叠加，避免出现"两个武士"
+      const overlay = this.add.sprite(s.x, s.y, d.x < 0 ? Q + 'AtkL' : Q + 'AtkR', 0)
+        .setOrigin(0.5, 0.5).setScale(1.5).setDepth(2.2);
+      overlay.play(d.x < 0 ? Q + '-atkL' : Q + '-atkR');
+      this.time.delayedCall(320, () => overlay.destroy());
+    }
     this.shake(80, 0.007);
     this.sfx.sword.play({ rate: 0.8, volume: 0.6 });
     const hw = Math.abs(d.x) > Math.abs(d.y) ? B.slashWidth / 2 : 22;

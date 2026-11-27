@@ -2,6 +2,7 @@
 
 - 日期：2026-11-26
 - 状态：美术方向已接受；工程重构列入 backlog，不在当前第 1 关批次
+- 进展：2026-11-27 完成 pilot 第 1 步「蓝武士 3D 四向 Boss」，`fort:1` 2/2；地形套件与关键摆件尚未开始，见 `docs/BATCH39-G5-SAMBLUE.md`
 - 相关：`docs/BACKLOG.md`、`docs/BATCH37-FORT.md`、`docs/ART_PIPELINE.md`
 
 ## 背景
