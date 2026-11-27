@@ -90,6 +90,14 @@
 
 这是回归机器人建模修正，不是给 Boss 放水；游戏数值、贴图尺寸、碰撞盒均未改。
 
+## 发布
+
+- `76efc9d feat(fort): add ink-studio samBlue 3D four-direction boss`
+- `51e5a16 test(fort): pass fort:1 2/2 with 3D samurai; record boss pathing fix`
+- `660c4dd docs(audit): record Pages build game.1933151d`
+- 线上 `https://elijah-lin-dancer.github.io/game-dev/` 已切到 `dist/game.1933151d.js`（390,260 B）与 `dist/assets.101163a0.js`（132,787 B）。
+- `node tools/audit_pages.mjs`：`passed:true`、`errors:[]`；world `mire-6` 36/36、`visible 1312`、`missing:[]`。
+
 ## 未完成 / 风险
 
 - `samRed` 仍是 Ninja Adventure 旧贴图，未同批升级。
