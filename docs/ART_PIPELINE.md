@@ -382,6 +382,6 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 渲染：地面 1024→256 最近邻；墙体 512→32，相机 `pitch 1.10 / target [0,0.50,0] / lens 20.0`，让墙顶和南侧立面都能读出高度；阴影顶部 12px 渐变透明。
 - 运行时：`paintFloorAndWalls` 识别 `theme==='fort'`；`paintFortWalls` 按 `fortWallCells` 铺墙、按南侧空地格铺阴影；门洞不再铺旧 `field` 路面，门锁改用 `fortWall` 暖色 tint，锁的容器 / 碰撞不变。
 - 预算：图集 189 切片 / 151,754 B；`dist/assets.b269ef7b.js` 133,313 B、`dist/game.2f403d3b.js` 391,232 B；首屏 1947 KB / 2.00 MB，gzip 753 KB。
-- 验收：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1424 / 3939 / 0；实机截图 `docs/revamp/playtest/fort-4-g5-3-{room,boss}-{960,640}.png`、`-844.png`；`fort:2` 首版真实键盘 1/1（114.3s），`fort:4` 0/2 记录在 `docs/audit/PLAYTEST-FORT-G5-3.json`，未写成稳定通关。
+- 验收：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1424 / 3939 / 0；实机截图 `docs/revamp/playtest/fort-4-g5-3-{room,boss}-{960,640}.png`、`-844.png`；`fort:2` 最终构建真实键盘 1/1（108.8s），`fort:4` 0/3 记录在 `docs/audit/PLAYTEST-FORT-G5-3.json`，未写成稳定通关。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-fort-terrain.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原地形图。
