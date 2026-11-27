@@ -9,10 +9,10 @@
     "bosses": 6,
     "scripts": [
       "./web/vendor/phaser.min.js",
-      "./dist/assets.101163a0.js",
-      "./dist/game.1933151d.js"
+      "./dist/assets.9349b5fa.js",
+      "./dist/game.89c0ceef.js"
     ],
-    "sw": true
+    "sw": false
   },
   "stage": {
     "key": "lava:9",
