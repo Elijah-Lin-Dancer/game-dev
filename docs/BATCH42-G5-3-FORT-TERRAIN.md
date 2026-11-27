@@ -67,6 +67,7 @@
 - 提交 `98630c5 feat(fort): add G5-3 ink-studio terrain kit`；线上脚本为 `dist/assets.b269ef7b.js` / `dist/game.2f403d3b.js`，`sw.js` 缓存 `na-b18-ef592c55`。
 - `npm run audit:pages` → `passed:true`、`errors:[]`；36 屏章节入口可加载，world `mire-6` 36/36、visible 1312、missing []。
 - 线上地址：https://elijah-lin-dancer.github.io/game-dev/
+- 飞书文件：https://my.feishu.cn/file/HJAOb2Fb8oyptTxcsWdcKLHanV5
 
 ### 真实键盘
 
