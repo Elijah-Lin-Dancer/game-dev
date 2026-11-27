@@ -1,5 +1,5 @@
 /* 自动生成：批 18 PWA 首屏缓存。改 tools/build.mjs 后重新构建。 */
-const CACHE = 'na-b18-c42f7269';
+const CACHE = 'na-b18-6605dc41';
 const CORE = [
   './',
   './index.html',
@@ -11,7 +11,7 @@ const CORE = [
   './web/icons/icon-192.png',
   './web/icons/icon-512.png',
   './web/icons/icon-maskable-512.png',
-  './dist/assets.9349b5fa.js',
+  './dist/assets.0f832904.js',
   './dist/game.89c0ceef.js',
 ];
 const isAsset = (path) => path.endsWith('/manifest.json') || path.includes('/dist/') || path.includes('/web/');

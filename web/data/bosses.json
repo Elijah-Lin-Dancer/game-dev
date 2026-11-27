@@ -50,7 +50,8 @@
       "dmg": 4,
       "speed": 60,
       "half": 22,
-      "scale": 1.5
+      "scale": 1.5,
+      "art3d": "samRed"
     },
     {
       "id": "tenguBlue",

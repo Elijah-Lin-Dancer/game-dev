@@ -350,3 +350,19 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 验收：`npm run smoke` `SMOKE OK`；`npm run audit:font` 1422 字符 / 0 缺失；`fort:1` 真实键盘 **2/2**（100.6s / 115.0s），Boss 均清；详见 `docs/BATCH39-G5-SAMBLUE.md`。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-g5.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
+## G5-2 产出（2026-11-27）
+
+旧堡第二位 Boss「赤武士」`samRed` 由 Ninja Adventure 96×48 贴图改为 ink-studio 离线 SDF → 像素 → 四向图集；运行时只读成品 PNG，没有运行时 3D / splat。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 赤武士 | `art-src/g5/sam-red.cjs`（seed 3902，5 姿态） | 384×96，4 向 × 96×96 | `docs/revamp/g5-3d/sam-red-{idle,walk,slash,charge,roar}.png` + 同名 `.json` | `assets/01-primary/world/sam-red-*.png`；构建键 `samRed*`；`FRAME [96,96]`；`samRed.art3d`；scale 1.5、half 22 |
+
+- 帧序 0 前 / 1 左 / 2 后 / 3 右；运行时按姿态与朝向切帧，不再 `setFlipX`，`samRed` 不再生成 96×96 攻击 overlay。
+- alpha bbox：正面约 57×83，侧面约 36×83；顶部 y=3、底部 y=86。
+- 第三版把刀身改中性钢色、衬底压近黑、胸甲加亮面板 + 金框、面部收成单条橙红眼缝、背旗收到 0.13×0.37，只改材质与轮廓。
+- 对照板：`docs/revamp/g5-3d/sam-red-board.png`；实机：`docs/revamp/playtest/fort-4-samred-960.png`、`-close.png`。
+- 验收：`npm run smoke` `SMOKE OK`；`npm run audit:font` 1423 字符 / 0 缺失；真实键盘 Boss 段 HP 43→19；整关 4 次均未到 Boss，未写成通关；详见 `docs/BATCH41-G5-SAMRED.md`。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-sam-red.cjs`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。

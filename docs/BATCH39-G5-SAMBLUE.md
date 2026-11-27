@@ -25,7 +25,7 @@
 ## 运行时接入
 
 - `tools/build.mjs`：新增 `samBlueIdle` / `samBlueWalk` / `samBlueSlash` / `samBlueCharge` / `samBlueRoar` 五个图片键，`FRAME [96,96]`。
-- `web/data/bosses.json`：`samBlue.art3d = "samBlue"`；`hp 34`、`speed 58`、`half 22`、`scale 1.5` 未改。`samRed` 未加 `art3d`，仍走旧贴图。
+- `web/data/bosses.json`：`samBlue.art3d = "samBlue"`；`hp 34`、`speed 58`、`half 22`、`scale 1.5` 未改。G5-2 已给 `samRed` 加 `art3d`，见 `docs/BATCH41-G5-SAMRED.md`。
 - `src/scenes/play.js`：
   - `spawnBoss()` 的 `def.kind === 'sam'` 分支识别 `def.art3d`；有 3D 图集时不 `play(prefix + '-idle')`，直接 `setTexture(art3d + 'Idle', 0)`，记录 `art3d`、`baseScale`、`samPose`、`samDir`。
   - `samuraiFacing(dx,dy)`：水平差更大走左右，否则走上下。
@@ -100,7 +100,7 @@
 
 ## 未完成 / 风险
 
-- `samRed` 仍是 Ninja Adventure 旧贴图，未同批升级。
+- `samRed` 在 G5-1 时仍是旧贴图；G5-2 已完成 3D 化，见 `docs/BATCH41-G5-SAMRED.md`。
 - 面部在 1.5× 游戏尺寸下仍偏暗；金新月前立与双角远看容易糊成金色块。对照板可读，实机侧视仍偏块状。
 - `slashWindup` 目前没有独立地面预警弧，只用 `Idle + 黄色 tint + 轻微缩放`；后续可加一条与 `slashReach` 对齐的短弧。
 - 地形套件、机关石像、篝火等关键摆件尚未开始；旧堡 2–6 关、49 关整体抽样未跑。
