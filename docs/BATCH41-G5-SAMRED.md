@@ -98,8 +98,9 @@
 
 ## 发布
 
-- 待提交：新 art 源、5 张图集 / JSON、对照板、运行时 5 件、`web/atlas/core.*`、`tools/build.mjs`、`web/data/bosses.json`、`dist/assets.0f832904.js`、`index.html`、`sw.js`、`web/fonts/game.woff2`、`web/game.html`、两张实机图、本文档、`ART_PIPELINE` / `CREDITS` / `0018` 回填。
-- 线上仍是旧素材 `assets.9349b5fa.js`；推送后等 Pages 部署，再跑 `npm run audit:pages` 核验 scripts 是否切到 `0f832904`。
+- `9141a76 feat(fort): add ink-studio samRed 3D four-direction boss`
+- 线上 `https://elijah-lin-dancer.github.io/game-dev/` 已切到 `dist/assets.0f832904.js`（133,118 B）与 `dist/game.89c0ceef.js`（390,623 B）；`sw.js` 缓存 `na-b18-6605dc41`。
+- `npm run audit:pages`：`passed:true`、`errors:[]`；`entry.scripts` 为 `phaser.min.js` / `assets.0f832904.js` / `game.89c0ceef.js`；world `mire-6` 36/36、`visible 1312`、`missing:[]`。
 
 ## 复现
 
