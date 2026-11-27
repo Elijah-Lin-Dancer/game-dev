@@ -62,6 +62,12 @@
 - `docs/revamp/playtest/fort-4-g5-3-room-640.png` / `fort-4-g5-3-boss-640.png`：640×360，1:1 逻辑分辨率下 32px 格子仍清楚；墙体比地面暗，读成阻挡而非地面。
 - `docs/revamp/playtest/fort-4-g5-3-room-844.png`：844×390，HUD / 地形不溢出；Boss 头与底线 HUD 仍有既有遮挡，不是本轮引入。
 
+### Pages
+
+- 提交 `98630c5 feat(fort): add G5-3 ink-studio terrain kit`；线上脚本为 `dist/assets.b269ef7b.js` / `dist/game.2f403d3b.js`，`sw.js` 缓存 `na-b18-ef592c55`。
+- `npm run audit:pages` → `passed:true`、`errors:[]`；36 屏章节入口可加载，world `mire-6` 36/36、visible 1312、missing []。
+- 线上地址：https://elijah-lin-dancer.github.io/game-dev/
+
 ### 真实键盘
 
 | 关 | 次 | 结果 | 结束 HP | 最低 HP | 击杀 | 用时 | Boss |
