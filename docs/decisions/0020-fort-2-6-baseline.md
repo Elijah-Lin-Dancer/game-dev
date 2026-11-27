@@ -75,7 +75,7 @@
 - `npm run smoke`：PASS（地图→选关→移动→攻击→暂停→存档 v11→触屏互斥）。
 - `npm run audit:font`：1423 字 / 3939 cmap / 0 missing。
 - `npm run build:single` + `audit:font:single`：单文件 2019 KB，字体检查通过。
-- `audit:pages` 在本轮仍指向线上旧版，不作为新构建证据；线上发布后需重跑。
+- `audit:pages` 线上已切到 `dist/game.89c0ceef.js`，对新构建 PASS；PWA 用户需刷新/等 Service Worker 换缓存。
 
 ## 后续
 

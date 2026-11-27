@@ -62,7 +62,7 @@
 
 1. `fort:4` 的蜘蛛/分裂怪/召唤兽组合仍会让机器人磨死或超时；连续 2–6 全链未成立。
 2. `samRed` 仍是旧贴图，和 3D 蓝武士同场有画风断层。
-3. `audit:pages` 本轮仍指向线上旧版（`game.1933151d.js`），不能作为新构建证据；发布后需重跑。
+3. 线上已切到 `dist/game.89c0ceef.js`；`audit:pages` 已对新构建 PASS。PWA 用户需刷新/等 Service Worker 换缓存后生效。
 
 ## 复跑
 
