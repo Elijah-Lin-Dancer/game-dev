@@ -218,7 +218,7 @@ async function runStage(page, stageIndex, attempt) {
     // 连续 1.2s 几乎没位移就反方向退一步，下一轮重新算路径。
     if (Date.now() - lastPosAt > 1200) {
       const moved = Math.hypot(s.px - lastPosX, s.py - lastPosY);
-      if (held && moved < 5 && s.enemies.length === 0) {
+      if (held && moved < 5 && (s.enemies.length === 0 || s.bossInfo)) {
         const back = { a: 'd', d: 'a', w: 's', s: 'w' }[held];
         await release();
         if (back) { await page.keyboard.down(back); await page.waitForTimeout(320); await page.keyboard.up(back); }
@@ -254,7 +254,10 @@ async function runStage(page, stageIndex, attempt) {
       const bwant = Math.abs(bdx) >= Math.abs(bdy) ? (bdx > 0 ? 'd' : 'a') : (bdy > 0 ? 's' : 'w');
       const baway = { d: 'a', a: 'd', s: 'w', w: 's' }[bwant];
       const DANGER = ['windup', 'lunge', 'slamWindup', 'slamAir', 'pounceWindup', 'pounceAir', 'swipeWindup', 'swipeHit',
-        'dashWindup', 'diveWindup', 'dive', 'chargeWindup', 'charge', 'castWindup', 'cast', 'fanWindup', 'blinkOut', 'storm', 'roar', 'shift'];
+        'dashWindup', 'diveWindup', 'dive', 'chargeWindup', 'charge', 'castWindup', 'cast', 'fanWindup', 'blinkOut', 'storm', 'roar', 'shift',
+        // 蓝武士横斩 reach 96，比忍者刀 69 的实打范围更远；前摇/命中期必须退，
+        // 否则机器人贴到 46 之前就被 4 点一刀打退，整场摸不到 Boss（fort:1 回归失败根因）。
+        'slashWindup', 'slashHit'];
       if (DANGER.includes(b.ph)) {
         let esc = baway;
         if (b.ring) {
@@ -311,7 +314,10 @@ async function runStage(page, stageIndex, attempt) {
         await page.waitForTimeout(100);
         continue;
       }
-      if (bd <= 46) {
+      // 近战出手距离按玩家真实攻击盒算：忍者刀 reach 30 + box 17 + Boss half 22 ≈ 69，
+      // 不是贴脸 46；否则大体积 Boss 会永远停在 70–100 的外圈，机器人一刀不还手。
+      const meleeReach = s.weapon === 'katana' ? 68 : 60;
+      if (bd <= meleeReach) {
         if (now - lastAtk > 340) {
           if (held) await release();
           if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[bwant]) {
@@ -319,8 +325,11 @@ async function runStage(page, stageIndex, attempt) {
           }
           await page.keyboard.press('Space'); lastAtk = now;
         }
-      } else if (bwant !== held) {
-        await release(); await page.keyboard.down(bwant); held = bwant;
+      } else {
+        // Boss 房有柱子和窄门，直接朝 Boss 走会顶墙；沿真实可走路径绕。
+        const path = pathNear(new Set(s.walls), ...tileOf(s.px, s.py), ...tileOf(b.x, b.y));
+        const moveWant = stepKey(s, path) || bwant;
+        if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
       }
       await page.waitForTimeout(100);
       continue;
