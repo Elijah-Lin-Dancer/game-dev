@@ -101,6 +101,7 @@
 - `9141a76 feat(fort): add ink-studio samRed 3D four-direction boss`
 - 线上 `https://elijah-lin-dancer.github.io/game-dev/` 已切到 `dist/assets.0f832904.js`（133,118 B）与 `dist/game.89c0ceef.js`（390,623 B）；`sw.js` 缓存 `na-b18-6605dc41`。
 - `npm run audit:pages`：`passed:true`、`errors:[]`；`entry.scripts` 为 `phaser.min.js` / `assets.0f832904.js` / `game.89c0ceef.js`；world `mire-6` 36/36、`visible 1312`、`missing:[]`。
+- 飞书 BATCH41：`https://my.feishu.cn/file/Chahbsr0no4f9sxIM9zcSLiTn5d`。
 
 ## 复现
 
