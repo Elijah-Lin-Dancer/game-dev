@@ -541,6 +541,20 @@ export class Play extends Phaser.Scene {
       .setAlpha(alpha[theme] || 0.85);
   }
 
+  /* G5-3：墙体贴图。按坐标哈希选 4 帧，不改碰撞 / 门锁 / 刷怪。 */
+  paintFortWalls(wrap, cells) {
+    for (const [x, y] of cells) {
+      const frame = ((x * 7 + y * 11) % 4 + 4) % 4;
+      wrap.add(this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, 'fortWall', frame));
+    }
+    // 墙体南侧投到下一格地面；门洞未锁前也算空地，和实际可走区域一致。
+    for (const [x, y] of cells) {
+      if (y + 1 >= ROWS || this.walls.has(x + ',' + (y + 1))) continue;
+      wrap.add(this.add.image(x * TILE, (y + 1) * TILE, 'fortShadow')
+        .setOrigin(0, 0).setAlpha(0.55).setDepth(0.52));
+    }
+  }
+
   paintFloorAndWalls(room) {
     const wrap = this.roomWrap;
     // 主题：前半程草地、后半程石砖；Boss 房与二周目起强制石砖
@@ -550,19 +564,31 @@ export class Play extends Phaser.Scene {
       ? (THEME_SET.indexOf(this.chapterTheme) >= 0 ? this.chapterTheme : 'dungeon')
       : ((room.isBoss || room.idx >= Math.ceil(this.roomTotal / 2) || this.cycle >= 2) ? 'dungeon' : 'field');
     this.theme = theme;
+    const fortTerrain = theme === 'fort';
     const stone = theme !== 'field';
-    const floorKey = stone ? 'floorDungeon' : 'field';
-    // 石砖房用 Interior 花砖（322）作底；旧堡/沙海/水殿再压一层主题色
-    const floorFrame = stone ? 322 : 21;
-    const floor = this.add.tileSprite(0, 0, RW, RH, floorKey, floorFrame).setOrigin(0);
+    let floor;
+    if (fortTerrain) {
+      // G5-3：8×8 地面变体板，整块 256×256 作为可平铺纹理，32px 格子不变。
+      floor = this.add.tileSprite(0, 0, RW, RH, 'fortFloor', 0).setOrigin(0);
+    } else {
+      const floorKey = stone ? 'floorDungeon' : 'field';
+      // 石砖房用 Interior 花砖（322）作底；旧堡/沙海/水殿再压一层主题色
+      const floorFrame = stone ? 322 : 21;
+      floor = this.add.tileSprite(0, 0, RW, RH, floorKey, floorFrame).setOrigin(0);
+    }
     wrap.add(floor);
-    if (theme === 'fort' || theme === 'desert' || theme === 'water' || theme === 'lava' || theme === 'sky') {
-      const TINT = { fort: 0xffcbb0, desert: 0xf2cf9a, water: 0x9fd8e8, lava: 0xffb08a, sky: 0x7060a8 };
-      const GLOW = { fort: 0xff9a50, desert: 0xffc060, water: 0x3a9fd0, lava: 0xff4a20, sky: 0x7a5aff };
+    if (!fortTerrain && (theme === 'desert' || theme === 'water' || theme === 'lava' || theme === 'sky')) {
+      const TINT = { desert: 0xf2cf9a, water: 0x9fd8e8, lava: 0xffb08a, sky: 0x7060a8 };
+      const GLOW = { desert: 0xffc060, water: 0x3a9fd0, lava: 0xff4a20, sky: 0x7a5aff };
       floor.setTint(TINT[theme]);
-      const warm = this.add.rectangle(0, 0, RW, RH, GLOW[theme], theme === 'water' ? 0.2 : (theme === 'lava' ? 0.24 : (theme === 'sky' ? 0.14 : 0.22))).setOrigin(0)
+      const warm = this.add.rectangle(0, 0, RW, RH, GLOW[theme], theme === 'water' ? 0.2 : (theme === 'lava' ? 0.24 : 0.14)).setOrigin(0)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(0.15);
       wrap.add(warm);
+    }
+    if (fortTerrain) {
+      // 只留很薄的一层暖光，避免新地板被旧主题染色洗平。
+      wrap.add(this.add.rectangle(0, 0, RW, RH, 0xff8a50, 0.06).setOrigin(0)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(0.15));
     }
 
     // 地板贴花：石砖用裂纹/碎石/头骨，草地用草簇（全部取自 TilesetFloorDetail，半透明压在地面）
@@ -575,7 +601,7 @@ export class Play extends Phaser.Scene {
       const dx = Phaser.Math.Between(TILE * 3, RW - TILE * 3);
       const dy = Phaser.Math.Between(TILE * 3, RH - TILE * 3);
       wrap.add(this.add.image(dx, dy, 'floorDetail', decals[i % decals.length])
-        .setAlpha(theme === 'field' ? 0.4 : 0.55).setTint(theme === 'lava' ? 0xff7a4a : 0xffffff).setDepth(0.4));
+        .setAlpha(theme === 'field' ? 0.4 : (fortTerrain ? 0.32 : 0.55)).setTint(theme === 'lava' ? 0xff7a4a : 0xffffff).setDepth(0.4));
     }
     if (theme === 'lava') {
       // 熔岩裂纹：用同一套地板贴花染橙并加法叠亮，避免再引一张外部底图
@@ -631,9 +657,16 @@ export class Play extends Phaser.Scene {
         : (theme === 'desert' ? 0x5a4128
           : (theme === 'water' ? 0x22364a
             : (theme === 'lava' ? 0x4a2018 : (theme === 'sky' ? 0x1a1830 : 0x2a2426)))));
+    const fortWallCells = [];
     const wallAt = (x, y) => {
-      wallRect(wrap, x, y, WALL_TONE);
-      this.walls.add(x + ',' + y);
+      if (fortTerrain) {
+        // G5-3：先只登记碰撞，等门洞 / 障碍全部落位后再按邻居画墙体。
+        this.walls.add(x + ',' + y);
+        fortWallCells.push([x, y]);
+      } else {
+        wallRect(wrap, x, y, WALL_TONE);
+        this.walls.add(x + ',' + y);
+      }
     };
 
     for (let x = 0; x < COLS; x++) {
@@ -656,12 +689,21 @@ export class Play extends Phaser.Scene {
         const y = dir === 'u' ? 0 : ROWS - 1;
         for (let dx = -1; dx <= 1; dx++) cells.push([midX + dx, y]);
       }
-      cells.forEach(([x, y]) => wrap.add(
-        this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, 'field', 3).setScale(2)
-      ));
+      if (!fortTerrain) {
+        cells.forEach(([x, y]) => wrap.add(
+          this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, 'field', 3).setScale(2)
+        ));
+      }
 
       const lock = this.add.container(0, 0);
-      cells.forEach(([x, y]) => wallRect(lock, x, y, 0x5c5648));
+      cells.forEach(([x, y]) => {
+        if (fortTerrain) {
+          lock.add(this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, 'fortWall',
+            ((x * 7 + y * 11) % 4 + 4) % 4).setTint(0xc08a6a));
+        } else {
+          wallRect(lock, x, y, 0x5c5648);
+        }
+      });
       wrap.add(lock);
       lock.cells = cells;
       this.doorLocks[dir] = lock;
@@ -679,6 +721,7 @@ export class Play extends Phaser.Scene {
       for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) wallAt(bx + ix, by + iy);
       placed++;
     }
+    if (fortTerrain) this.paintFortWalls(wrap, fortWallCells);
     /* 伪光照：屏幕暗角（贴图压在 HUD 下面，避免把血量/文字也压黑）+ 墙角火把 + 石砖房光柱 + 灰尘粒子 */
     this.buildVignette(theme);
     const fx = this.add.container(0, 0).setDepth(615);

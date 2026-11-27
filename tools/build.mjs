@@ -127,6 +127,10 @@ const img = {
   samBlueSlash: join(ROOT, 'assets/01-primary/world/sam-blue-slash.png'),
   samBlueCharge: join(ROOT, 'assets/01-primary/world/sam-blue-charge.png'),
   samBlueRoar: join(ROOT, 'assets/01-primary/world/sam-blue-roar.png'),
+  /* G5-3：旧堡地形套件，32px 地面板 / 墙体 / 墙脚阴影 */
+  fortFloor: join(ROOT, 'assets/01-primary/world/fort-floor.png'),
+  fortWall: join(ROOT, 'assets/01-primary/world/fort-wall.png'),
+  fortShadow: join(ROOT, 'assets/01-primary/world/fort-shadow.png'),
   /* G5-2：旧堡赤武士 3D 四向件，96×96 × 4 向 × 5 姿态 */
   samRedIdle: join(ROOT, 'assets/01-primary/world/sam-red-idle.png'),
   samRedWalk: join(ROOT, 'assets/01-primary/world/sam-red-walk.png'),
@@ -260,6 +264,7 @@ const FRAME = {
   racoonIdle: [60, 60], racoonAtk: [60, 60], racoonJump: [60, 60], racoonChg: [60, 60],
   samBlueIdle: [96, 96], samBlueWalk: [96, 96], samBlueSlash: [96, 96],
   samBlueCharge: [96, 96], samBlueRoar: [96, 96],
+  fortFloor: [256, 256], fortWall: [32, 32], fortShadow: [32, 32],
   samRedIdle: [96, 96], samRedWalk: [96, 96], samRedSlash: [96, 96],
   samRedCharge: [96, 96], samRedRoar: [96, 96],
   rsamIdle: [96, 48], rsamWalk: [96, 48], rsamAtkL: [96, 96], rsamAtkR: [96, 96],

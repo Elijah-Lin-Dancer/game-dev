@@ -366,3 +366,22 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 验收：`npm run smoke` `SMOKE OK`；`npm run audit:font` 1423 字符 / 0 缺失；真实键盘 Boss 段 HP 43→19；整关 4 次均未到 Boss，未写成通关；详见 `docs/BATCH41-G5-SAMRED.md`。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-sam-red.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原 Boss 图。
+
+## G5-3 产出（2026-11-27）
+
+旧堡地形套件第一版。只改视觉层：地面 / 墙体 / 墙脚阴影由 ink-studio 离线预渲染，运行时仍是 32px 格子，`walls`、`isWall()`、`reachableTiles()`、门锁、刷怪、Boss 状态机不动。
+
+| 件 | 源 | 源尺寸 | 正式输出 | 运行时 |
+|---|---|---|---|---|
+| 旧堡地面 | `art-src/g5/fort-terrain.cjs`（seed 4207，17 色，8×8 变体） | 1024×1024 | `docs/revamp/g5-3d/fort-floor.png` 256×256 | `assets/01-primary/world/fort-floor.png`；构建键 `fortFloor`，`FRAME [256,256]`；`tileSprite` 平铺整房 |
+| 旧堡墙体 | 同上（4 个 hash 变体） | 512×512 → 4×32×32 | `docs/revamp/g5-3d/fort-wall.png` 128×32（4×32） | `assets/01-primary/world/fort-wall.png`；构建键 `fortWall`，`FRAME [32,32]` |
+| 墙脚阴影 | 渲染脚本生成 | 32×32 RGBA | `docs/revamp/g5-3d/fort-shadow.png` 32×32 | `assets/01-primary/world/fort-shadow.png`；构建键 `fortShadow`，`FRAME [32,32]` |
+
+- 地面：8×8 共 64 块 32px 石板；深色勾缝底板 + 每块顶面 + 裂缝 / 铁锈 / 缺口；颜色带 `stone` / `stoneWarm` 变化，降低 4×4 在大房间里的重复感。
+- 墙体：灰岩色板 `slate` / `slateLight` / `slateDark`，4 帧按 `((x*7+y*11)%4+4)%4` 选帧；顶盖 + 南侧暗立面 + 顶面裂缝。不是 N/E/S/W autotile，内外拐角仍靠单块贴图。
+- 渲染：地面 1024→256 最近邻；墙体 512→32，相机 `pitch 1.10 / target [0,0.50,0] / lens 20.0`，让墙顶和南侧立面都能读出高度；阴影顶部 12px 渐变透明。
+- 运行时：`paintFloorAndWalls` 识别 `theme==='fort'`；`paintFortWalls` 按 `fortWallCells` 铺墙、按南侧空地格铺阴影；门洞不再铺旧 `field` 路面，门锁改用 `fortWall` 暖色 tint，锁的容器 / 碰撞不变。
+- 预算：图集 189 切片 / 151,754 B；`dist/assets.b269ef7b.js` 133,313 B、`dist/game.2f403d3b.js` 391,232 B；首屏 1947 KB / 2.00 MB，gzip 753 KB。
+- 验收：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1424 / 3939 / 0；实机截图 `docs/revamp/playtest/fort-4-g5-3-{room,boss}-{960,640}.png`、`-844.png`；`fort:2` 首版真实键盘 1/1（114.3s），`fort:4` 0/2 记录在 `docs/audit/PLAYTEST-FORT-G5-3.json`，未写成稳定通关。
+- 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-fort-terrain.cjs`。
+- 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原地形图。

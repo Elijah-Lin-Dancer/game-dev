@@ -1,0 +1,175 @@
+{
+ "chapter": "fort",
+ "mode": "real-keyboard-input",
+ "notes": "G5-3 旧堡地形套件视觉批次。真实移动 / 攻击 / 门 / 天赋面板；无 __dbg.next / __dbg.win。fort:2 最终构建 1/1 通关；fort:4 三次均未通关，记录为玩法稳定性限制，不写成地形通关。",
+ "passed": false,
+ "errors": [
+  "fort:4 0/3 (G5-3 runs); not a terrain collision regression"
+ ],
+ "runs": [
+  {
+   "stage": "fort:2",
+   "stageIndex": 2,
+   "attempt": 1,
+   "startHp": 22,
+   "maxHp": 22,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "0,0",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795786542910
+    },
+    {
+     "key": "1,0",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 20,
+     "enemiesAt": 2,
+     "startedAt": 1795786562087
+    },
+    {
+     "key": "2,0",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 11,
+     "enemiesAt": 0,
+     "startedAt": 1795786577175
+    },
+    {
+     "key": "2,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 19,
+     "enemiesAt": 2,
+     "startedAt": 1795786592925
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 14,
+     "enemiesAt": 1,
+     "startedAt": 1795786607784
+    },
+    {
+     "key": "0,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 13,
+     "enemiesAt": 0,
+     "startedAt": 1795786628796
+    },
+    {
+     "key": "0,2",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 19,
+     "enemiesAt": 1,
+     "startedAt": 1795786640692
+    }
+   ],
+   "startedAt": 1795786542875,
+   "maxRoom": 6,
+   "minHp": 11,
+   "hitsApprox": 10,
+   "talents": [
+    "狂战",
+    "铁胃",
+    "重击"
+   ],
+   "rest": 2,
+   "ended": "win",
+   "endHp": 19,
+   "endRoom": 6,
+   "endRoomKey": "0,2",
+   "endedAt": 1795786651724,
+   "durationMs": 108849,
+   "kills": 16,
+   "coins": 1,
+   "gems": 3,
+   "talentsFinal": [
+    "berserk",
+    "ironstomach",
+    "heavy"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 384,
+   "endPy": 516,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-2-a1-win.png"
+  }
+ ],
+ "stage4Attempts": [
+  {
+   "run": "boss-19",
+   "stage": "fort:4",
+   "attempt": 1,
+   "ended": "dead",
+   "endHp": 0,
+   "maxHp": 26,
+   "minHp": 0,
+   "endRoom": 6,
+   "durationMs": 133976,
+   "kills": 13,
+   "bossEnd": {
+    "ph": "recover",
+    "hp": 19,
+    "maxHp": 43
+   },
+   "screenshot": "docs/revamp/playtest/fort-4-g5-3-a1-dead.png"
+  },
+  {
+   "run": "early-room1",
+   "stage": "fort:4",
+   "attempt": 1,
+   "ended": "dead",
+   "endHp": 0,
+   "maxHp": 26,
+   "minHp": 0,
+   "endRoom": 1,
+   "durationMs": 68889,
+   "kills": 7,
+   "bossEnd": null,
+   "screenshot": "docs/revamp/playtest/fort-4-a1-dead.png"
+  },
+  {
+   "run": "early-room1",
+   "stage": "fort:4",
+   "attempt": 2,
+   "ended": "dead",
+   "endHp": 0,
+   "maxHp": 26,
+   "minHp": 0,
+   "endRoom": 1,
+   "durationMs": 41698,
+   "kills": 9,
+   "bossEnd": null,
+   "screenshot": "docs/revamp/playtest/fort-4-a2-dead.png"
+  }
+ ],
+ "summary": {
+  "fort:2": {
+   "attempts": 1,
+   "wins": 1,
+   "endHp": 19,
+   "maxHp": 22,
+   "minHp": 11,
+   "durationMs": 108849,
+   "kills": 16,
+   "bossKind": "sam",
+   "bossEnd": null
+  },
+  "fort:4": {
+   "attempts": 3,
+   "wins": 0,
+   "note": "1 次到 Boss 19/43，2 次房 1 死亡；G5-2 旧素材整关 1/1 仍为玩法基线"
+  }
+ },
+ "selectionProof": "fort bossPool=[samBlue,samRed]; stage 2 / 4 both resolve to samRed."
+}
