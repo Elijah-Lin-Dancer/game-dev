@@ -56,8 +56,10 @@
 
 ### Pages
 
+- 提交：`20e9d3d fix(fort): stabilize G5-5 fort 2-6 regression`、`91995e5 docs(audit): record G5-5 fort 2-6 regression`。
 - 线上地址：https://elijah-lin-dancer.github.io/game-dev/
-- 线上脚本：`dist/assets.b269ef7b.js` / `dist/game.2906b6e2.js`；`sw.js` 缓存 `na-b18-f9d9c2e8`。
+- 线上脚本：`dist/assets.b269ef7b.js` / `dist/game.2906b6e2.js`；`sw.js` 缓存 `na-b18-f9d9c2e8`；`entry.scripts` 已读到新构建，`entry.sw:true`。
+- `npm run audit:pages` → `passed:true`、`errors:[]`；stage 抽查 `lava:9` 10 房完整，world `mire-6` 36/36、visible 1312、missing []。
 
 ## 已知限制
 
