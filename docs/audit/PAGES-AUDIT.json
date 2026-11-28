@@ -10,9 +10,9 @@
     "scripts": [
       "./web/vendor/phaser.min.js",
       "./dist/assets.b269ef7b.js",
-      "./dist/game.2f403d3b.js"
+      "./dist/game.39f79735.js"
     ],
-    "sw": false
+    "sw": true
   },
   "stage": {
     "key": "lava:9",

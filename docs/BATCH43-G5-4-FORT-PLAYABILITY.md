@@ -63,13 +63,14 @@ G5-3 的三次失败不是地形碰撞回归，而是三个独立问题叠加：
 
 ### Pages
 
+- 提交：`2231e85 fix(fort): stabilize G5-4 playtest and boss lane`。
 - 线上地址：https://elijah-lin-dancer.github.io/game-dev/
-- 线上脚本：`dist/assets.b269ef7b.js` / `dist/game.39f79735.js`
-- 复核：待推送后以 `npm run audit:pages` 结果回填。
+- 线上脚本：`dist/assets.b269ef7b.js` / `dist/game.39f79735.js`；`sw.js` 缓存 `na-b18-30bb814f`；首屏可读 `game.39f79735.js`。
+- `npm run audit:pages` → `passed:true`、`errors:[]`；entry scripts 为上述两项，36 屏入口可加载，world `mire-6` 36/36、visible 1312、missing []。
 
 ### 飞书
 
-- BATCH43 文件：待上传后回填。
+- BATCH43 文件：https://my.feishu.cn/file/WNT0b0disoezszxi0MncAEjmnqf（file_token `WNT0b0disoezszxi0MncAEjmnqf`，7,796 B）
 
 ## 已知限制
 
