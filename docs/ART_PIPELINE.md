@@ -385,3 +385,14 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 验收：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1424 / 3939 / 0；实机截图 `docs/revamp/playtest/fort-4-g5-3-{room,boss}-{960,640}.png`、`-844.png`；`fort:2` 最终构建真实键盘 1/1（108.8s），`fort:4` 0/3 记录在 `docs/audit/PLAYTEST-FORT-G5-3.json`，未写成稳定通关。
 - 复现：`INK_STUDIO=/home/user/Doubao/chats/38454996042111490/toolchains/ink-studio node art-src/g5/render-fort-terrain.cjs`。
 - 素材出处：ink-studio 生成件，工具 MIT，成品本项目自制；不涉及 Ninja Adventure 原地形图。
+
+## G5-4 产出（2026-11-28）
+
+旧堡 `fort:4` 玩法与机器人稳定性收口。没有新增美术素材；G5-3 三张地形件、32px 碰撞、门锁与 Boss 状态机保持不变。
+
+- 游戏逻辑：Boss 房 2×2 内部障碍不再压中央线（`room.isBoss && abs(bx-midX)<=3` 跳过），避免 Boss 被墙隔在另一半场；旧堡前两间只出 `larva/slime/mole`，同房最多 1 只远程，第二只远程换近战/钻地。刷怪总数、出生位置、门锁、Boss 选择不变。
+- 机器人：新增 seed/tag、`openRun()`、`pathClosest()`、`travelDash()`；Boss 前摇按实际落点最大化与 Boss 距离、低血 Q 24、只在 recover 相位 Q 贴脸、召唤兽优先、砍后退半步；战斗与 Boss 接近在 `pathNear()` 为空时 BFS 到最近可达格。
+- 验收：`fort:4` 三次独立真实键盘启动 3/3 通关，131.9s / 130.8s / 131.9s，结束 HP 22 / 26 / 27，Boss 均清零；记录 `docs/audit/PLAYTEST-FORT-G5-4.json`，截图 `docs/revamp/playtest/fort-g54-stable{1,2,3}-4-a1-win.png`。
+- 构建：`dist/assets.b269ef7b.js` 133,313 B；`dist/game.39f79735.js` 391,576 B；首屏 1948 KB / gzip 753 KB；`sw.js` `na-b18-30bb814f`；`web/game.html` 2,040 KB。
+- 静态：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1426 / 3939 / 0；单文件字体审计 `passed:true`。
+- 未做：旧堡 2/3/5/6 全量重跑、640/844 真机触屏、Boss 血条与 HUD 重叠修复。详见 `docs/BATCH43-G5-4-FORT-PLAYABILITY.md`。

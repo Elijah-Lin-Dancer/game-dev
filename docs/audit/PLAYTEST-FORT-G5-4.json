@@ -1,0 +1,307 @@
+{
+  "chapter": "fort",
+  "stage": "fort:4",
+  "attempts": 3,
+  "passed": true,
+  "stages": [
+    {
+      "stage": "fort:4",
+      "stageIndex": 4,
+      "attempt": 1,
+      "startHp": 26,
+      "maxHp": 26,
+      "weapon": "katana",
+      "rooms": [
+        {
+          "key": "0,2",
+          "idx": 0,
+          "type": "battle",
+          "hpAt": 26,
+          "enemiesAt": 2,
+          "startedAt": 1795831793365
+        },
+        {
+          "key": "1,2",
+          "idx": 1,
+          "type": "battle",
+          "hpAt": 26,
+          "enemiesAt": 2,
+          "startedAt": 1795831812914
+        },
+        {
+          "key": "2,2",
+          "idx": 2,
+          "type": "rest",
+          "hpAt": 21,
+          "enemiesAt": 0,
+          "startedAt": 1795831832635
+        },
+        {
+          "key": "2,1",
+          "idx": 3,
+          "type": "battle",
+          "hpAt": 23,
+          "enemiesAt": 2,
+          "startedAt": 1795831842261
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "gate",
+          "hpAt": 17,
+          "enemiesAt": 1,
+          "startedAt": 1795831867914
+        },
+        {
+          "key": "0,1",
+          "idx": 5,
+          "type": "rest",
+          "hpAt": 17,
+          "enemiesAt": 0,
+          "startedAt": 1795831889119
+        },
+        {
+          "key": "0,0",
+          "idx": 6,
+          "type": "boss",
+          "hpAt": 27,
+          "enemiesAt": 1,
+          "startedAt": 1795831899089
+        }
+      ],
+      "startedAt": 1795831793334,
+      "maxRoom": 6,
+      "minHp": 17,
+      "hitsApprox": 8,
+      "talents": [
+        "狂战",
+        "厚皮",
+        "稳手"
+      ],
+      "rest": 2,
+      "ended": "win",
+      "endHp": 22,
+      "endRoom": 6,
+      "endRoomKey": "0,0",
+      "endedAt": 1795831925215,
+      "durationMs": 131881,
+      "kills": 23,
+      "coins": 5,
+      "gems": 3,
+      "talentsFinal": [
+        "berserk",
+        "tough",
+        "steady"
+      ],
+      "bossKind": "sam",
+      "bossEnd": null,
+      "endEnemies": [],
+      "endPx": 401,
+      "endPy": 406,
+      "error": "",
+      "screenshot": "docs/revamp/playtest/fort-g54-stable1-4-a1-win.png"
+    },
+    {
+      "stage": "fort:4",
+      "stageIndex": 4,
+      "attempt": 2,
+      "startHp": 26,
+      "maxHp": 26,
+      "weapon": "katana",
+      "rooms": [
+        {
+          "key": "0,0",
+          "idx": 0,
+          "type": "battle",
+          "hpAt": 26,
+          "enemiesAt": 2,
+          "startedAt": 1795831933859
+        },
+        {
+          "key": "1,0",
+          "idx": 1,
+          "type": "battle",
+          "hpAt": 26,
+          "enemiesAt": 2,
+          "startedAt": 1795831947730
+        },
+        {
+          "key": "2,0",
+          "idx": 2,
+          "type": "rest",
+          "hpAt": 24,
+          "enemiesAt": 0,
+          "startedAt": 1795831965151
+        },
+        {
+          "key": "2,1",
+          "idx": 3,
+          "type": "battle",
+          "hpAt": 24,
+          "enemiesAt": 2,
+          "startedAt": 1795831972569
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "gate",
+          "hpAt": 14,
+          "enemiesAt": 1,
+          "startedAt": 1795831996850
+        },
+        {
+          "key": "0,1",
+          "idx": 5,
+          "type": "rest",
+          "hpAt": 17,
+          "enemiesAt": 0,
+          "startedAt": 1795832020393
+        },
+        {
+          "key": "0,2",
+          "idx": 6,
+          "type": "boss",
+          "hpAt": 28,
+          "enemiesAt": 1,
+          "startedAt": 1795832042302
+        }
+      ],
+      "startedAt": 1795831933830,
+      "maxRoom": 6,
+      "minHp": 13,
+      "hitsApprox": 10,
+      "talents": [
+        "吸血",
+        "快手",
+        "厚皮"
+      ],
+      "rest": 1,
+      "ended": "win",
+      "endHp": 26,
+      "endRoom": 6,
+      "endRoomKey": "0,2",
+      "endedAt": 1795832064679,
+      "durationMs": 130849,
+      "kills": 21,
+      "coins": 3,
+      "gems": 4,
+      "talentsFinal": [
+        "vampire",
+        "quick",
+        "tough"
+      ],
+      "bossKind": "sam",
+      "bossEnd": null,
+      "endEnemies": [],
+      "endPx": 401,
+      "endPy": 78,
+      "error": "",
+      "screenshot": "docs/revamp/playtest/fort-g54-stable2-4-a1-win.png"
+    },
+    {
+      "stage": "fort:4",
+      "stageIndex": 4,
+      "attempt": 3,
+      "startHp": 26,
+      "maxHp": 26,
+      "weapon": "katana",
+      "rooms": [
+        {
+          "key": "2,0",
+          "idx": 0,
+          "type": "battle",
+          "hpAt": 26,
+          "enemiesAt": 2,
+          "startedAt": 1795832073215
+        },
+        {
+          "key": "1,0",
+          "idx": 1,
+          "type": "battle",
+          "hpAt": 24,
+          "enemiesAt": 2,
+          "startedAt": 1795832088879
+        },
+        {
+          "key": "0,0",
+          "idx": 2,
+          "type": "rest",
+          "hpAt": 23,
+          "enemiesAt": 0,
+          "startedAt": 1795832105343
+        },
+        {
+          "key": "0,1",
+          "idx": 3,
+          "type": "battle",
+          "hpAt": 23,
+          "enemiesAt": 2,
+          "startedAt": 1795832112726
+        },
+        {
+          "key": "1,1",
+          "idx": 4,
+          "type": "gate",
+          "hpAt": 22,
+          "enemiesAt": 1,
+          "startedAt": 1795832130797
+        },
+        {
+          "key": "2,1",
+          "idx": 5,
+          "type": "rest",
+          "hpAt": 21,
+          "enemiesAt": 0,
+          "startedAt": 1795832164936
+        },
+        {
+          "key": "2,2",
+          "idx": 6,
+          "type": "boss",
+          "hpAt": 27,
+          "enemiesAt": 1,
+          "startedAt": 1795832173406
+        }
+      ],
+      "startedAt": 1795832073185,
+      "maxRoom": 6,
+      "minHp": 19,
+      "hitsApprox": 7,
+      "talents": [
+        "狂战",
+        "铁胃",
+        "厚皮"
+      ],
+      "rest": 1,
+      "ended": "win",
+      "endHp": 27,
+      "endRoom": 6,
+      "endRoomKey": "2,2",
+      "endedAt": 1795832205037,
+      "durationMs": 131852,
+      "kills": 26,
+      "coins": 2,
+      "gems": 4,
+      "talentsFinal": [
+        "berserk",
+        "ironstomach",
+        "tough"
+      ],
+      "bossKind": "sam",
+      "bossEnd": null,
+      "endEnemies": [],
+      "endPx": 396,
+      "endPy": 500,
+      "error": "",
+      "screenshot": "docs/revamp/playtest/fort-g54-stable3-4-a1-win.png"
+    }
+  ],
+  "errors": [],
+  "mode": "real-keyboard-input",
+  "notes": "Three consecutive real-keyboard runs on G5-4 build; no __dbg.next or __dbg.win. Boss room central lane reserved; bot path fallback + boss retreat.",
+  "build": {
+    "assets": "dist/assets.b269ef7b.js",
+    "game": "dist/game.39f79735.js"
+  },
+  "generatedAt": "2026-11-28T10:17:04+08:00"
+}

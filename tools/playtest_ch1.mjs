@@ -21,9 +21,11 @@ const STAGES = Math.max(1, Math.min(5, Number(opt('stages', 5)) || 5));
 const END = Math.max(START, Math.min(6, Number(opt('end', START + STAGES - 1)) || (START + STAGES - 1)));
 const STAGE_TIMEOUT = Number(opt('stageTime', 150000));
 const MAX_ATTEMPTS = Math.max(1, Math.min(5, Number(opt('attempts', 3)) || 3));
-const TAG = CHAPTER === 'bamboo' ? 'ch1' : CHAPTER;
+const SEED = Math.max(0, Number(opt('seed', 0)) || 0);
+const TAG = opt('tag', CHAPTER === 'bamboo' ? 'ch1' : CHAPTER);
 const OUT_NAME = CHAPTER === 'bamboo' ? 'PLAYTEST-CH1' : `PLAYTEST-${CHAPTER.toUpperCase()}`;
 const out = { chapter: CHAPTER, stages: [], errors: [], mode: 'real-keyboard-input', notes: 'Real movement / attack / doors / talent panel; no __dbg.next or __dbg.win.' };
+if (SEED) out.seed = SEED;
 
 // 测第二章起：预置前序章节通关星级，模拟玩家已完成第一章；不跳过目标章节自身解锁。
 const CHAPTERS = JSON.parse(readFileSync(join(ROOT, 'web/data/chapters.json'), 'utf8')).chapters || [];
@@ -102,6 +104,40 @@ function pathNear(walls, sx, sy, gx, gy) {
     if (p && (!best || p.length < best.length)) best = p;
   }
   return best;
+}
+
+// 目标格本身不可达（怪贴墙/被 2×2 障碍挡在半场）时，BFS 到离它最近的可达格。
+// 没有这层兜底，战斗分支会回退成“朝目标直走”，顶墙后原地挨弹幕到死。
+function pathClosest(walls, sx, sy, gx, gy) {
+  const wall = (x, y) => walls.has(x + ',' + y) || x < 1 || x >= COLS - 1 || y < 1 || y >= ROWS - 1;
+  const q = [[sx, sy]], prev = new Map(), seen = new Set([sx + ',' + sy]);
+  let bestK = sx + ',' + sy, bestD = Math.hypot(sx - gx, sy - gy);
+  while (q.length) {
+    const [x, y] = q.shift();
+    const d = Math.hypot(x - gx, y - gy);
+    if (d < bestD - 0.4) { bestD = d; bestK = x + ',' + y; }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
+      if (seen.has(nk) || wall(nx, ny)) continue;
+      seen.add(nk); prev.set(nk, x + ',' + y); q.push([nx, ny]);
+    }
+  }
+  const p = [];
+  let k = bestK;
+  while (k !== sx + ',' + sy) { p.push(k.split(',').map(Number)); k = prev.get(k); }
+  p.reverse();
+  return p;
+}
+
+// 沿某个方向最多还能走多远（像素）。用于躲避弹幕时优先选不撞墙的一侧。
+function openRun(s, dir, max = 72) {
+  const walls = new Set(s.walls || []);
+  const [dx, dy] = dir === 'a' ? [-1, 0] : dir === 'd' ? [1, 0] : dir === 'w' ? [0, -1] : [0, 1];
+  for (let d = 16; d <= max; d += 16) {
+    const [tx, ty] = tileOf(s.px + dx * d, s.py + dy * d);
+    if (walls.has(tx + ',' + ty)) return d - 16;
+  }
+  return max;
 }
 
 async function state(page) {
@@ -223,7 +259,7 @@ async function runStage(page, stageIndex, attempt) {
     // 连续 1.2s 几乎没位移就反方向退一步，下一轮重新算路径。
     if (Date.now() - lastPosAt > 1200) {
       const moved = Math.hypot(s.px - lastPosX, s.py - lastPosY);
-      if (held && moved < 5 && (s.enemies.length === 0 || s.bossInfo)) {
+      if (held && moved < 5 && (s.enemies.length === 0 || s.bossInfo || s.enemies.length <= 2)) {
         const back = { a: 'd', d: 'a', w: 's', s: 'w' }[held];
         await release();
         if (back) { await page.keyboard.down(back); await page.waitForTimeout(320); await page.keyboard.up(back); }
@@ -234,6 +270,18 @@ async function runStage(page, stageIndex, attempt) {
     }
 
     const now = Date.now();
+    // 清场后的长距离移动用疾影冲刺赶路：旧堡 7 房关卡 180s 里，
+    // 机关房到石像 / 篝火到门 / 清房到门经常要走 20–30s，Q 可以省下 8–15s。
+    const travelDash = async (dir, dist) => {
+      if (!s.qready || now - lastQ < 1400 || dist < 130 || openRun(s, dir, 96) < 40) return false;
+      await release();
+      if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[dir]) {
+        await page.keyboard.down(dir); await page.waitForTimeout(30); await page.keyboard.up(dir);
+      }
+      await page.keyboard.press('q'); lastQ = now;
+      await page.waitForTimeout(120);
+      return true;
+    };
     // 先看迎面弹体：骷髅弹会转向，不能只在 36px 处做一次垂直位移；
     // 提前 0.85s 预判，并按“房间哪边空间大”选侧移方向，避免贴墙时原地吃弹。
     // 受击后的 700ms 无敌帧是靠近窗口：不要在这段时间继续躲，直接贴脸换血推进。
@@ -257,6 +305,21 @@ async function runStage(page, stageIndex, attempt) {
       } else {
         // 纵向弹：左右躲。
         side = s.px < 384 ? 'd' : 'a';
+      }
+      // 选垂直弹道、且实际有空间的一侧；贴墙时原地侧移会直接撞墙吃弹。
+      const cands = Math.abs(danger.sh.vx) > Math.abs(danger.sh.vy) ? ['s', 'w'] : ['d', 'a'];
+      let bestRun = -1;
+      for (const k of cands) {
+        const run = openRun(s, k, 72);
+        if (run > bestRun) { bestRun = run; side = k; }
+      }
+      // 低血时用疾影冲刺吃无敌帧穿弹，不再靠两条腿硬躲。
+      if (s.hp <= 18 && s.qready && now - lastQ > 1200) {
+        await release();
+        await page.keyboard.down(side); await page.waitForTimeout(30); await page.keyboard.up(side);
+        await page.keyboard.press('q'); lastQ = now;
+        await page.waitForTimeout(150);
+        continue;
       }
       if (held !== side) { await release(); await page.keyboard.down(side); held = side; }
       await page.waitForTimeout(100);
@@ -294,7 +357,20 @@ async function runStage(page, stageIndex, attempt) {
         } else {
           esc = s.px < 416 ? 'd' : 'a';
         }
-        if (s.hp <= 14 && s.qready && now - lastQ > 1200) {
+        // 贴墙时不能只挑“空间最大”的方向——那个方向可能正对 Boss，横斩照吃。
+        // 按实际能走的距离估算落点，选离 Boss 最远的空间；直接朝 Boss 走的重罚。
+        let bestScore = -1e9, bestK = esc;
+        for (const k of ['a', 'd', 'w', 's']) {
+          const run = Math.min(openRun(s, k, 96), 72);
+          if (run < 16) continue;
+          const dx = k === 'a' ? -1 : k === 'd' ? 1 : 0;
+          const dy = k === 'w' ? -1 : k === 's' ? 1 : 0;
+          const nx = s.px + dx * run, ny = s.py + dy * run;
+          const score = Math.hypot(nx - b.x, ny - b.y) + (k === baway ? 8 : 0) - (k === bwant ? 200 : 0);
+          if (score > bestScore) { bestScore = score; bestK = k; }
+        }
+        esc = bestK;
+        if (s.hp <= 24 && s.qready && now - lastQ > 1200) {
           // Boss 前摇期用疾影冲刺吃无敌帧，别把 Q 留到死。
           await release();
           await page.keyboard.down(esc); await page.waitForTimeout(30); await page.keyboard.up(esc);
@@ -303,6 +379,30 @@ async function runStage(page, stageIndex, attempt) {
           continue;
         }
         if (held !== esc) { await release(); await page.keyboard.down(esc); held = esc; }
+        await page.waitForTimeout(100);
+        continue;
+      }
+      // Boss 召唤的小怪会一直贴脸磨血；Boss 不在近身时先清掉最近的召唤物。
+      // 即使 Boss 在 70 内，只要小怪已经贴到 60 内，也先砍小怪：它才是持续掉血的来源，
+      // Boss 前摇由上面的 DANGER 分支优先接管。
+      const BOSS_KINDS = ['boss', 'bossB', 'racoonBoss', 'mireWraith', 'frostOwl', 'magmaColossus', 'bambooMirage', 'sandMirage', 'mossBeast'];
+      const add = (s.enemies || []).find((e) => !BOSS_KINDS.includes(e.k));
+      const adx = add ? add.x - s.px : 0, ady = add ? add.y - s.py : 0;
+      const adist = add ? Math.hypot(adx, ady) : 1e9;
+      if (add && (bd > 70 || adist < 60)) {
+        const awant = Math.abs(adx) >= Math.abs(ady) ? (adx > 0 ? 'd' : 'a') : (ady > 0 ? 's' : 'w');
+        if (adist <= 58) {
+          if (held) await release();
+          if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[awant]) {
+            await page.keyboard.down(awant); await page.waitForTimeout(35); await page.keyboard.up(awant);
+          }
+          if (now - lastAtk > 340) { await page.keyboard.press('Space'); lastAtk = now; }
+          await page.waitForTimeout(220);
+          continue;
+        }
+        const addPath = pathNear(new Set(s.walls), ...tileOf(s.px, s.py), ...tileOf(add.x, add.y));
+        const addWant = stepKey(s, addPath) || awant;
+        if (addWant !== held) { await release(); await page.keyboard.down(addWant); held = addWant; }
         await page.waitForTimeout(100);
         continue;
       }
@@ -335,7 +435,9 @@ async function runStage(page, stageIndex, attempt) {
       const meleeReach = s.weapon === 'katana' ? 68 : 60;
       // Boss 刚退到 70–130 的外圈时，用疾影冲刺贴脸；否则恢复期只有 360ms，
       // 从 96px 外跑回去根本赶不上，长血 Boss 会被拖到超时。
-      if (bd > meleeReach && bd < 132 && s.qready && now - lastQ > 1200) {
+      // 只在 Boss 硬直 recover 时用 Q 贴脸。approach 期 Q 进去会落在 40–50px，
+      // 420ms 前摇只够走 40px，横斩 96 仍命中——这是 seed2 Boss 房暴毙的直接原因。
+      if (bd > meleeReach && bd < 132 && b.ph === 'recover' && s.qready && now - lastQ > 1200) {
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[bwant]) {
           await release();
           await page.keyboard.down(bwant); await page.waitForTimeout(30); await page.keyboard.up(bwant);
@@ -351,10 +453,24 @@ async function runStage(page, stageIndex, attempt) {
             await page.keyboard.down(bwant); await page.waitForTimeout(35); await page.keyboard.up(bwant);
           }
           await page.keyboard.press('Space'); lastAtk = now;
+          // 贴身砍完立刻退半步：Boss 横斩 reach 96，站在 50–60 等前摇再跑常常只剩 86–96，
+          // 仍会被刀锋擦到。先退到 70+，再让 DANGER 分支接管。
+          if (bd < 62 && openRun(s, baway, 48) >= 16) {
+            await page.keyboard.down(baway); await page.waitForTimeout(100); await page.keyboard.up(baway);
+            held = null;
+            await page.waitForTimeout(60);
+            continue;
+          }
+        } else if (bd < 48 && openRun(s, baway, 48) >= 16) {
+          await page.keyboard.down(baway); await page.waitForTimeout(80); await page.keyboard.up(baway);
+          held = null;
+          await page.waitForTimeout(80);
+          continue;
         }
       } else {
         // Boss 房有柱子和窄门，直接朝 Boss 走会顶墙；沿真实可走路径绕。
-        const path = pathNear(new Set(s.walls), ...tileOf(s.px, s.py), ...tileOf(b.x, b.y));
+        const path = pathNear(new Set(s.walls), ...tileOf(s.px, s.py), ...tileOf(b.x, b.y))
+          || pathClosest(new Set(s.walls), ...tileOf(s.px, s.py), ...tileOf(b.x, b.y));
         const moveWant = stepKey(s, path) || bwant;
         if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
       }
@@ -370,6 +486,21 @@ async function runStage(page, stageIndex, attempt) {
       await page.waitForTimeout(180);
       continue;
     }
+    // 低血先吃地上的心：旧堡第二房经常打到 4–6 血，清完再捡已经来不及。
+    if (s.hp <= Math.max(8, Math.floor(s.maxHp * 0.35))) {
+      const heart = (s.drops || []).find((d) => d.k === 'heart');
+      if (heart) {
+        const [sx0, sy0] = tileOf(s.px, s.py), [gx0, gy0] = tileOf(heart.x, heart.y);
+        const path = pathNear(new Set(s.walls), sx0, sy0, gx0, gy0);
+        const dist = Math.hypot(heart.x - s.px, heart.y - s.py);
+        if (dist > 16 && path && path.length <= 8) {
+          const moveWant = stepKey(s, path) || keyFor(heart.x - s.px, heart.y - s.py);
+          if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
+          await page.waitForTimeout(100);
+          continue;
+        }
+      }
+    }
     if (s.enemies.length) {
       // 风筝/远程怪：蜘蛛、骷髅会站在 120+ 距离持续放弹幕，近身后要贴死，不能打一刀就退。
       const KITE = ['spider', 'skull', 'eye', 'octopus', 'flam', 'demon', 'lantern', 'spirit', 'mush'];
@@ -377,7 +508,8 @@ async function runStage(page, stageIndex, attempt) {
       let e = null, epath = null, bestLen = 1e9;
       for (const foe of s.enemies) {
         const [sx0, sy0] = tileOf(s.px, s.py), [gx0, gy0] = tileOf(foe.x, foe.y);
-        const p0 = pathNear(new Set(s.walls), sx0, sy0, gx0, gy0);
+        const p0 = pathNear(new Set(s.walls), sx0, sy0, gx0, gy0)
+          || pathClosest(new Set(s.walls), sx0, sy0, gx0, gy0);
         const len = p0 ? p0.length : 999;
         if (len < bestLen) { bestLen = len; e = foe; epath = p0; }
       }
@@ -411,7 +543,7 @@ async function runStage(page, stageIndex, attempt) {
       }
       // 远程/风筝怪（蜘蛛、骷髅、眼怪等）站在 120+ 距离放弹幕，慢慢追只会被磨死。
       // 距离 70–170 且 Q 就绪时向前疾影冲刺 100px，落地无敌帧正好贴脸，再进入近战循环。
-      if (KITE.includes(e.k) && dist >= 70 && dist <= 220 && s.qready && now - lastQ > 1400) {
+      if (KITE.includes(e.k) && dist >= 65 && dist <= 220 && s.qready && now - lastQ > 1400) {
         await release();
         if (s.facing !== { d: 'right', a: 'left', s: 'down', w: 'up' }[want]) {
           await page.keyboard.down(want); await page.waitForTimeout(30); await page.keyboard.up(want);
@@ -467,6 +599,7 @@ async function runStage(page, stageIndex, attempt) {
         if (dist > 18) {
           const path = pathNear(new Set(s.walls), sx, sy, gx, gy);
           const moveWant = stepKey(s, path) || keyFor(drop.x - s.px, drop.y - s.py);
+          if (await travelDash(moveWant, dist)) continue;
           if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
           await page.waitForTimeout(100);
           continue;
@@ -487,6 +620,7 @@ async function runStage(page, stageIndex, attempt) {
         }
         const path = pathNear(new Set(s.walls), sx, sy, gx, gy);
         const moveWant = stepKey(s, path) || keyFor(rest.x - s.px, rest.y - s.py);
+        if (await travelDash(moveWant, dist)) continue;
         if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
         await page.waitForTimeout(120);
         continue;
@@ -504,6 +638,7 @@ async function runStage(page, stageIndex, attempt) {
         }
         const path = pathNear(new Set(s.walls), sx, sy, gx, gy);
         const moveWant = stepKey(s, path) || keyFor(gate.x - s.px, gate.y - s.py);
+        if (await travelDash(moveWant, dist)) continue;
         if (moveWant !== held) { await release(); await page.keyboard.down(moveWant); held = moveWant; }
         await page.waitForTimeout(120);
         continue;
@@ -518,6 +653,8 @@ async function runStage(page, stageIndex, attempt) {
         let want;
         const step = stepKey(s, path);
         want = step || (dir === 'l' ? 'a' : dir === 'r' ? 'd' : dir === 'u' ? 'w' : 's');
+        const doorDist = Math.hypot(target[0] * TILE + TILE / 2 - s.px, target[1] * TILE + TILE / 2 - s.py);
+        if (await travelDash(want, doorDist)) continue;
         if (want !== held) { await release(); await page.keyboard.down(want); held = want; }
         // 到门边再持续按方向，让 checkDoors 触发。
         const near = (dir === 'l' && s.px < 40) || (dir === 'r' && s.px > 728) || (dir === 'u' && s.py < 40) || (dir === 'd' && s.py > 792);
@@ -575,6 +712,16 @@ mkdirSync(join(ROOT, 'docs/revamp/playtest'), { recursive: true });
 try {
   const ctx = await browser.newContext({ viewport: { width: 960, height: 540 } });
   const page = await ctx.newPage();
+  // 固定随机种子：让房间蛇形翻转 / 怪物组合 / 出生点可复现；不传 seed 时保持原随机行为。
+  if (SEED) {
+    await page.addInitScript((seed) => {
+      let a = seed >>> 0;
+      Math.random = () => {
+        a = (a * 1664525 + 1013904223) >>> 0;
+        return a / 4294967296;
+      };
+    }, SEED);
+  }
   if (CI >= 0) {
     await page.addInitScript((s) => {
       if (!localStorage.getItem('na.save')) localStorage.setItem('na.save', JSON.stringify(s));

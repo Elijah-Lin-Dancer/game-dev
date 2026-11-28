@@ -715,6 +715,9 @@ export class Play extends Phaser.Scene {
     while (placed < 4 && guard++ < 80) {
       const bx = Phaser.Math.Between(3, COLS - 5);
       const by = Phaser.Math.Between(3, ROWS - 5);
+      // Boss 在正中央线上生成；2×2 障碍压到中线会把 Boss 与玩家隔成两个封闭半场，
+      // 近战玩家/机器人只能顶墙罚站。Boss 房整条中线留空，普通房仍只避让出生点。
+      if (room.isBoss && Math.abs(bx - midX) <= 3) continue;
       if (Math.abs(bx - midX) <= 3 && Math.abs(by - midY) <= 3) continue;      // 别堵住出生点
       if (Math.abs(by - midY) <= 3 && (bx < 4 || bx > COLS - 5)) continue;     // 别堵左右门
       if (Math.abs(bx - midX) <= 3 && (by < 4 || by > ROWS - 5)) continue;     // 别堵上下门
@@ -956,7 +959,19 @@ export class Play extends Phaser.Scene {
     // 难度靠组合、房间密度和 Boss，不靠数量围殴。3 只实测会在第二房把 20 血玩家围死。
     if (early) n = Math.min(3, n);
     else if (fort) n = Math.min(2, n);
-    for (let i = 0; i < n; i++) spawn(this.pickKind(room.idx), 200);
+    // 旧堡同房双远程（蜘蛛 + 骷髅）会把 26–30 血玩家卡在门口：
+    // 一只在中距离放网、一只在远处转向弹，近战武器必须先吃两轮弹幕才能贴身。
+    // 数量仍是 2 只，只把第二只远程换成近战/钻地，保证每房最多一个风筝点。
+    const RANGED = ['spider', 'skull', 'eye', 'octopus', 'flam', 'demon', 'lantern', 'spirit', 'mush'];
+    const MELEE = ['larva', 'slime', 'mole', 'beast'];
+    for (let i = 0; i < n; i++) {
+      let kind = this.pickKind(room.idx);
+      if (fort && i > 0 && RANGED.includes(kind) && this.enemies.some((e) => RANGED.includes(e.kind))) {
+        const fallback = MELEE.filter((k) => ((this.spec.chapter && this.spec.chapter.monsters) || []).includes(k));
+        kind = fallback[(room.idx + i) % fallback.length] || kind;
+      }
+      spawn(kind, 200);
+    }
   }
 
   /* 批 16：二周目普通怪词缀。只在房间生成时调用，不污染召唤物 / 分裂小号。 */
@@ -1098,8 +1113,10 @@ export class Play extends Phaser.Scene {
       const pool = ((this.spec.chapter && this.spec.chapter.monsters) || [])
         .filter((k) => k === 'beast' || CFG[k]);
       if (pool.length) {
-        if (this.spec.chapterId === 'fort' && this.spec.index === 1) {
-          // 旧堡第 1 关只教“分裂 + 钻地”，蜘蛛/骷髅的远程风筝留到第 2 关再上。
+        if (this.spec.chapterId === 'fort' && (this.spec.index === 1 || idx <= 1)) {
+          // 旧堡前两间只出“分裂 + 钻地 + 软泥”近战组。第 2 关起第二间仍可能
+          // 同时抽到蜘蛛 + 骷髅两只远程，26 血机器人会在门口被双层弹幕磨死；
+          // 远程风筝从第三间（idx 2）再上，保留后段压力。
           const intro = ['larva', 'slime', 'mole'].filter((k) => pool.includes(k));
           if (intro.length) return intro[this.enemies.length % intro.length];
         }
