@@ -61,6 +61,10 @@
 - 线上脚本：`dist/assets.b269ef7b.js` / `dist/game.2906b6e2.js`；`sw.js` 缓存 `na-b18-f9d9c2e8`；`entry.scripts` 已读到新构建，`entry.sw:true`。
 - `npm run audit:pages` → `passed:true`、`errors:[]`；stage 抽查 `lava:9` 10 房完整，world `mire-6` 36/36、visible 1312、missing []。
 
+### 飞书
+
+- BATCH44 文件：https://my.feishu.cn/file/Czz4bC3x2osFEyxJJqRc7sxNnHd（file_token `Czz4bC3x2osFEyxJJqRc7sxNnHd`）
+
 ## 已知限制
 
 1. **3/3 不是永久保证**：仍是“当前测试协议下可达”，不是每个随机布局必胜；改刷怪权重、蜘蛛数值或 Boss 后需重跑。
