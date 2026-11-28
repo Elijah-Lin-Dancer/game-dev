@@ -22,7 +22,10 @@ const CFG = {
   larva: { hp: 9, speed: 56, dmg: 2, miniHp: 3, miniSpeed: 74, miniHalf: 10, splitCount: 2 },
   /* 批 4：新怪。每只一个"破法"，数值都留在这里可调 */
   slime: { hp: 7, speed: 32, dmg: 2, splitHp: 3, splitSpeed: 46, splitCount: 2 },
-  spider: { hp: 8, speed: 36, dmg: 2, webCd: 1900, webSpeed: 118, webSlow: 0.4, webSlowMs: 1500, keepMin: 120, range: 360 },
+  // 蜘蛛网原 0.4×移速 / 1.5s，配合 1.9s 冷却会形成近乎永久的 60% 减速：
+  // 玩家 96×0.4=38，只比蜘蛛 36 快 2px/s，近战永远追不上，旧堡 3/5/6 多次出现
+  // “蜘蛛满血、玩家 0 血”的软锁。改成 0.55× / 1.1s / 2.1s，追得动但仍需躲网。
+  spider: { hp: 8, speed: 36, dmg: 2, webCd: 2100, webSpeed: 118, webSlow: 0.55, webSlowMs: 1100, keepMin: 120, range: 360 },
   owl: { hp: 6, speed: 42, dmg: 3, hoverMs: 720, diveSpeed: 205, diveRange: 230, tall: 18 },
   mush: { hp: 10, speed: 8, dmg: 2, poisonCd: 2400, poisonRadius: 54, poisonLife: 3000, poisonTick: 600, poisonDmg: 1, poisonRange: 300 },
   mole: { hp: 9, speed: 38, dmg: 2, diveMs: 620, emergeMs: 260, diveRange: 260 },

@@ -947,7 +947,16 @@ export class Play extends Phaser.Scene {
       // 机关房：守卫 + 一尊机关石像；石像不拉，门不开。机关房是解谜不是歼灭。
       // 旧堡只放 1 个守卫：2 个守卫会把残血玩家磨死，还没摸到机关就先倒。
       const guards = fort ? 1 : 2;
-      for (let i = 0; i < guards; i++) spawn(this.pickKind(room.idx), 170);
+      // 旧堡机关房守卫只出近战/钻地：拉机关时被蜘蛛隔墙风筝，会把残血玩家在
+      // 石像前磨死（fort:3 真实键盘回归失败根因）。谜题房不再放远程风筝点。
+      const fortGateMelee = ['larva', 'slime', 'mole'];
+      for (let i = 0; i < guards; i++) {
+        let kind = this.pickKind(room.idx);
+        if (fort && ['spider', 'skull', 'eye', 'octopus', 'flam', 'demon', 'lantern', 'spirit', 'mush'].includes(kind)) {
+          kind = fortGateMelee[room.idx % fortGateMelee.length];
+        }
+        spawn(kind, 170);
+      }
       return;
     }
     // 竹林第一章是新手章：五关统一封顶 3 只。实机试点中 4 只（尤其 1–2 只眼怪）
