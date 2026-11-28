@@ -1,0 +1,1001 @@
+{
+ "chapter": "fort",
+ "build": "game.2906b6e2",
+ "buildNote": "G5-5 gate melee guard + spider web retune",
+ "mode": "real-keyboard",
+ "attemptsPerStage": {
+  "fort:2": 1,
+  "fort:3": 3,
+  "fort:4": 3,
+  "fort:5": 1,
+  "fort:6": 1
+ },
+ "passed": true,
+ "summary": [
+  {
+   "stage": "fort:2",
+   "ended": "win",
+   "durationMs": 126400,
+   "endHp": 23,
+   "maxHp": 22,
+   "kills": 20,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg2-2-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "ended": "win",
+   "durationMs": 133751,
+   "endHp": 15,
+   "maxHp": 24,
+   "kills": 23,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-1-3-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "ended": "win",
+   "durationMs": 138538,
+   "endHp": 24,
+   "maxHp": 24,
+   "kills": 22,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-2-3-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "ended": "win",
+   "durationMs": 141284,
+   "endHp": 18,
+   "maxHp": 24,
+   "kills": 25,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-3-3-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "ended": "win",
+   "durationMs": 104901,
+   "endHp": 26,
+   "maxHp": 26,
+   "kills": 24,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-1-4-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "ended": "win",
+   "durationMs": 114715,
+   "endHp": 24,
+   "maxHp": 26,
+   "kills": 20,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-2-4-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "ended": "win",
+   "durationMs": 151307,
+   "endHp": 11,
+   "maxHp": 26,
+   "kills": 25,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-3-4-a1-win.png"
+  },
+  {
+   "stage": "fort:5",
+   "ended": "win",
+   "durationMs": 138724,
+   "endHp": 17,
+   "maxHp": 28,
+   "kills": 25,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg5-5-a1-win.png"
+  },
+  {
+   "stage": "fort:6",
+   "ended": "win",
+   "durationMs": 118705,
+   "endHp": 27,
+   "maxHp": 30,
+   "kills": 22,
+   "bossKind": "sam",
+   "bossHpLeft": 0,
+   "ending": "boss-clear",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg6-6-a1-win.png"
+  }
+ ],
+ "stages": [
+  {
+   "stage": "fort:2",
+   "stageIndex": 2,
+   "attempt": 1,
+   "startHp": 22,
+   "maxHp": 22,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,0",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795835231159
+    },
+    {
+     "key": "1,0",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795835247599
+    },
+    {
+     "key": "0,0",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 18,
+     "enemiesAt": 0,
+     "startedAt": 1795835266815
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835279040
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 26,
+     "enemiesAt": 1,
+     "startedAt": 1795835301251
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 26,
+     "enemiesAt": 0,
+     "startedAt": 1795835325285
+    },
+    {
+     "key": "2,2",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 23,
+     "enemiesAt": 1,
+     "startedAt": 1795835337390
+    }
+   ],
+   "startedAt": 1795835231128,
+   "maxRoom": 6,
+   "minHp": 18,
+   "hitsApprox": 3,
+   "talents": [
+    "厚皮",
+    "重击",
+    "狂战"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 23,
+   "endRoom": 6,
+   "endRoomKey": "2,2",
+   "endedAt": 1795835357528,
+   "durationMs": 126400,
+   "kills": 20,
+   "coins": 4,
+   "gems": 3,
+   "talentsFinal": [
+    "tough",
+    "heavy",
+    "berserk"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 396,
+   "endPy": 511,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg2-2-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "stageIndex": 3,
+   "attempt": 1,
+   "startHp": 24,
+   "maxHp": 24,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,0",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795834780092
+    },
+    {
+     "key": "1,0",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795834794223
+    },
+    {
+     "key": "0,0",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 15,
+     "enemiesAt": 0,
+     "startedAt": 1795834807689
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 23,
+     "enemiesAt": 2,
+     "startedAt": 1795834829907
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 16,
+     "enemiesAt": 1,
+     "startedAt": 1795834848869
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 17,
+     "enemiesAt": 0,
+     "startedAt": 1795834868861
+    },
+    {
+     "key": "2,2",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 23,
+     "enemiesAt": 1,
+     "startedAt": 1795834881483
+    }
+   ],
+   "startedAt": 1795834780059,
+   "maxRoom": 6,
+   "minHp": 11,
+   "hitsApprox": 11,
+   "talents": [
+    "贪婪",
+    "铁胃",
+    "重击"
+   ],
+   "rest": 2,
+   "ended": "win",
+   "endHp": 15,
+   "endRoom": 6,
+   "endRoomKey": "2,2",
+   "endedAt": 1795834913810,
+   "durationMs": 133751,
+   "kills": 23,
+   "coins": 8,
+   "gems": 4,
+   "talentsFinal": [
+    "greed",
+    "ironstomach",
+    "heavy"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 412,
+   "endPy": 56,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-1-3-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "stageIndex": 3,
+   "attempt": 1,
+   "startHp": 24,
+   "maxHp": 24,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795834922438
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 22,
+     "enemiesAt": 2,
+     "startedAt": 1795834938280
+    },
+    {
+     "key": "0,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 24,
+     "enemiesAt": 0,
+     "startedAt": 1795834957803
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795834966847
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 23,
+     "enemiesAt": 1,
+     "startedAt": 1795834996946
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 24,
+     "enemiesAt": 0,
+     "startedAt": 1795835017284
+    },
+    {
+     "key": "2,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 28,
+     "enemiesAt": 1,
+     "startedAt": 1795835031745
+    }
+   ],
+   "startedAt": 1795834922407,
+   "maxRoom": 6,
+   "minHp": 20,
+   "hitsApprox": 4,
+   "talents": [
+    "铁胃",
+    "拾荒",
+    "厚皮"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 24,
+   "endRoom": 6,
+   "endRoomKey": "2,0",
+   "endedAt": 1795835060945,
+   "durationMs": 138538,
+   "kills": 22,
+   "coins": 3,
+   "gems": 4,
+   "talentsFinal": [
+    "ironstomach",
+    "scavenger",
+    "tough"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 465,
+   "endPy": 578,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-2-3-a1-win.png"
+  },
+  {
+   "stage": "fort:3",
+   "stageIndex": 3,
+   "attempt": 1,
+   "startHp": 24,
+   "maxHp": 24,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "0,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795835069411
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795835085182
+    },
+    {
+     "key": "2,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 24,
+     "enemiesAt": 0,
+     "startedAt": 1795835114451
+    },
+    {
+     "key": "2,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795835123876
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 28,
+     "enemiesAt": 1,
+     "startedAt": 1795835149444
+    },
+    {
+     "key": "0,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 28,
+     "enemiesAt": 0,
+     "startedAt": 1795835170321
+    },
+    {
+     "key": "0,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 28,
+     "enemiesAt": 1,
+     "startedAt": 1795835185211
+    }
+   ],
+   "startedAt": 1795835069382,
+   "maxRoom": 6,
+   "minHp": 14,
+   "hitsApprox": 7,
+   "talents": [
+    "稳手",
+    "厚皮",
+    "铁胃",
+    "快手"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 18,
+   "endRoom": 6,
+   "endRoomKey": "0,0",
+   "endedAt": 1795835210666,
+   "durationMs": 141284,
+   "kills": 25,
+   "coins": 3,
+   "gems": 5,
+   "talentsFinal": [
+    "steady",
+    "tough",
+    "ironstomach",
+    "quick"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 419,
+   "endPy": 268,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-web-3-3-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "stageIndex": 4,
+   "attempt": 1,
+   "startHp": 26,
+   "maxHp": 26,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,0",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835640552
+    },
+    {
+     "key": "1,0",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835654962
+    },
+    {
+     "key": "0,0",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 26,
+     "enemiesAt": 0,
+     "startedAt": 1795835668895
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835678361
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 26,
+     "enemiesAt": 1,
+     "startedAt": 1795835698869
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 26,
+     "enemiesAt": 0,
+     "startedAt": 1795835712530
+    },
+    {
+     "key": "2,2",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 26,
+     "enemiesAt": 1,
+     "startedAt": 1795835724299
+    }
+   ],
+   "startedAt": 1795835640523,
+   "maxRoom": 6,
+   "minHp": 23,
+   "hitsApprox": 2,
+   "talents": [
+    "稳手",
+    "铁胃",
+    "快手"
+   ],
+   "rest": 0,
+   "ended": "win",
+   "endHp": 26,
+   "endRoom": 6,
+   "endRoomKey": "2,2",
+   "endedAt": 1795835745424,
+   "durationMs": 104901,
+   "kills": 24,
+   "coins": 5,
+   "gems": 5,
+   "talentsFinal": [
+    "steady",
+    "ironstomach",
+    "quick"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 404,
+   "endPy": 528,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-1-4-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "stageIndex": 4,
+   "attempt": 1,
+   "startHp": 26,
+   "maxHp": 26,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835754122
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835772445
+    },
+    {
+     "key": "0,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 26,
+     "enemiesAt": 0,
+     "startedAt": 1795835788506
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835795518
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 23,
+     "enemiesAt": 1,
+     "startedAt": 1795835822986
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 24,
+     "enemiesAt": 0,
+     "startedAt": 1795835842626
+    },
+    {
+     "key": "2,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 24,
+     "enemiesAt": 1,
+     "startedAt": 1795835852480
+    }
+   ],
+   "startedAt": 1795835754093,
+   "maxRoom": 6,
+   "minHp": 20,
+   "hitsApprox": 4,
+   "talents": [
+    "铁胃",
+    "快手",
+    "吸血"
+   ],
+   "rest": 0,
+   "ended": "win",
+   "endHp": 24,
+   "endRoom": 6,
+   "endRoomKey": "2,0",
+   "endedAt": 1795835868808,
+   "durationMs": 114715,
+   "kills": 20,
+   "coins": 1,
+   "gems": 3,
+   "talentsFinal": [
+    "ironstomach",
+    "quick",
+    "vampire"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 369,
+   "endPy": 244,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-2-4-a1-win.png"
+  },
+  {
+   "stage": "fort:4",
+   "stageIndex": 4,
+   "attempt": 1,
+   "startHp": 26,
+   "maxHp": 26,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "0,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835877745
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 24,
+     "enemiesAt": 2,
+     "startedAt": 1795835902954
+    },
+    {
+     "key": "2,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 22,
+     "enemiesAt": 0,
+     "startedAt": 1795835921407
+    },
+    {
+     "key": "2,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 30,
+     "enemiesAt": 2,
+     "startedAt": 1795835935891
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 30,
+     "enemiesAt": 1,
+     "startedAt": 1795835963507
+    },
+    {
+     "key": "0,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 30,
+     "enemiesAt": 0,
+     "startedAt": 1795835978856
+    },
+    {
+     "key": "0,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 27,
+     "enemiesAt": 1,
+     "startedAt": 1795835988819
+    }
+   ],
+   "startedAt": 1795835877717,
+   "maxRoom": 6,
+   "minHp": 7,
+   "hitsApprox": 9,
+   "talents": [
+    "厚皮",
+    "铁胃",
+    "狂战"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 11,
+   "endRoom": 6,
+   "endRoomKey": "0,0",
+   "endedAt": 1795836029024,
+   "durationMs": 151307,
+   "kills": 25,
+   "coins": 2,
+   "gems": 4,
+   "talentsFinal": [
+    "tough",
+    "ironstomach",
+    "berserk"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 119,
+   "endPy": 752,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-fort4-3-4-a1-win.png"
+  },
+  {
+   "stage": "fort:5",
+   "stageIndex": 5,
+   "attempt": 1,
+   "startHp": 28,
+   "maxHp": 28,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "2,2",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 28,
+     "enemiesAt": 2,
+     "startedAt": 1795835366225
+    },
+    {
+     "key": "1,2",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 26,
+     "enemiesAt": 2,
+     "startedAt": 1795835389774
+    },
+    {
+     "key": "0,2",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 21,
+     "enemiesAt": 0,
+     "startedAt": 1795835406030
+    },
+    {
+     "key": "0,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 25,
+     "enemiesAt": 2,
+     "startedAt": 1795835424775
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 21,
+     "enemiesAt": 1,
+     "startedAt": 1795835444938
+    },
+    {
+     "key": "2,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 21,
+     "enemiesAt": 0,
+     "startedAt": 1795835467073
+    },
+    {
+     "key": "2,0",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 29,
+     "enemiesAt": 1,
+     "startedAt": 1795835476725
+    }
+   ],
+   "startedAt": 1795835366193,
+   "maxRoom": 6,
+   "minHp": 13,
+   "hitsApprox": 10,
+   "talents": [
+    "狂战",
+    "厚皮",
+    "铁胃"
+   ],
+   "rest": 2,
+   "ended": "win",
+   "endHp": 17,
+   "endRoom": 6,
+   "endRoomKey": "2,0",
+   "endedAt": 1795835504917,
+   "durationMs": 138724,
+   "kills": 25,
+   "coins": 2,
+   "gems": 4,
+   "talentsFinal": [
+    "berserk",
+    "tough",
+    "ironstomach"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 396,
+   "endPy": 714,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg5-5-a1-win.png"
+  },
+  {
+   "stage": "fort:6",
+   "stageIndex": 6,
+   "attempt": 1,
+   "startHp": 30,
+   "maxHp": 30,
+   "weapon": "katana",
+   "rooms": [
+    {
+     "key": "0,0",
+     "idx": 0,
+     "type": "battle",
+     "hpAt": 30,
+     "enemiesAt": 2,
+     "startedAt": 1795835513346
+    },
+    {
+     "key": "1,0",
+     "idx": 1,
+     "type": "battle",
+     "hpAt": 30,
+     "enemiesAt": 2,
+     "startedAt": 1795835534807
+    },
+    {
+     "key": "2,0",
+     "idx": 2,
+     "type": "rest",
+     "hpAt": 25,
+     "enemiesAt": 0,
+     "startedAt": 1795835551532
+    },
+    {
+     "key": "2,1",
+     "idx": 3,
+     "type": "battle",
+     "hpAt": 27,
+     "enemiesAt": 2,
+     "startedAt": 1795835570668
+    },
+    {
+     "key": "1,1",
+     "idx": 4,
+     "type": "gate",
+     "hpAt": 26,
+     "enemiesAt": 1,
+     "startedAt": 1795835587840
+    },
+    {
+     "key": "0,1",
+     "idx": 5,
+     "type": "rest",
+     "hpAt": 27,
+     "enemiesAt": 0,
+     "startedAt": 1795835603435
+    },
+    {
+     "key": "0,2",
+     "idx": 6,
+     "type": "boss",
+     "hpAt": 27,
+     "enemiesAt": 1,
+     "startedAt": 1795835612806
+    }
+   ],
+   "startedAt": 1795835513316,
+   "maxRoom": 6,
+   "minHp": 23,
+   "hitsApprox": 4,
+   "talents": [
+    "狂战",
+    "铁胃",
+    "快手"
+   ],
+   "rest": 1,
+   "ended": "win",
+   "endHp": 27,
+   "endRoom": 6,
+   "endRoomKey": "0,2",
+   "endedAt": 1795835632021,
+   "durationMs": 118705,
+   "kills": 22,
+   "coins": 4,
+   "gems": 5,
+   "talentsFinal": [
+    "berserk",
+    "ironstomach",
+    "quick"
+   ],
+   "bossKind": "sam",
+   "bossEnd": null,
+   "endEnemies": [],
+   "endPx": 402,
+   "endPy": 492,
+   "error": "",
+   "screenshot": "docs/revamp/playtest/fort-g55-reg6-6-a1-win.png"
+  }
+ ]
+}

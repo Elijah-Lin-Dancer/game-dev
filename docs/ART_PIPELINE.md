@@ -396,3 +396,13 @@ G3 世界 Boss 第 4、5 只：雪原霜灯巨鸮、火山熔心巨像。两只�
 - 构建：`dist/assets.b269ef7b.js` 133,313 B；`dist/game.39f79735.js` 391,576 B；首屏 1948 KB / gzip 753 KB；`sw.js` `na-b18-30bb814f`；`web/game.html` 2,040 KB。
 - 静态：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1426 / 3939 / 0；单文件字体审计 `passed:true`。
 - 未做：旧堡 2/3/5/6 全量重跑、640/844 真机触屏、Boss 血条与 HUD 重叠修复。详见 `docs/BATCH43-G5-4-FORT-PLAYABILITY.md`。
+
+## G5-5 产出（2026-11-28）
+
+旧堡 2–6 回归与 `fort:3` 软锁修复。没有新增美术素材；G5-3 地形件、32px 格子、门锁与 Boss 状态机不动。
+
+- 玩法：旧堡 gate 房守卫只出 `larva/slime/mole`，不再抽远程风筝点；蜘蛛网从 `0.4×/1.5s/1.9s cd` 调为 `0.55×/1.1s/2.1s cd`，解决“玩家减速后仅比蜘蛛快 2px/s、近战永远追不上”的满血软锁。
+- 验收：最终构建 `game.2906b6e2` 下旧堡 `fort:2–6` 共 9 次独立真实键盘启动全部通关；`fort:3` 3/3（133.8s / 138.5s / 141.3s），`fort:4` 3/3（104.9s / 114.7s / 151.3s），`fort:2/5/6` 各 1/1。记录 `docs/audit/PLAYTEST-FORT-G5-5.json`。
+- 构建：`dist/assets.b269ef7b.js` 133,313 B；`dist/game.2906b6e2.js` 391,727 B；首屏 1948 KB / gzip 753 KB；`sw.js` `na-b18-f9d9c2e8`；`web/game.html` 2,040 KB。
+- 静态：`npm run smoke` `SMOKE OK`；`npm run audit` 49/49 关、108/108 屏、6 Boss、35 过渡；`npm run audit:font` 1426 / 3939 / 0；单文件字体审计 `passed:true`。
+- 未做：旧堡墙体 16 向 autotile、关键摆件、640/844 真机触屏、其他 4 章回归。详见 `docs/BATCH44-G5-5-FORT-REGRESSION.md`。

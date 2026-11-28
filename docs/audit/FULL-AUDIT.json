@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-11-28T02:18:02.809Z",
+  "startedAt": "2026-11-28T03:21:41.844Z",
   "stages": [
     {
       "chapter": "bamboo",
@@ -340,7 +340,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 20,
+      "textures": 19,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -371,7 +371,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 20,
+      "textures": 19,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -433,7 +433,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -495,7 +495,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 20,
+      "textures": 19,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -526,7 +526,7 @@
         "5:shop",
         "6:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 7,
       "roomTypes": [
         "battle",
@@ -657,7 +657,7 @@
         "6:shrine",
         "7:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 8,
       "roomTypes": [
         "battle",
@@ -723,7 +723,7 @@
         "6:shrine",
         "7:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 8,
       "roomTypes": [
         "battle",
@@ -789,7 +789,7 @@
         "6:shrine",
         "7:boss"
       ],
-      "textures": 19,
+      "textures": 20,
       "roomsVisited": 8,
       "roomTypes": [
         "battle",
@@ -1247,7 +1247,7 @@
         "2:battle",
         "3:boss"
       ],
-      "textures": 20,
+      "textures": 21,
       "roomsVisited": 4,
       "roomTypes": [
         "battle",
@@ -1296,7 +1296,7 @@
         "1:battle",
         "2:boss"
       ],
-      "textures": 21,
+      "textures": 20,
       "roomsVisited": 3,
       "roomTypes": [
         "battle",
@@ -1322,7 +1322,7 @@
         "4:battle",
         "5:boss"
       ],
-      "textures": 20,
+      "textures": 21,
       "roomsVisited": 6,
       "roomTypes": [
         "battle",
@@ -1463,7 +1463,7 @@
         "4:battle",
         "5:boss"
       ],
-      "textures": 22,
+      "textures": 21,
       "roomsVisited": 6,
       "roomTypes": [
         "battle",
@@ -1491,7 +1491,7 @@
         "3:battle",
         "4:boss"
       ],
-      "textures": 21,
+      "textures": 22,
       "roomsVisited": 5,
       "roomTypes": [
         "battle",
@@ -4089,7 +4089,7 @@
     }
   ],
   "errors": [],
-  "finishedAt": "2026-11-28T02:19:28.249Z",
+  "finishedAt": "2026-11-28T03:23:09.197Z",
   "summary": {
     "stagesExpected": 49,
     "stagesRun": 49,
